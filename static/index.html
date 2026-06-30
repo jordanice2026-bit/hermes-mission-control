@@ -1,2281 +1,985 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ICE Inc. — Mission Control</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg:          #07090f;
-      --surface:     #0d1117;
-      --surface2:    #131720;
-      --surface3:    #1a2030;
-      --border:      #1e2535;
-      --border2:     #252d3e;
-      --text:        #e2e8f0;
-      --text2:       #94a3b8;
-      --text3:       #64748b;
-      --accent:      #1d4ed8;
-      --accent2:     #2563eb;
-      --accent-glow: rgba(29,78,216,0.15);
-      --white:       #ffffff;
-      --pending:     #475569;
-      --in-progress: #2563eb;
-      --blocked:     #dc2626;
-      --done:        #16a34a;
-      --cancelled:   #374151;
-      --radius-sm:   6px;
-      --radius:      8px;
-      --radius-lg:   12px;
-    }
-    html, body { height: 100%; overflow: hidden; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 14px;
-      display: flex;
-      flex-direction: column;
-    }
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ICE Inc. — Mission Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07090f;--surface:#0d1117;--surface2:#131720;--surface3:#1a2030;--border:#1e2535;--border2:#252d3e;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--accent:#1d4ed8;--accent2:#2563eb;--accent-glow:rgba(29,78,216,0.15);--white:#fff;--pending:#475569;--in-progress:#2563eb;--blocked:#dc2626;--done:#16a34a;--cancelled:#374151;--radius-sm:6px;--radius:8px;--radius-lg:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;font-size:14px}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
 
-    /* ── Top bar ── */
-    .topbar {
-      display: flex;
-      align-items: center;
-      height: 52px;
-      padding: 0 24px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-      gap: 0;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding-right: 28px;
-      border-right: 1px solid var(--border);
-      margin-right: 20px;
-    }
-    .brand-logo {
-      width: 28px; height: 28px;
-      background: var(--accent2);
-      border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px; font-weight: 800; color: #fff; letter-spacing: -1px;
-    }
-    .brand-name {
-      font-size: 13px; font-weight: 700; letter-spacing: 0.12em;
-      text-transform: uppercase; color: var(--white);
-    }
-    .brand-sub { font-size: 10px; color: var(--text3); letter-spacing: 0.06em; text-transform: uppercase; }
+/* TOP BAR */
+#topbar{display:flex;align-items:center;gap:16px;padding:0 20px;height:52px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;z-index:100}
+.brand{display:flex;align-items:center;gap:10px;margin-right:8px}
+.brand-logo{width:32px;height:32px;background:var(--accent2);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;flex-shrink:0}
+.brand-text{display:flex;flex-direction:column;line-height:1.2}
+.brand-name{font-weight:700;font-size:14px}
+.brand-sub{font-size:11px;color:var(--text3)}
+nav{display:flex;gap:2px;flex:1}
+.nav-item{padding:6px 12px;border-radius:var(--radius-sm);cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all .15s;border:none;background:none}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--accent-glow);color:var(--accent2)}
+.topbar-right{display:flex;align-items:center;gap:12px;margin-left:auto}
+.live-dot-wrap{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);transition:background .3s}
+.live-dot.connected{background:#16a34a;box-shadow:0 0 6px #16a34a}
+.user-wrap{display:flex;align-items:center;gap:8px}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff}
+.user-name{font-size:13px;font-weight:500}
+.sign-out-btn{font-size:12px;color:var(--text3);padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:none;transition:all .15s}
+.sign-out-btn:hover{border-color:var(--border2);color:var(--text2)}
 
-    /* Nav */
-    .nav { display: flex; align-items: center; gap: 2px; flex: 1; }
-    .nav-item {
-      display: flex; align-items: center; gap: 7px;
-      padding: 6px 14px; border-radius: var(--radius-sm);
-      background: none; border: none;
-      color: var(--text3); font-size: 13px; font-weight: 500;
-      cursor: pointer; transition: color 0.15s, background 0.15s;
-      white-space: nowrap;
-    }
-    .nav-item:hover { color: var(--text); background: var(--surface2); }
-    .nav-item.active { color: var(--white); background: var(--surface3); }
-    .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.8; }
+/* KPI BAR */
+#kpi-bar{display:flex;gap:12px;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.kpi-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;min-width:110px}
+.kpi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.kpi-value{font-size:22px;font-weight:700}
+.kpi-pending .kpi-value{color:var(--pending)}
+.kpi-inprogress .kpi-value{color:var(--in-progress)}
+.kpi-blocked .kpi-value{color:var(--blocked)}
+.kpi-done .kpi-value{color:var(--done)}
+.kpi-total .kpi-value{color:var(--text)}
 
-    /* Right side */
-    .topbar-right { display: flex; align-items: center; gap: 16px; }
-    .live-indicator {
-      display: flex; align-items: center; gap: 7px;
-      font-size: 11px; color: var(--text3);
-      letter-spacing: 0.04em; text-transform: uppercase;
-    }
-    .live-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--text3); flex-shrink: 0; transition: background 0.3s;
-    }
-    .live-dot.live { background: #22c55e; box-shadow: 0 0 6px #22c55e88; animation: blink 2s infinite; }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+/* MAIN LAYOUT */
+#main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.view{display:none;flex:1;overflow:auto}
+.view.active{display:flex;flex-direction:column}
 
-    .user-menu {
-      display: flex; align-items: center; gap: 9px;
-      padding: 5px 12px 5px 5px;
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 999px; cursor: pointer;
-    }
-    .user-avatar {
-      width: 26px; height: 26px; border-radius: 50%;
-      background: var(--accent2); overflow: hidden;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
-    }
-    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .user-name { font-size: 12px; font-weight: 500; color: var(--text); }
-    .sign-out-btn {
-      font-size: 11px; color: var(--text3); background: none; border: none; cursor: pointer;
-      padding: 0; transition: color 0.15s; text-transform: uppercase; letter-spacing: 0.04em;
-    }
-    .sign-out-btn:hover { color: var(--text); }
+/* ACTION BAR */
+.action-bar{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface)}
+.action-bar .spacer{flex:1}
+.search-input{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);padding:6px 10px;font-family:inherit;font-size:13px;width:220px;outline:none}
+.search-input:focus{border-color:var(--accent2)}
+.record-count{font-size:12px;color:var(--text3);white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;border:1px solid var(--border2);background:var(--surface2);color:var(--text);transition:all .15s;cursor:pointer}
+.btn:hover{border-color:var(--border2);background:var(--surface3)}
+.btn-primary{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.btn-primary:hover{background:var(--accent);border-color:var(--accent)}
+.btn-sm{padding:4px 8px;font-size:12px}
+.btn-danger{background:#7f1d1d;border-color:#991b1b;color:#fca5a5}
+.btn-danger:hover{background:#991b1b}
+.btn-green{background:#14532d;border-color:#166534;color:#86efac}
+.btn-green:hover{background:#166534}
 
-    /* ── Breadcrumb bar ── */
-    .breadcrumb-bar {
-      display: flex; align-items: center; gap: 8px;
-      height: 40px; padding: 0 24px;
-      background: var(--surface); border-bottom: 1px solid var(--border);
-      flex-shrink: 0; font-size: 12px; color: var(--text3);
-    }
-    .breadcrumb-bar.hidden { display: none; }
-    .bc-sep { color: var(--border2); }
-    .bc-link { color: var(--text3); background: none; border: none; cursor: pointer; font-size: 12px; padding: 0; }
-    .bc-link:hover { color: var(--text); }
-    .bc-current { color: var(--text); font-weight: 500; }
-    .dept-color-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+/* KANBAN BOARD */
+.board-wrap{display:flex;flex:1;overflow:hidden}
+.kanban{display:flex;gap:0;flex:1;overflow-x:auto;padding:16px;gap:12px;align-items:flex-start}
+.kanban-col{min-width:260px;max-width:300px;flex:1;display:flex;flex-direction:column;gap:8px}
+.col-header{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.col-pending .col-header{background:rgba(71,85,105,.15);color:var(--pending);border-left:3px solid var(--pending)}
+.col-inprogress .col-header{background:rgba(37,99,235,.15);color:var(--in-progress);border-left:3px solid var(--in-progress)}
+.col-blocked .col-header{background:rgba(220,38,38,.15);color:var(--blocked);border-left:3px solid var(--blocked)}
+.col-done .col-header{background:rgba(22,163,74,.15);color:var(--done);border-left:3px solid var(--done)}
+.col-cancelled .col-header{background:rgba(55,65,81,.15);color:var(--cancelled);border-left:3px solid var(--cancelled)}
+.col-count{background:rgba(255,255,255,.1);border-radius:10px;padding:1px 7px;font-size:11px}
+.task-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;cursor:pointer;transition:all .15s;position:relative}
+.task-card:hover{border-color:var(--border2);background:var(--surface2)}
+.task-card.selected{border-color:var(--accent2);background:var(--surface2)}
+.task-id{font-size:10px;color:var(--text3);margin-bottom:4px}
+.task-title{font-size:13px;font-weight:500;margin-bottom:8px;line-height:1.4}
+.task-meta{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.agent-tag{font-size:11px;background:var(--surface3);border:1px solid var(--border2);border-radius:10px;padding:2px 8px;color:var(--text2)}
+.time-ago{font-size:11px;color:var(--text3)}
 
-    /* ── KPI bar ── */
-    .kpi-bar {
-      display: flex; align-items: stretch;
-      height: 48px; padding: 0 24px; gap: 28px;
-      background: var(--surface); border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    .kpi-bar.hidden { display: none; }
-    .kpi-item { display: flex; align-items: center; gap: 8px; }
-    .kpi-divider { width: 1px; background: var(--border); align-self: stretch; margin: 10px 0; }
-    .kpi-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .kpi-num { font-size: 16px; font-weight: 700; color: var(--white); }
-    .kpi-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
-    .kpi-spacer { flex: 1; }
-    .kpi-sync { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; }
+/* SIDEBAR */
+.sidebar{width:340px;flex-shrink:0;background:var(--surface);border-left:1px solid var(--border);overflow-y:auto;transition:width .2s}
+.sidebar.closed{width:0;overflow:hidden}
+.sidebar-inner{padding:20px;min-width:340px}
+.sidebar-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sidebar-title{font-size:15px;font-weight:600}
+.sidebar-close{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:4px}
+.sidebar-close:hover{color:var(--text)}
+.detail-field{margin-bottom:14px}
+.detail-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.detail-value{font-size:13px;color:var(--text)}
+.status-badge{display:inline-block;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600;text-transform:uppercase}
+.badge-pending{background:rgba(71,85,105,.3);color:#94a3b8}
+.badge-inprogress{background:rgba(37,99,235,.2);color:#60a5fa}
+.badge-blocked{background:rgba(220,38,38,.2);color:#f87171}
+.badge-done{background:rgba(22,163,74,.2);color:#4ade80}
+.badge-cancelled{background:rgba(55,65,81,.3);color:#6b7280}
 
-    /* ── Views ── */
-    .view { display: none; flex: 1; overflow: hidden; flex-direction: column; }
-    .view.active { display: flex; }
+/* DEPARTMENTS */
+.dept-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding:20px}
+.dept-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;cursor:pointer;transition:all .2s}
+.dept-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.dept-icon{font-size:28px;margin-bottom:10px}
+.dept-name{font-size:16px;font-weight:600;margin-bottom:6px}
+.dept-desc{font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5}
+.dept-progress-wrap{margin-bottom:12px}
+.dept-progress-label{display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:4px}
+.progress-bar{height:4px;background:var(--surface3);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;border-radius:2px;transition:width .3s}
+.dept-agents{display:flex;gap:-4px;flex-wrap:wrap;gap:4px}
+.dept-agent-chip{font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:2px 8px;color:var(--text2)}
 
-    /* ── Board view ── */
-    .board-wrap { display: flex; flex: 1; overflow: hidden; }
-    .board {
-      display: flex; gap: 14px;
-      padding: 20px 24px; overflow-x: auto; flex: 1; align-items: flex-start;
-    }
-    .column {
-      flex: 0 0 260px; min-width: 260px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius-lg); display: flex;
-      flex-direction: column; max-height: 100%;
-    }
-    .col-header {
-      display: flex; align-items: center; gap: 8px;
-      padding: 11px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
-    }
-    .col-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .col-title { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text2); }
-    .col-count {
-      margin-left: auto; background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 999px; padding: 1px 7px; font-size: 11px; font-weight: 600; color: var(--text3);
-    }
-    .col-body {
-      flex: 1; overflow-y: auto; padding: 10px;
-      display: flex; flex-direction: column; gap: 7px;
-    }
-    .col-body::-webkit-scrollbar { width: 3px; }
-    .col-body::-webkit-scrollbar-track { background: transparent; }
-    .col-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-    .empty-col { text-align: center; padding: 28px 12px; color: var(--text3); font-size: 12px; }
+/* BREADCRUMB */
+.breadcrumb{display:flex;align-items:center;gap:8px;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--border);font-size:13px;flex-shrink:0}
+.breadcrumb-link{color:var(--accent2);cursor:pointer}
+.breadcrumb-link:hover{text-decoration:underline}
+.breadcrumb-sep{color:var(--text3)}
 
-    /* ── Task card ── */
-    .task-card {
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 11px 12px;
-      cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    .task-card:hover { border-color: var(--accent2); box-shadow: 0 0 0 1px var(--accent-glow); }
-    .task-id { font-size: 10px; font-family: monospace; color: var(--text3); margin-bottom: 5px; }
-    .task-title {
-      font-size: 12px; font-weight: 500; line-height: 1.5; margin-bottom: 9px; color: var(--text);
-      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-    }
-    .task-footer { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-    .agent-tag {
-      display: inline-flex; align-items: center; gap: 4px;
-      border-radius: 4px; padding: 2px 7px;
-      font-size: 10px; font-weight: 600; letter-spacing: 0.02em;
-      max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .task-age { font-size: 10px; color: var(--text3); white-space: nowrap; }
+/* AGENT CARDS */
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;padding:20px}
+.agent-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:all .2s;text-align:center}
+.agent-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.agent-avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:#fff;margin:0 auto 10px}
+.agent-name{font-size:14px;font-weight:600;margin-bottom:4px}
+.agent-role{font-size:12px;color:var(--text3);margin-bottom:10px}
+.agent-stats{display:flex;justify-content:center;gap:16px}
+.agent-stat{text-align:center}
+.agent-stat-val{font-size:16px;font-weight:700}
+.agent-stat-lbl{font-size:10px;color:var(--text3)}
 
-    /* ── Sidebar ── */
-    .sidebar {
-      width: 340px; flex-shrink: 0; border-left: 1px solid var(--border);
-      background: var(--surface); display: flex; flex-direction: column;
-      overflow: hidden; transition: width 0.2s;
-    }
-    .sidebar.hidden { width: 0; border-left: none; }
-    .sidebar-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
-    }
-    .sidebar-title { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text2); }
-    .close-btn { background: none; border: none; color: var(--text3); font-size: 18px; cursor: pointer; line-height: 1; }
-    .close-btn:hover { color: var(--text); }
-    .sidebar-body { flex: 1; overflow-y: auto; padding: 16px; }
-    .detail-section { margin-bottom: 20px; }
-    .detail-label {
-      font-size: 10px; color: var(--text3); text-transform: uppercase;
-      letter-spacing: 0.07em; margin-bottom: 5px; font-weight: 600;
-    }
-    .detail-value { font-size: 13px; line-height: 1.55; color: var(--text); }
-    .status-chip {
-      display: inline-block; padding: 3px 10px; border-radius: 4px;
-      font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-    }
-    .detail-mono { font-family: monospace; font-size: 11px; color: var(--text3); word-break: break-all; }
-    .detail-pre { white-space: pre-wrap; font-size: 11px; color: var(--text2); line-height: 1.6; }
-    .detail-divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
-    .agent-link { color: var(--accent2); text-decoration: none; font-weight: 600; }
-    .agent-link:hover { text-decoration: underline; }
+/* OWNERS TABLE */
+.owners-container{flex:1;overflow:auto;padding:16px}
+.owners-table{width:100%;border-collapse:collapse}
+.owners-table th{background:var(--surface);border-bottom:2px solid var(--border2);padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);white-space:nowrap;position:sticky;top:0;z-index:1}
+.owners-table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.owners-table tr:hover td{background:var(--surface2)}
+.contact-badge,.stage-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
+.ct-individual{background:rgba(22,163,74,.2);color:#4ade80}
+.ct-llc{background:rgba(37,99,235,.2);color:#60a5fa}
+.ct-trust{background:rgba(124,58,237,.2);color:#c4b5fd}
+.st-newlead{background:rgba(71,85,105,.3);color:#94a3b8}
+.st-verified{background:rgba(37,99,235,.2);color:#60a5fa}
+.st-emailsent{background:rgba(202,138,4,.2);color:#fbbf24}
+.st-mailsent{background:rgba(234,88,12,.2);color:#fb923c}
+.st-called{background:rgba(219,39,119,.2);color:#f472b6}
+.st-responded{background:rgba(22,163,74,.2);color:#4ade80}
+.st-listed{background:rgba(124,58,237,.2);color:#c4b5fd}
+.st-dead,.st-donotcontact{background:rgba(220,38,38,.2);color:#f87171}
 
-    /* ── Departments view ── */
-    .dept-container { flex: 1; overflow-y: auto; padding: 28px 24px; }
-    .dept-container::-webkit-scrollbar { width: 6px; }
-    .dept-container::-webkit-scrollbar-track { background: transparent; }
-    .dept-container::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-    .section-header {
-      display: flex; align-items: baseline; justify-content: space-between;
-      margin-bottom: 20px;
-    }
-    .section-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
-    .dept-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; max-width: 1400px; }
+/* PIPELINE */
+.pipeline-board{display:flex;gap:12px;padding:16px;overflow-x:auto;flex:1;align-items:flex-start}
+.pl-col{min-width:280px;max-width:320px;flex:1;display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;max-height:calc(100vh - 160px);overflow-y:auto}
+.pl-col-header{display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0}
+.pl-col-draft .pl-col-header{color:var(--pending)}
+.pl-col-approved .pl-col-header{color:var(--done)}
+.pl-col-sent .pl-col-header{color:var(--in-progress)}
+.pl-col-failed .pl-col-header{color:var(--blocked)}
+.pl-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;transition:all .15s}
+.pl-card:hover{border-color:var(--border2)}
+.pl-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.pl-owner-name{font-size:13px;font-weight:600;line-height:1.3}
+.pl-badges{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.pl-state-chip{font-size:10px;background:var(--surface3);border:1px solid var(--border2);border-radius:4px;padding:1px 5px;color:var(--text3)}
+.pl-subject{font-size:12px;color:var(--text3);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:8px;line-height:1.4}
+.pl-card-footer{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.pl-date{font-size:11px;color:var(--text3)}
+.pl-actions{display:flex;gap:4px;flex-wrap:wrap}
+.pl-col-count{background:rgba(255,255,255,.1);border-radius:10px;padding:1px 7px;font-size:11px}
 
-    /* ── Department card ── */
-    .dept-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius-lg); overflow: hidden;
-      cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    .dept-card:hover { border-color: var(--border2); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-    .dept-card-top {
-      padding: 18px 20px 14px;
-      border-bottom: 1px solid var(--border);
-    }
-    .dept-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
-    .dept-icon-wrap {
-      width: 38px; height: 38px; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px; flex-shrink: 0;
-    }
-    .dept-name { font-size: 15px; font-weight: 700; color: var(--white); margin-bottom: 3px; }
-    .dept-desc { font-size: 11px; color: var(--text3); line-height: 1.5; }
-    .dept-status-chip {
-      font-size: 10px; font-weight: 700; padding: 3px 8px;
-      border-radius: 4px; letter-spacing: 0.06em; text-transform: uppercase; flex-shrink: 0;
-    }
-    /* Progress bar */
-    .dept-progress { margin-top: 14px; }
-    .dept-progress-track {
-      height: 3px; background: var(--border); border-radius: 2px;
-      overflow: hidden; display: flex; margin-bottom: 10px;
-    }
-    .dept-progress-seg { height: 100%; }
-    .dept-kpis { display: flex; gap: 16px; }
-    .dept-kpi { display: flex; flex-direction: column; gap: 2px; }
-    .dept-kpi-num { font-size: 18px; font-weight: 700; color: var(--white); line-height: 1; }
-    .dept-kpi-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
-    /* Agents roster */
-    .dept-card-agents { padding: 12px 20px 14px; }
-    .agents-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; margin-bottom: 10px; }
-    .agent-row {
-      display: flex; align-items: center; gap: 10px; padding: 7px 0;
-      border-top: 1px solid var(--border); cursor: pointer;
-      transition: background 0.1s; margin: 0 -20px; padding-left: 20px; padding-right: 20px;
-    }
-    .agent-row:hover { background: var(--surface2); }
-    .agent-row-avatar {
-      width: 26px; height: 26px; border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
-    }
-    .agent-row-name { font-size: 12px; font-weight: 500; flex: 1; }
-    .agent-row-stats { display: flex; align-items: center; gap: 8px; }
-    .agent-row-stat { display: flex; align-items: center; gap: 3px; font-size: 11px; }
-    .agent-row-dot { width: 6px; height: 6px; border-radius: 50%; }
-    .agent-active-pip {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: #22c55e; box-shadow: 0 0 5px #22c55e88;
-    }
+/* MODALS */
+.pl-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center}
+.pl-modal-overlay.open{display:flex}
+.pl-modal-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);width:90%;max-width:640px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.pl-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+.pl-modal-title{font-size:16px;font-weight:600}
+.pl-modal-close{background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:4px}
+.pl-modal-close:hover{color:var(--text)}
+.pl-modal-body{padding:20px;overflow-y:auto;flex:1}
+.pl-modal-footer{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid var(--border);flex-shrink:0}
+.pl-modal-footer-left{margin-right:auto}
+.form-group{margin-bottom:14px}
+.form-label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block}
+.form-input,.form-textarea{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);padding:8px 10px;font-family:inherit;font-size:13px;outline:none;resize:vertical}
+.form-input:focus,.form-textarea:focus{border-color:var(--accent2)}
+.form-textarea{min-height:200px}
+.ai-fix-row{display:flex;gap:8px;margin-top:8px;align-items:center}
+.ai-fix-row .form-input{flex:1;min-width:0}
 
-    /* ── Department detail view ── */
-    .dept-detail-container { flex: 1; overflow-y: auto; padding: 24px; }
-    .dept-detail-agents-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; max-width: 1200px; }
-    .agent-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius-lg); padding: 16px;
-      cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    .agent-card:hover { border-color: var(--border2); box-shadow: 0 4px 16px rgba(0,0,0,0.25); }
-    .agent-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-    .agent-avatar-lg {
-      width: 36px; height: 36px; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 15px; font-weight: 800; color: #fff; flex-shrink: 0;
-    }
-    .agent-card-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
-    .agent-card-sub { font-size: 11px; color: var(--text3); }
-    .agent-chip {
-      font-size: 10px; font-weight: 700; padding: 2px 7px;
-      border-radius: 4px; letter-spacing: 0.05em; text-transform: uppercase; flex-shrink: 0; margin-left: auto;
-    }
-    .agent-progress-track {
-      height: 3px; background: var(--border); border-radius: 2px; overflow: hidden;
-      display: flex; margin-bottom: 10px;
-    }
-    .agent-stats-row { display: flex; gap: 12px; }
-    .agent-stat-item { display: flex; align-items: center; gap: 4px; font-size: 11px; }
-    .agent-stat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-    .agent-stat-num { font-weight: 600; }
-    .agent-stat-lbl { color: var(--text3); }
+/* EXPORTS */
+.exports-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;padding:24px;max-width:800px}
+.export-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;display:flex;flex-direction:column;gap:14px}
+.export-icon{font-size:36px}
+.export-name{font-size:17px;font-weight:600}
+.export-desc{font-size:13px;color:var(--text2);line-height:1.6}
 
-    /* Toast */
-    .toast-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 9999; }
-    .toast {
-      background: var(--surface3); border: 1px solid var(--border2);
-      border-radius: var(--radius); padding: 9px 14px; font-size: 12px; color: var(--text);
-      animation: toastIn 0.2s ease; letter-spacing: 0.02em;
-    }
-    @keyframes toastIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+/* TOAST */
+#toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:var(--text);box-shadow:0 4px 16px rgba(0,0,0,.4);max-width:320px;animation:slideIn .2s ease}
+.toast.error{border-color:#7f1d1d;color:#fca5a5}
+.toast.success{border-color:#14532d;color:#86efac}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
 
-    /* Loading */
-    .loading {
-      display: flex; align-items: center; justify-content: center;
-      flex: 1; flex-direction: column; gap: 12px; color: var(--text3); font-size: 13px;
-    }
-    .spinner {
-      width: 28px; height: 28px; border: 2px solid var(--border);
-      border-top-color: var(--accent2); border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--text3);gap:10px}
+.spinner{width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--accent2);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3)}
+.empty-state-icon{font-size:40px;margin-bottom:12px}
 
-    /* Scrollbars */
-    .board::-webkit-scrollbar { height: 5px; }
-    .board::-webkit-scrollbar-track { background: transparent; }
-    .board::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-  
-    /* ── Pipeline view ── */
-/* ══════════════════════════════════════════════
-   PIPELINE VIEW
-   ══════════════════════════════════════════════ */
+/* BULK SEND */
+.bulk-list{max-height:300px;overflow-y:auto;margin-bottom:16px}
+.bulk-item{display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid var(--border);font-size:13px}
+.bulk-item:last-child{border-bottom:none}
+.bulk-email{color:var(--text3);font-size:12px}
+.progress-wrap{margin-top:12px}
+.progress-wrap .progress-bar{height:8px;background:var(--surface3);border-radius:4px}
+.progress-wrap .progress-fill{background:var(--accent2)}
+.progress-label{font-size:12px;color:var(--text3);margin-top:4px;text-align:center}
 
-/* ── Action bar ── */
-.pipeline-action-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 24px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.pipeline-send-all-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  background: var(--accent2);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius);
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  letter-spacing: 0.01em;
-  white-space: nowrap;
-  transition: background 0.15s, box-shadow 0.15s;
-}
-.pipeline-send-all-btn:hover {
-  background: var(--accent);
-  box-shadow: 0 0 18px rgba(37,99,235,0.45);
-}
-.pipeline-search-wrap { flex: 1; max-width: 320px; }
-.pipeline-search {
-  width: 100%;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 7px 12px;
-  color: var(--text);
-  font-size: 13px;
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.15s;
-}
-.pipeline-search:focus { border-color: var(--accent2); }
-.pipeline-search::placeholder { color: var(--text3); }
-.pipeline-record-count {
-  font-size: 12px;
-  color: var(--text3);
-  white-space: nowrap;
-}
-.pipeline-refresh-btn {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text3);
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
-}
-.pipeline-refresh-btn:hover {
-  color: var(--text);
-  border-color: var(--border2);
-  background: var(--surface3);
-}
-.pipeline-refresh-btn svg { width: 14px; height: 14px; }
+/* SEND CONFIRM */
+.send-preview-owner{font-size:16px;font-weight:600;margin-bottom:4px}
+.send-preview-email{font-size:13px;color:var(--text3);margin-bottom:14px}
+.send-preview-subject{font-size:13px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;margin-bottom:8px}
+.send-preview-body{font-size:12px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;white-space:pre-wrap;max-height:180px;overflow-y:auto}
 
-/* ── Pipeline board / columns ── */
-.pipeline-board { /* inherits .board layout */ }
-.pipeline-column { flex: 0 0 280px; min-width: 280px; }
-
-/* ── Pipeline card ── */
-.pipeline-card {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-.pipeline-card:hover {
-  border-color: var(--accent2);
-  box-shadow: 0 0 0 1px var(--accent-glow);
-}
-.pipeline-card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 5px;
-}
-.pipeline-card-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text);
-  line-height: 1.45;
-  flex: 1;
-  min-width: 0;
-}
-.match-score-badge {
-  flex-shrink: 0;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
-}
-.pipeline-card-buyer {
-  font-size: 11px;
-  color: var(--text2);
-  margin-bottom: 3px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.pipeline-card-address {
-  font-size: 11px;
-  color: var(--text3);
-  margin-bottom: 6px;
-  line-height: 1.35;
-}
-.pipeline-stats-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-bottom: 8px;
-}
-.pipeline-stat-chip {
-  font-size: 10px;
-  color: var(--text3);
-  background: var(--surface3);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 2px 6px;
-  white-space: nowrap;
-}
-.pipeline-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
-}
-.pipeline-card-actions { display: flex; gap: 4px; flex-wrap: wrap; }
-
-/* ── Pipeline buttons ── */
-.pipeline-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 10px;
-  background: var(--surface3);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-sm);
-  color: var(--text2);
-  font-size: 12px;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-.pipeline-btn:hover {
-  background: var(--surface2);
-  color: var(--text);
-  border-color: var(--accent2);
-}
-.pipeline-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-.pipeline-btn-primary {
-  background: var(--accent2);
-  border-color: var(--accent2);
-  color: #fff;
-}
-.pipeline-btn-primary:hover {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-.pipeline-btn-sm { padding: 3px 7px; font-size: 10px; }
-
-/* ── Modals ── */
-.pl-modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.72);
-  z-index: 1000;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-.pl-modal-overlay.active { display: flex; }
-.pl-modal-card {
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-lg);
-  width: 100%;
-  max-width: 600px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.65);
-}
-.pl-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.pl-modal-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--white);
-  margin: 0;
-}
-.pl-modal-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-.pl-modal-body::-webkit-scrollbar { width: 4px; }
-.pl-modal-body::-webkit-scrollbar-track { background: transparent; }
-.pl-modal-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-.pl-modal-footer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 20px;
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.pl-field { display: flex; flex-direction: column; gap: 5px; }
-.pl-label {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text3);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-}
-.pl-input {
-  width: 100%;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  color: var(--text);
-  font-size: 13px;
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.15s;
-}
-.pl-input:focus { border-color: var(--accent2); }
-.pl-textarea {
-  width: 100%;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-  color: var(--text);
-  font-size: 12px;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-  outline: none;
-  resize: vertical;
-  line-height: 1.65;
-  transition: border-color 0.15s;
-}
-.pl-textarea:focus { border-color: var(--accent2); }
-.pl-textarea-lg { min-height: 240px; }
-.pl-textarea-sm {
-  min-height: 72px;
-  font-family: inherit;
-  font-size: 12px;
-}
-
-/* Reply modal */
-.pl-reply-from {
-  font-size: 13px;
-  color: var(--text2);
-  padding: 7px 10px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-}
-.pl-reply-body {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 12px;
-  font-size: 12px;
-  font-family: inherit;
-  color: var(--text2);
-  white-space: pre-wrap;
-  line-height: 1.65;
-  max-height: 320px;
-  overflow-y: auto;
-  margin: 0;
-}
-.pl-reply-body::-webkit-scrollbar { width: 3px; }
-.pl-reply-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
-/* Bulk send modal */
-.pl-bulk-count {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
-}
-.pl-bulk-recipient-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  max-height: 240px;
-  overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 6px;
-}
-.pl-bulk-recipient-list::-webkit-scrollbar { width: 3px; }
-.pl-bulk-recipient-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-.pl-bulk-recipient {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 8px;
-  border-radius: var(--radius-sm);
-  background: var(--surface2);
-}
-.pl-bulk-rname {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text);
-  min-width: 110px;
-  white-space: nowrap;
-}
-.pl-bulk-remail {
-  font-size: 11px;
-  color: var(--text3);
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.pl-bulk-rdeal {
-  font-size: 11px;
-  color: var(--text2);
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.pl-bulk-progress { margin-top: 16px; }
-.pl-bulk-progress-track {
-  height: 6px;
-  background: var(--border);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-bottom: 8px;
-}
-.pl-bulk-progress-bar {
-  height: 100%;
-  background: var(--accent2);
-  border-radius: 3px;
-  transition: width 0.25s ease;
-}
-.pl-bulk-progress-text {
-  font-size: 12px;
-  color: var(--text2);
-  text-align: center;
-}
-
-/* ── Inbox replies section ── */
-.pipeline-inbox-section {
-  flex-shrink: 0;
-  border-top: 1px solid var(--border);
-  background: var(--surface);
-  max-height: 380px;
-  display: flex;
-  flex-direction: column;
-}
-.pipeline-inbox-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 24px;
-  flex-shrink: 0;
-}
-.pipeline-inbox-toggle-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: none;
-  border: none;
-  color: var(--text2);
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.15s;
-}
-.pipeline-inbox-toggle-btn:hover { color: var(--text); }
-.inbox-badge {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: var(--accent2);
-  color: #fff;
-  min-width: 18px;
-  text-align: center;
-}
-.inbox-badge.empty {
-  background: var(--surface3);
-  color: var(--text3);
-  border: 1px solid var(--border2);
-}
-.inbox-chevron {
-  font-size: 10px;
-  color: var(--text3);
-  transition: transform 0.2s ease;
-  display: inline-block;
-}
-.inbox-chevron.open { transform: rotate(180deg); }
-.pipeline-inbox-body {
-  display: none;
-  flex-direction: column;
-  gap: 6px;
-  overflow-y: auto;
-  padding: 0 24px 14px;
-}
-.pipeline-inbox-body.open { display: flex; }
-.pipeline-inbox-body::-webkit-scrollbar { width: 4px; }
-.pipeline-inbox-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-.inbox-section-label {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text3);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  padding: 6px 0 4px;
-}
-.inbox-card {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 11px 12px;
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  transition: border-color 0.15s;
-}
-.inbox-card:hover { border-color: var(--border2); }
-.inbox-card-left { flex: 1; min-width: 0; }
-.inbox-deal-name {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 2px;
-}
-.inbox-buyer {
-  font-size: 11px;
-  color: var(--text3);
-  margin-bottom: 5px;
-}
-.inbox-reply-snippet {
-  font-size: 11px;
-  color: var(--text2);
-  line-height: 1.5;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-.inbox-card-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  flex-shrink: 0;
-}
-  </style>
+@media(max-width:768px){.kanban{padding:10px;gap:8px}.kanban-col{min-width:240px}.exports-grid{grid-template-columns:1fr}.sidebar{position:fixed;right:0;top:52px;bottom:0;z-index:200}}
+</style>
 </head>
 <body>
 
-<!-- ═══════════════════════════ TOP BAR ═══════════════════════════ -->
-<header class="topbar">
+<!-- TOP BAR -->
+<div id="topbar">
   <div class="brand">
     <div class="brand-logo">I</div>
-    <div>
-      <div class="brand-name">Ice Inc.</div>
+    <div class="brand-text">
+      <div class="brand-name">ICE Inc.</div>
       <div class="brand-sub">Mission Control</div>
     </div>
   </div>
-
-  <nav class="nav">
-    <button class="nav-item active" data-view="board" onclick="switchView('board')">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="14" rx="1"/><rect x="9" y="1" width="6" height="9" rx="1"/><rect x="9" y="12" width="6" height="3" rx="1"/></svg>
-      Board
-    </button>
-    <button class="nav-item" data-view="departments" onclick="switchView('departments')">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-      Departments
-    </button>
-      <button class="nav-item" data-view="pipeline" onclick="switchView('pipeline')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="14" height="3" rx="1"/><rect x="1" y="6" width="9" height="3" rx="1"/><rect x="1" y="11" width="11" height="3" rx="1"/><circle cx="13.5" cy="12.5" r="2" stroke="none" fill="currentColor" opacity="0.6"/></svg>Pipeline</button>
+  <nav>
+    <button class="nav-item active" data-view="board">Board</button>
+    <button class="nav-item" data-view="departments">Departments</button>
+    <button class="nav-item" data-view="owners">Owners</button>
+    <button class="nav-item" data-view="pipeline">Outreach Pipeline</button>
+    <button class="nav-item" data-view="exports">Exports</button>
   </nav>
-
   <div class="topbar-right">
-    <div class="live-indicator">
-      <div class="live-dot" id="live-dot"></div>
-      <span id="live-label">Connecting</span>
-    </div>
-    <div class="user-menu">
-      <div class="user-avatar" id="user-avatar"></div>
-      <span class="user-name" id="user-name">…</span>
-      <button class="sign-out-btn" onclick="location.href='/auth/logout'">Sign out</button>
-    </div>
-  </div>
-</header>
-
-<!-- ═══════════════════════ BREADCRUMB BAR ════════════════════════ -->
-<div class="breadcrumb-bar hidden" id="breadcrumb-bar">
-  <button class="bc-link" id="bc-home" onclick="switchView('departments')">Departments</button>
-  <span class="bc-sep">›</span>
-  <span id="bc-dept"></span>
-  <span class="bc-sep bc-agent-sep hidden">›</span>
-  <span id="bc-agent" class="bc-current"></span>
-</div>
-
-<!-- ═══════════════════════════ KPI BAR ══════════════════════════ -->
-<div class="kpi-bar" id="kpi-bar">
-  <div class="kpi-item">
-    <div class="kpi-dot" style="background:var(--pending)"></div>
-    <span class="kpi-num" id="kpi-pending">0</span>
-    <span class="kpi-label">Pending</span>
-  </div>
-  <div class="kpi-divider"></div>
-  <div class="kpi-item">
-    <div class="kpi-dot" style="background:var(--in-progress)"></div>
-    <span class="kpi-num" id="kpi-inprogress">0</span>
-    <span class="kpi-label">In Progress</span>
-  </div>
-  <div class="kpi-divider"></div>
-  <div class="kpi-item">
-    <div class="kpi-dot" style="background:var(--blocked)"></div>
-    <span class="kpi-num" id="kpi-blocked">0</span>
-    <span class="kpi-label">Blocked</span>
-  </div>
-  <div class="kpi-divider"></div>
-  <div class="kpi-item">
-    <div class="kpi-dot" style="background:var(--done)"></div>
-    <span class="kpi-num" id="kpi-done">0</span>
-    <span class="kpi-label">Completed</span>
-  </div>
-  <div class="kpi-divider"></div>
-  <div class="kpi-item">
-    <span class="kpi-num" id="kpi-total" style="color:var(--text2)">0</span>
-    <span class="kpi-label">Total Tasks</span>
-  </div>
-  <div class="kpi-spacer"></div>
-  <span class="kpi-sync" id="kpi-sync">—</span>
-</div>
-
-<!-- ═══════════════════ VIEW: BOARD ═══════════════════ -->
-<div class="view active" id="view-board">
-  <div class="board-wrap">
-    <div class="board" id="board">
-      <div class="loading"><div class="spinner"></div>Loading…</div>
-    </div>
-    <div class="sidebar hidden" id="sidebar">
-      <div class="sidebar-header">
-        <span class="sidebar-title">Task Details</span>
-        <button class="close-btn" onclick="closeSidebar('sidebar')">×</button>
-      </div>
-      <div class="sidebar-body" id="sidebar-body"></div>
+    <div class="live-dot-wrap"><div class="live-dot" id="live-dot"></div><span id="live-label">Connecting</span></div>
+    <div class="user-wrap">
+      <div class="user-avatar" id="user-avatar">?</div>
+      <span class="user-name" id="user-name">Loading…</span>
+      <button class="sign-out-btn" onclick="signOut()">Sign Out</button>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════ VIEW: DEPARTMENTS ═══════════════════ -->
-<div class="view" id="view-departments">
-  <div class="dept-container">
-    <div class="section-header">
-      <span class="section-title" id="dept-section-title">Departments</span>
-    </div>
-    <div class="dept-grid" id="dept-grid">
-      <div class="loading"><div class="spinner"></div></div>
-    </div>
-  </div>
+<!-- KPI BAR -->
+<div id="kpi-bar">
+  <div class="kpi-card kpi-pending"><div class="kpi-label">Pending</div><div class="kpi-value" id="kpi-pending">—</div></div>
+  <div class="kpi-card kpi-inprogress"><div class="kpi-label">In Progress</div><div class="kpi-value" id="kpi-inprogress">—</div></div>
+  <div class="kpi-card kpi-blocked"><div class="kpi-label">Blocked</div><div class="kpi-value" id="kpi-blocked">—</div></div>
+  <div class="kpi-card kpi-done"><div class="kpi-label">Completed</div><div class="kpi-value" id="kpi-done">—</div></div>
+  <div class="kpi-card kpi-total"><div class="kpi-label">Total Tasks</div><div class="kpi-value" id="kpi-total">—</div></div>
 </div>
 
-<!-- ═══════════════════ VIEW: DEPARTMENT DETAIL ═══════════════════ -->
-<div class="view" id="view-dept-detail">
-  <div class="dept-detail-container">
-    <div class="section-header">
-      <span class="section-title" id="dept-detail-title">Agents</span>
-    </div>
-    <div class="dept-detail-agents-grid" id="dept-agents-grid"></div>
-  </div>
-</div>
+<!-- MAIN -->
+<div id="main">
 
-<!-- ═══════════════════ VIEW: AGENT BOARD ═══════════════════ -->
-<div class="view" id="view-agent-board">
-  <div class="board-wrap">
-    <div class="board" id="board-agent">
-      <div class="loading"><div class="spinner"></div></div>
-    </div>
-    <div class="sidebar hidden" id="sidebar-agent">
-      <div class="sidebar-header">
-        <span class="sidebar-title">Task Details</span>
-        <button class="close-btn" onclick="closeSidebar('sidebar-agent')">×</button>
-      </div>
-      <div class="sidebar-body" id="sidebar-agent-body"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════ VIEW: PIPELINE ═══════════════════ -->
-<div class="view" id="view-pipeline">
-
-  <!-- ─── Action Bar ─── -->
-  <div class="pipeline-action-bar">
-    <button class="pipeline-send-all-btn" onclick="openBulkSend()">
-      📨 Send All Drafts
-    </button>
-    <div class="pipeline-search-wrap">
-      <input
-        type="text"
-        id="pipeline-search"
-        class="pipeline-search"
-        placeholder="Search deals, buyers, addresses…"
-        oninput="pipelineSearchTerm=this.value;renderPipeline()"
-        autocomplete="off"
-      >
-    </div>
-    <span class="pipeline-record-count" id="pipeline-count">0 records</span>
-    <button class="pipeline-refresh-btn" onclick="loadPipeline()" title="Refresh pipeline">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M13.65 2.35A7 7 0 1 0 15 8"/>
-        <polyline points="11,2 14.5,2 14.5,5.5"/>
-      </svg>
-    </button>
-  </div>
-
-  <!-- ─── Kanban Board ─── -->
-  <div class="board pipeline-board" id="pipeline-board">
-    <div class="loading"><div class="spinner"></div>Loading pipeline…</div>
-  </div>
-
-  <!-- ─── Inbox / Replies Section ─── -->
-  <div class="pipeline-inbox-section" id="pipeline-inbox-section">
-    <div class="pipeline-inbox-bar">
-      <button class="pipeline-inbox-toggle-btn" onclick="togglePipelineInbox()">
-        💬 Inbox &amp; Replies
-        <span class="inbox-badge empty" id="pipeline-inbox-badge">0</span>
-        <span class="inbox-chevron" id="pipeline-inbox-chevron">▲</span>
-      </button>
-      <button class="pipeline-btn pipeline-btn-sm" onclick="checkPipelineInbox()">🔄 Check Inbox</button>
-    </div>
-    <div class="pipeline-inbox-body" id="pipeline-inbox-body"></div>
-  </div>
-
-  <!-- ─── Edit / Draft Modal ─── -->
-  <div class="pl-modal-overlay" id="pl-edit-modal"
-       onclick="if(event.target===this)closePipelineEditModal()">
-    <div class="pl-modal-card">
-      <div class="pl-modal-header">
-        <h2 class="pl-modal-title" id="pl-modal-title">Edit Draft</h2>
-        <button class="close-btn" onclick="closePipelineEditModal()">✕</button>
-      </div>
-      <div class="pl-modal-body">
-        <input type="hidden" id="pl-modal-id">
-        <div class="pl-field">
-          <label class="pl-label" for="pl-modal-subject">Email Subject</label>
-          <input type="text" id="pl-modal-subject" class="pl-input" placeholder="Subject line…">
+  <!-- BOARD VIEW -->
+  <div class="view active" id="view-board">
+    <div class="board-wrap">
+      <div class="kanban" id="board-kanban">
+        <div class="kanban-col col-pending" id="col-pending">
+          <div class="col-header">Pending <span class="col-count" id="cnt-pending">0</span></div>
         </div>
-        <div class="pl-field">
-          <label class="pl-label" for="pl-modal-body-txt">Email Body</label>
-          <textarea id="pl-modal-body-txt" class="pl-textarea pl-textarea-lg"
-                    placeholder="Email body will appear here…"></textarea>
+        <div class="kanban-col col-inprogress" id="col-inprogress">
+          <div class="col-header">In Progress <span class="col-count" id="cnt-inprogress">0</span></div>
         </div>
-        <div class="pl-field">
-          <label class="pl-label" for="pl-modal-errors">Error Notes / Fix Instructions</label>
-          <textarea id="pl-modal-errors" class="pl-textarea pl-textarea-sm"
-                    placeholder="Describe any issues or instructions for the AI…"></textarea>
+        <div class="kanban-col col-blocked" id="col-blocked">
+          <div class="col-header">Blocked <span class="col-count" id="cnt-blocked">0</span></div>
+        </div>
+        <div class="kanban-col col-done" id="col-done">
+          <div class="col-header">Completed <span class="col-count" id="cnt-done">0</span></div>
+        </div>
+        <div class="kanban-col col-cancelled" id="col-cancelled">
+          <div class="col-header">Cancelled <span class="col-count" id="cnt-cancelled">0</span></div>
         </div>
       </div>
-      <div class="pl-modal-footer">
-        <button class="pipeline-btn" id="pl-ai-fix-btn" onclick="runAiFix()">🤖 AI Fix</button>
-        <div style="flex:1"></div>
-        <button class="pipeline-btn" onclick="closePipelineEditModal()">✕ Cancel</button>
-        <button class="pipeline-btn" id="pl-save-btn" onclick="savePipelineDraft()">💾 Save Draft</button>
-        <button class="pipeline-btn pipeline-btn-primary" id="pl-send-btn" onclick="sendFromModal()">📨 Send Email</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ─── Reply View Modal ─── -->
-  <div class="pl-modal-overlay" id="pl-reply-modal"
-       onclick="if(event.target===this)closePipelineReplyModal()">
-    <div class="pl-modal-card">
-      <div class="pl-modal-header">
-        <h2 class="pl-modal-title" id="pl-reply-title">Buyer Reply</h2>
-        <button class="close-btn" onclick="closePipelineReplyModal()">✕</button>
-      </div>
-      <div class="pl-modal-body">
-        <input type="hidden" id="pl-reply-id">
-        <div class="pl-field">
-          <label class="pl-label">From</label>
-          <div class="pl-reply-from" id="pl-reply-from">—</div>
-        </div>
-        <div class="pl-field">
-          <label class="pl-label">Reply Content</label>
-          <pre class="pl-reply-body" id="pl-reply-body-txt"></pre>
-        </div>
-      </div>
-      <div class="pl-modal-footer">
-        <div style="flex:1"></div>
-        <button class="pipeline-btn" onclick="closePipelineReplyModal()">✕ Close</button>
-        <button class="pipeline-btn pipeline-btn-primary"
-                onclick="startDraftFollowUpFromReply()">📝 Draft Follow-Up</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ─── Single Send Confirmation Modal ─── -->
-  <div class="pl-modal-overlay" id="pl-single-modal" onclick="if(event.target===this)closeSingleSendModal()">
-    <div class="pl-modal-card" style="max-width:520px">
-      <div class="pl-modal-header">
-        <h2 class="pl-modal-title">📨 Send Email</h2>
-        <button class="close-btn" onclick="closeSingleSendModal()">✕</button>
-      </div>
-      <div class="pl-modal-body">
-        <div id="pl-single-details"></div>
-      </div>
-      <div class="pl-modal-footer">
-        <button class="pipeline-btn" onclick="closeSingleSendModal()">Cancel</button>
-        <button class="pipeline-btn pipeline-btn-primary" id="pl-single-confirm-btn" onclick="executeSingleSend()">
-          📨 Send Now
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ─── Bulk Send Confirmation Modal ─── -->
-  <div class="pl-modal-overlay" id="pl-bulk-modal"
-       onclick="if(event.target===this&&!plBulkSending)closeBulkSendModal()">
-    <div class="pl-modal-card">
-      <div class="pl-modal-header">
-        <h2 class="pl-modal-title">📨 Send All Drafts</h2>
-        <button class="close-btn" id="pl-bulk-close-btn" onclick="closeBulkSendModal()">✕</button>
-      </div>
-      <div class="pl-modal-body">
-        <p class="pl-bulk-count" id="pl-bulk-count">0 emails ready to send</p>
-        <div class="pl-bulk-recipient-list" id="pl-bulk-list"></div>
-        <div class="pl-bulk-progress" id="pl-bulk-progress" style="display:none">
-          <div class="pl-bulk-progress-track">
-            <div class="pl-bulk-progress-bar" id="pl-bulk-bar"></div>
+      <div class="sidebar closed" id="task-sidebar">
+        <div class="sidebar-inner">
+          <div class="sidebar-header">
+            <div class="sidebar-title" id="sidebar-task-title">Task Detail</div>
+            <button class="sidebar-close" onclick="closeSidebar()">✕</button>
           </div>
-          <div class="pl-bulk-progress-text" id="pl-bulk-progress-text">Preparing…</div>
+          <div id="sidebar-content"></div>
         </div>
-      </div>
-      <div class="pl-modal-footer">
-        <div style="flex:1"></div>
-        <button class="pipeline-btn" id="pl-bulk-cancel-btn"
-                onclick="closeBulkSendModal()">Cancel</button>
-        <button class="pipeline-btn pipeline-btn-primary" id="pl-bulk-confirm-btn"
-                onclick="confirmBulkSend()">📨 Confirm &amp; Send All</button>
       </div>
     </div>
   </div>
 
-</div>
-<!-- ══════════════════════════════════════════════════════════ -->
+  <!-- DEPARTMENTS VIEW -->
+  <div class="view" id="view-departments">
+    <div class="dept-grid" id="dept-grid">
+      <div class="loading"><div class="spinner"></div> Loading…</div>
+    </div>
+  </div>
 
-<!-- Toast container -->
-<div class="toast-container" id="toasts"></div>
+  <!-- DEPT DETAIL VIEW -->
+  <div class="view" id="view-dept-detail">
+    <div class="breadcrumb">
+      <span class="breadcrumb-link" onclick="switchView('departments')">Departments</span>
+      <span class="breadcrumb-sep">›</span>
+      <span id="breadcrumb-dept">—</span>
+    </div>
+    <div class="agent-grid" id="dept-agent-grid">
+      <div class="loading"><div class="spinner"></div> Loading…</div>
+    </div>
+  </div>
+
+  <!-- AGENT BOARD VIEW -->
+  <div class="view" id="view-agent-board">
+    <div class="breadcrumb">
+      <span class="breadcrumb-link" onclick="switchView('departments')">Departments</span>
+      <span class="breadcrumb-sep">›</span>
+      <span class="breadcrumb-link" id="breadcrumb-dept-agent" onclick="switchView('dept-detail')">—</span>
+      <span class="breadcrumb-sep">›</span>
+      <span id="breadcrumb-agent-name">—</span>
+    </div>
+    <div class="board-wrap">
+      <div class="kanban" id="agent-kanban">
+        <div class="kanban-col col-pending" id="ag-col-pending"><div class="col-header">Pending <span class="col-count" id="ag-cnt-pending">0</span></div></div>
+        <div class="kanban-col col-inprogress" id="ag-col-inprogress"><div class="col-header">In Progress <span class="col-count" id="ag-cnt-inprogress">0</span></div></div>
+        <div class="kanban-col col-blocked" id="ag-col-blocked"><div class="col-header">Blocked <span class="col-count" id="ag-cnt-blocked">0</span></div></div>
+        <div class="kanban-col col-done" id="ag-col-done"><div class="col-header">Completed <span class="col-count" id="ag-cnt-done">0</span></div></div>
+        <div class="kanban-col col-cancelled" id="ag-col-cancelled"><div class="col-header">Cancelled <span class="col-count" id="ag-cnt-cancelled">0</span></div></div>
+      </div>
+      <div class="sidebar closed" id="agent-sidebar">
+        <div class="sidebar-inner">
+          <div class="sidebar-header">
+            <div class="sidebar-title" id="ag-sidebar-title">Task Detail</div>
+            <button class="sidebar-close" onclick="closeAgentSidebar()">✕</button>
+          </div>
+          <div id="ag-sidebar-content"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OWNERS VIEW -->
+  <div class="view" id="view-owners">
+    <div class="action-bar">
+      <button class="btn" onclick="loadOwners()">🔄 Refresh</button>
+      <input class="search-input" id="owners-search" placeholder="Search owners…" oninput="filterOwners()">
+      <span class="record-count" id="owners-count"></span>
+    </div>
+    <div class="owners-container">
+      <div id="owners-content"><div class="loading"><div class="spinner"></div> Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- PIPELINE VIEW -->
+  <div class="view" id="view-pipeline">
+    <div class="action-bar">
+      <button class="btn btn-primary" id="gen-drafts-btn" onclick="generateDrafts()">✨ Generate Drafts</button>
+      <button class="btn btn-green" onclick="sendAllApproved()">📨 Send All Approved</button>
+      <div class="spacer"></div>
+      <input class="search-input" id="pipeline-search" placeholder="Search pipeline…" oninput="filterPipeline()">
+      <span class="record-count" id="pipeline-count"></span>
+      <button class="btn" onclick="loadPipeline()">🔄</button>
+    </div>
+    <div class="pipeline-board" id="pipeline-board">
+      <div class="loading"><div class="spinner"></div> Loading pipeline…</div>
+    </div>
+  </div>
+
+  <!-- EXPORTS VIEW -->
+  <div class="view" id="view-exports">
+    <div class="exports-grid">
+      <div class="export-card">
+        <div class="export-icon">📬</div>
+        <div class="export-name">Lob Direct Mail</div>
+        <div class="export-desc">Download mailing addresses formatted for Lob CSV import. Includes all owners with valid mailing addresses who are not marked Do Not Contact.</div>
+        <button class="btn btn-primary" onclick="downloadCSV('/api/exports/lob.csv','lob.csv')">⬇️ Download CSV</button>
+      </div>
+      <div class="export-card">
+        <div class="export-icon">📞</div>
+        <div class="export-name">Mojo Dialer</div>
+        <div class="export-desc">Download contact list with all phone numbers formatted for Mojo Dialer import. One row per owner with up to 3 phone numbers.</div>
+        <button class="btn btn-primary" onclick="downloadCSV('/api/exports/mojo.csv','mojo.csv')">⬇️ Download CSV</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<!-- EDIT/VIEW MODAL -->
+<div class="pl-modal-overlay" id="edit-modal">
+  <div class="pl-modal-card" style="max-width:680px">
+    <div class="pl-modal-header">
+      <div class="pl-modal-title" id="edit-modal-title">Edit Draft</div>
+      <button class="pl-modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="pl-modal-body">
+      <input type="hidden" id="edit-modal-id">
+      <input type="hidden" id="edit-modal-stage">
+      <div class="form-group">
+        <label class="form-label">Subject Line</label>
+        <input class="form-input" id="edit-subject" placeholder="Subject line…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Body</label>
+        <textarea class="form-textarea" id="edit-body" rows="12" placeholder="Email body…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-textarea" id="edit-notes" rows="3" placeholder="Internal notes…" style="min-height:72px"></textarea>
+      </div>
+      <div class="ai-fix-row" id="ai-fix-row" style="display:none">
+        <input class="form-input" id="ai-fix-input" placeholder="Describe what to fix…">
+        <button class="btn btn-primary" onclick="runAiFix()">Fix</button>
+        <button class="btn" onclick="hideAiFix()">Cancel</button>
+      </div>
+    </div>
+    <div class="pl-modal-footer">
+      <div class="pl-modal-footer-left">
+        <button class="btn" onclick="showAiFix()">🤖 AI Fix</button>
+      </div>
+      <button class="btn" onclick="closeEditModal()">Cancel</button>
+      <button class="btn" onclick="saveDraft()">💾 Save Draft</button>
+      <button class="btn btn-primary" id="send-from-edit-btn" onclick="sendFromEdit()" style="display:none">📨 Send Email</button>
+    </div>
+  </div>
+</div>
+
+<!-- SEND CONFIRM MODAL -->
+<div class="pl-modal-overlay" id="send-modal">
+  <div class="pl-modal-card" style="max-width:520px">
+    <div class="pl-modal-header">
+      <div class="pl-modal-title">Confirm Send</div>
+      <button class="pl-modal-close" onclick="closeSendModal()">✕</button>
+    </div>
+    <div class="pl-modal-body">
+      <div class="send-preview-owner" id="send-preview-name"></div>
+      <div class="send-preview-email" id="send-preview-email"></div>
+      <div class="form-label">Subject</div>
+      <div class="send-preview-subject" id="send-preview-subject"></div>
+      <div class="form-label" style="margin-top:10px">Preview</div>
+      <div class="send-preview-body" id="send-preview-body"></div>
+    </div>
+    <div class="pl-modal-footer">
+      <button class="btn" onclick="closeSendModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmSend()">📨 Send Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK SEND MODAL -->
+<div class="pl-modal-overlay" id="bulk-modal">
+  <div class="pl-modal-card" style="max-width:520px">
+    <div class="pl-modal-header">
+      <div class="pl-modal-title">Send All Approved</div>
+      <button class="pl-modal-close" onclick="closeBulkModal()">✕</button>
+    </div>
+    <div class="pl-modal-body">
+      <div id="bulk-list-wrap"><div class="bulk-list" id="bulk-list"></div></div>
+      <div class="progress-wrap" id="bulk-progress-wrap" style="display:none">
+        <div class="progress-bar"><div class="progress-fill" id="bulk-progress-fill" style="width:0%"></div></div>
+        <div class="progress-label" id="bulk-progress-label">0 / 0</div>
+      </div>
+    </div>
+    <div class="pl-modal-footer">
+      <button class="btn" onclick="closeBulkModal()" id="bulk-cancel-btn">Cancel</button>
+      <button class="btn btn-primary" onclick="executeBulkSend()" id="bulk-send-btn">📨 Send All</button>
+    </div>
+  </div>
+</div>
 
 <script>
-// ================================================================
-// Data
-// ================================================================
-const DEPT_CONFIG = {
-  "Acquisitions":          { color: "#1a56db", agents: ["property-sourcer","deal-screener","underwriter"] },
-  "Sales":                 { color: "#0891b2", agents: ["buyer-sourcer","prospector","matchmaker"] },
-  "Marketing":             { color: "#7c3aed", agents: ["marketing-agent"] },
-  "Research & Intelligence":{ color: "#0ea5e9", agents: ["research-agent"] },
-  "Client Relations":      { color: "#059669", agents: ["lead-agent","investor-profiler","owner-researcher"] },
-};
-
-function agentDept(name) {
-  for (const [d, cfg] of Object.entries(DEPT_CONFIG)) {
-    if (cfg.agents.includes(name)) return d;
-  }
-  return "Operations";
-}
-function deptColor(name) { return DEPT_CONFIG[name]?.color || "#1d4ed8"; }
-function agentColor(name) {
-  const dept = agentDept(name);
-  return deptColor(dept);
-}
-
-const COLUMNS = [
-  { key:"pending",     label:"Pending",     color:"var(--pending)" },
-  { key:"in_progress", label:"In Progress", color:"var(--in-progress)" },
-  { key:"blocked",     label:"Blocked",     color:"var(--blocked)" },
-  { key:"done",        label:"Completed",   color:"var(--done)" },
-  { key:"cancelled",   label:"Cancelled",   color:"var(--cancelled)" },
-];
-
+// ── STATE ──────────────────────────────────────────────────────────────────
 let board = {};
-let currentView = "board";
+let pipeline = {stages:{"Draft":[],"Approved":[],"Sent":[],"Failed":[]}};
+let owners = [];
+let allAgents = [];
+let currentView = 'board';
 let currentDept = null;
 let currentAgent = null;
-let selectedTask = { board: null, agent: null };
-let eventSource = null;
+let sendTargetId = null;
+let sseSource = null;
+let editModalReadOnly = false;
 
-// ================================================================
-// Auth
-// ================================================================
-async function initUser() {
-  try {
-    const r = await fetch("/auth/me");
-    const d = await r.json();
-    if (!d.authenticated) { location.href = "/login"; return; }
-    const u = d.user;
-    document.getElementById("user-name").textContent = u.name || u.email;
-    const av = document.getElementById("user-avatar");
-    if (u.picture) av.innerHTML = `<img src="${u.picture}" alt="">`;
-    else av.textContent = (u.name || u.email)[0].toUpperCase();
-  } catch(e) { console.error(e); }
+// ── UTILS ──────────────────────────────────────────────────────────────────
+function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function timeAgo(ts){
+  if(!ts)return '';
+  const d=new Date(ts),now=Date.now(),diff=Math.floor((now-d)/1000);
+  if(diff<60)return diff+'s ago';
+  if(diff<3600)return Math.floor(diff/60)+'m ago';
+  if(diff<86400)return Math.floor(diff/3600)+'h ago';
+  return Math.floor(diff/86400)+'d ago';
+}
+function api(path,opts={}){
+  return fetch(path,{credentials:'include',...opts});
+}
+function showToast(msg,type='',dur=3500){
+  const el=document.createElement('div');
+  el.className='toast'+(type?' '+type:'');
+  el.textContent=msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>el.remove(),dur);
+}
+function downloadCSV(url,filename){
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();a.remove();
+  showToast('Download started','success');
+}
+function formatDate(ts){if(!ts)return '';return new Date(ts).toLocaleDateString();}
+
+// ── NAV ───────────────────────────────────────────────────────────────────
+function switchView(view){
+  currentView=view;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const kpiBar=document.getElementById('kpi-bar');
+  kpiBar.style.display=view==='board'?'flex':'none';
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===view));
+  const mapping={'board':'view-board','departments':'view-departments','dept-detail':'view-dept-detail','agent-board':'view-agent-board','owners':'view-owners','pipeline':'view-pipeline','exports':'view-exports'};
+  const vid=mapping[view]||('view-'+view);
+  const el=document.getElementById(vid);
+  if(el)el.classList.add('active');
+  if(view==='owners')loadOwners();
+  if(view==='pipeline')loadPipeline();
+  if(view==='departments')loadDepartments();
+}
+document.querySelectorAll('.nav-item').forEach(btn=>{
+  btn.addEventListener('click',()=>switchView(btn.dataset.view));
+});
+
+// ── USER ──────────────────────────────────────────────────────────────────
+async function loadUser(){
+  try{
+    const r=await api('/auth/me');
+    if(!r.ok)return;
+    const u=await r.json();
+    const name=u.name||u.username||u.email||'User';
+    document.getElementById('user-name').textContent=name;
+    document.getElementById('user-avatar').textContent=name.charAt(0).toUpperCase();
+  }catch(e){}
+}
+function signOut(){window.location='/auth/logout';}
+
+// ── SSE ───────────────────────────────────────────────────────────────────
+function connectSSE(){
+  if(sseSource)sseSource.close();
+  sseSource=new EventSource('/api/events',{withCredentials:true});
+  const dot=document.getElementById('live-dot');
+  const lbl=document.getElementById('live-label');
+  sseSource.onopen=()=>{dot.classList.add('connected');lbl.textContent='Live';};
+  sseSource.onerror=()=>{dot.classList.remove('connected');lbl.textContent='Reconnecting…';setTimeout(connectSSE,5000);};
+  sseSource.addEventListener('snapshot',e=>{
+    try{const d=JSON.parse(e.data);applySnapshot(d);}catch(err){}
+  });
+  sseSource.addEventListener('update',e=>{
+    try{const d=JSON.parse(e.data);applyUpdate(d);}catch(err){}
+  });
+  sseSource.addEventListener('ping',()=>{});
+}
+function applySnapshot(data){
+  board={};
+  (data.tasks||[]).forEach(t=>{board[t.id]=t;});
+  renderBoard();
+}
+function applyUpdate(data){
+  if(data.task){board[data.task.id]=data.task;renderBoard();}
 }
 
-// ================================================================
-// Helpers
-// ================================================================
-function esc(s) {
-  return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+// ── BOARD ─────────────────────────────────────────────────────────────────
+const STATUS_MAP={
+  'pending':'pending','in_progress':'inprogress','in-progress':'inprogress',
+  'blocked':'blocked','done':'done','completed':'done','cancelled':'cancelled'
+};
+function renderBoard(){
+  const cols={pending:[],inprogress:[],blocked:[],done:[],cancelled:[]};
+  Object.values(board).forEach(t=>{
+    const s=STATUS_MAP[t.status]||'pending';
+    if(cols[s])cols[s].push(t);
+  });
+  Object.entries(cols).forEach(([k,tasks])=>{
+    const col=document.getElementById('col-'+k);
+    if(!col)return;
+    const header=col.querySelector('.col-header');
+    col.querySelectorAll('.task-card').forEach(c=>c.remove());
+    tasks.sort((a,b)=>new Date(b.updated_at||b.created_at||0)-new Date(a.updated_at||a.created_at||0));
+    tasks.forEach(t=>{
+      const card=makeTaskCard(t,'board');
+      col.appendChild(card);
+    });
+    const cnt=col.querySelector('.col-count');
+    if(cnt)cnt.textContent=tasks.length;
+    // KPI
+    document.getElementById('cnt-'+k).textContent=tasks.length;
+  });
+  document.getElementById('kpi-pending').textContent=cols.pending.length;
+  document.getElementById('kpi-inprogress').textContent=cols.inprogress.length;
+  document.getElementById('kpi-blocked').textContent=cols.blocked.length;
+  document.getElementById('kpi-done').textContent=cols.done.length;
+  document.getElementById('kpi-total').textContent=Object.keys(board).length;
 }
-function timeAgo(ts) {
-  if (!ts) return "—";
-  const s = Math.floor(Date.now()/1000) - Math.floor(ts);
-  if (s < 60)   return "just now";
-  if (s < 3600) return `${Math.floor(s/60)}m ago`;
-  if (s < 86400)return `${Math.floor(s/3600)}h ago`;
-  return `${Math.floor(s/86400)}d ago`;
+function makeTaskCard(t,ctx='board'){
+  const card=document.createElement('div');
+  card.className='task-card';
+  card.dataset.id=t.id;
+  card.innerHTML=`<div class="task-id">#${esc(t.id)}</div><div class="task-title">${esc(t.title)}</div><div class="task-meta"><span class="agent-tag">${esc(t.agent||t.assigned_to||'Unassigned')}</span><span class="time-ago">${timeAgo(t.updated_at||t.created_at)}</span></div>`;
+  card.onclick=()=>{if(ctx==='board')openSidebar(t);else openAgentSidebar(t);};
+  return card;
 }
-function statusColor(s) {
-  return {pending:"var(--pending)",in_progress:"var(--in-progress)",blocked:"var(--blocked)",done:"var(--done)",cancelled:"var(--cancelled)"}[s]||"var(--text3)";
+function openSidebar(t){
+  document.querySelectorAll('#board-kanban .task-card').forEach(c=>c.classList.remove('selected'));
+  const card=document.querySelector(`#board-kanban [data-id="${t.id}"]`);
+  if(card)card.classList.add('selected');
+  document.getElementById('sidebar-task-title').textContent=t.title||'Task Detail';
+  document.getElementById('sidebar-content').innerHTML=renderTaskDetail(t);
+  document.getElementById('task-sidebar').classList.remove('closed');
 }
-function progressBars(stats, total) {
-  const segs = [{k:"done",c:"var(--done)"},{k:"in_progress",c:"var(--in-progress)"},{k:"pending",c:"var(--pending)"},{k:"blocked",c:"var(--blocked)"},{k:"cancelled",c:"var(--cancelled)"}];
-  return segs.map(s=>`<div class="dept-progress-seg" style="width:${(stats[s.k]||0)/(total||1)*100}%;background:${s.c}"></div>`).join("");
+function closeSidebar(){document.getElementById('task-sidebar').classList.add('closed');document.querySelectorAll('#board-kanban .task-card').forEach(c=>c.classList.remove('selected'));}
+function openAgentSidebar(t){
+  document.getElementById('ag-sidebar-title').textContent=t.title||'Task Detail';
+  document.getElementById('ag-sidebar-content').innerHTML=renderTaskDetail(t);
+  document.getElementById('agent-sidebar').classList.remove('closed');
 }
-function agentProgressBars(stats, total) {
-  const segs = [{k:"done",c:"var(--done)"},{k:"in_progress",c:"var(--in-progress)"},{k:"pending",c:"var(--pending)"},{k:"blocked",c:"var(--blocked)"}];
-  return segs.map(s=>`<div style="height:100%;width:${(stats[s.k]||0)/(total||1)*100}%;background:${s.c}"></div>`).join("");
+function closeAgentSidebar(){document.getElementById('agent-sidebar').classList.add('closed');}
+function renderTaskDetail(t){
+  const badgeMap={pending:'badge-pending','in_progress':'badge-inprogress','in-progress':'badge-inprogress',blocked:'badge-blocked',done:'badge-done',completed:'badge-done',cancelled:'badge-cancelled'};
+  const bc=badgeMap[t.status]||'badge-pending';
+  return `<div class="detail-field"><div class="detail-label">Status</div><span class="status-badge ${bc}">${esc(t.status)}</span></div>
+<div class="detail-field"><div class="detail-label">Agent</div><div class="detail-value">${esc(t.agent||t.assigned_to||'—')}</div></div>
+<div class="detail-field"><div class="detail-label">Department</div><div class="detail-value">${esc(t.department||'—')}</div></div>
+<div class="detail-field"><div class="detail-label">Description</div><div class="detail-value" style="line-height:1.6;color:var(--text2)">${esc(t.description||'No description.')}</div></div>
+<div class="detail-field"><div class="detail-label">Created</div><div class="detail-value">${formatDate(t.created_at)}</div></div>
+<div class="detail-field"><div class="detail-label">Updated</div><div class="detail-value">${formatDate(t.updated_at)}</div></div>`;
 }
 
-// ================================================================
-// View switching
-// ================================================================
-function switchView(view, dept, agent) {
-  currentView = view;
-  if (dept !== undefined) currentDept = dept;
-  if (agent !== undefined) currentAgent = agent;
+// ── DEPARTMENTS ───────────────────────────────────────────────────────────
+const DEPT_DEFS=[
+  {id:'seller-outreach',name:'Seller Outreach',icon:'📬',color:'#2563eb',desc:'Identify and contact property owners about selling their assets.'},
+  {id:'listings',name:'Listings',icon:'🏘️',color:'#059669',desc:'Manage active property listings, photos, and market data.'},
+  {id:'follow-up',name:'Follow-Up',icon:'📞',color:'#7c3aed',desc:'Track leads and follow up with prospects through the sales funnel.'},
+  {id:'operations',name:'Operations',icon:'⚙️',color:'#0891b2',desc:'Internal operations, compliance, reporting, and team management.'},
+];
+async function loadDepartments(){
+  const grid=document.getElementById('dept-grid');
+  grid.innerHTML='<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try{
+    const [deptRes,agentRes]=await Promise.all([api('/api/departments'),api('/api/agents')]);
+    const depts=deptRes.ok?await deptRes.json():[];
+    allAgents=agentRes.ok?await agentRes.json():[];
+    renderDepartments(depts);
+  }catch(e){renderDepartments([]);}
+}
+function renderDepartments(apiDepts){
+  const grid=document.getElementById('dept-grid');
+  grid.innerHTML='';
+  const defs=apiDepts.length?apiDepts:DEPT_DEFS;
+  defs.forEach(d=>{
+    const def=DEPT_DEFS.find(dd=>dd.id===d.id)||d;
+    const icon=def.icon||d.icon||'🏢';
+    const color=def.color||d.color||'#2563eb';
+    const agents=(allAgents||[]).filter(a=>a.department_id===d.id||a.dept_id===d.id||a.department===d.name);
+    const total=d.total_tasks||agents.reduce((s,a)=>s+(a.total_tasks||0),0)||0;
+    const done=d.completed_tasks||agents.reduce((s,a)=>s+(a.completed_tasks||0),0)||0;
+    const pct=total?Math.round(done/total*100):0;
+    const card=document.createElement('div');
+    card.className='dept-card';
+    card.innerHTML=`<div class="dept-icon">${icon}</div><div class="dept-name">${esc(d.name)}</div><div class="dept-desc">${esc(def.desc||d.description||'')}</div><div class="dept-progress-wrap"><div class="dept-progress-label"><span>${pct}% complete</span><span>${done}/${total} tasks</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${color}"></div></div></div><div class="dept-agents">${agents.slice(0,5).map(a=>`<span class="dept-agent-chip">${esc(a.name)}</span>`).join('')}${agents.length>5?`<span class="dept-agent-chip">+${agents.length-5}</span>`:''}</div>`;
+    card.onclick=()=>openDeptDetail(d);
+    card.style.borderTop=`3px solid ${color}`;
+    grid.appendChild(card);
+  });
+  if(!grid.children.length)grid.innerHTML='<div class="empty-state"><div class="empty-state-icon">🏢</div><div>No departments found.</div></div>';
+}
+function openDeptDetail(dept){
+  currentDept=dept;
+  document.getElementById('breadcrumb-dept').textContent=dept.name;
+  document.getElementById('breadcrumb-dept-agent').textContent=dept.name;
+  renderDeptAgents();
+  switchView('dept-detail');
+}
+function renderDeptAgents(){
+  const grid=document.getElementById('dept-agent-grid');
+  grid.innerHTML='';
+  const agents=allAgents.filter(a=>a.department_id===currentDept.id||a.dept_id===currentDept.id||a.department===currentDept.name);
+  if(!agents.length){grid.innerHTML='<div class="empty-state"><div class="empty-state-icon">👤</div><div>No agents in this department.</div></div>';return;}
+  const colors=['#2563eb','#7c3aed','#059669','#0891b2','#dc2626','#d97706'];
+  agents.forEach((a,i)=>{
+    const card=document.createElement('div');
+    card.className='agent-card';
+    const color=colors[i%colors.length];
+    card.innerHTML=`<div class="agent-avatar" style="background:${color}">${esc((a.name||'?').charAt(0))}</div><div class="agent-name">${esc(a.name)}</div><div class="agent-role">${esc(a.role||a.title||'Agent')}</div><div class="agent-stats"><div class="agent-stat"><div class="agent-stat-val">${a.total_tasks||0}</div><div class="agent-stat-lbl">Total</div></div><div class="agent-stat"><div class="agent-stat-val" style="color:var(--done)">${a.completed_tasks||0}</div><div class="agent-stat-lbl">Done</div></div><div class="agent-stat"><div class="agent-stat-val" style="color:var(--in-progress)">${a.active_tasks||0}</div><div class="agent-stat-lbl">Active</div></div></div>`;
+    card.onclick=()=>openAgentBoard(a);
+    grid.appendChild(card);
+  });
+}
+function openAgentBoard(agent){
+  currentAgent=agent;
+  document.getElementById('breadcrumb-agent-name').textContent=agent.name;
+  renderAgentBoard();
+  switchView('agent-board');
+}
+function renderAgentBoard(){
+  if(!currentAgent)return;
+  const cols={pending:[],inprogress:[],blocked:[],done:[],cancelled:[]};
+  Object.values(board).forEach(t=>{
+    const agentMatch=(t.agent||t.assigned_to||'').toLowerCase()===currentAgent.name.toLowerCase();
+    if(!agentMatch)return;
+    const s=STATUS_MAP[t.status]||'pending';
+    if(cols[s])cols[s].push(t);
+  });
+  Object.entries(cols).forEach(([k,tasks])=>{
+    const col=document.getElementById('ag-col-'+k);
+    if(!col)return;
+    col.querySelectorAll('.task-card').forEach(c=>c.remove());
+    tasks.forEach(t=>{col.appendChild(makeTaskCard(t,'agent'));});
+    const cnt=col.querySelector('.col-count');
+    if(cnt)cnt.textContent=tasks.length;
+    document.getElementById('ag-cnt-'+k).textContent=tasks.length;
+  });
+}
 
-  const allViews = ["board","departments","dept-detail","agent-board"];
-  allViews.forEach(v => document.getElementById(`view-${v}`).classList.toggle("active", v === view));
-
-  // Nav active state
-  document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
-  const navKey = (view === "board" || view === "agent-board") ? "board" : "departments";
-  document.querySelector(`.nav-item[data-view="${navKey}"]`)?.classList.add("active");
-
-  // KPI bar: show on board + agent-board, hide on department views
-  const showKpi = view === "board" || view === "agent-board";
-  document.getElementById("kpi-bar").classList.toggle("hidden", !showKpi);
-
-  // Breadcrumb
-  updateBreadcrumb();
-
-  // Render
-  if (view === "board") {
-    renderBoard(null, "board", "sidebar", "sidebar-body");
-    updateKpi(null);
-  } else if (view === "departments") {
-    renderDepartments();
-  } else if (view === "dept-detail") {
-    renderDeptDetail(currentDept);
-  } else if (view === "agent-board") {
-    renderBoard(currentAgent, "board-agent", "sidebar-agent", "sidebar-agent-body");
-    updateKpi(currentAgent);
+// ── OWNERS ────────────────────────────────────────────────────────────────
+async function loadOwners(){
+  document.getElementById('owners-content').innerHTML='<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try{
+    const r=await api('/api/owners');
+    if(!r.ok)throw new Error(r.statusText);
+    owners=await r.json();
+    renderOwners();
+  }catch(e){
+    owners=[];
+    document.getElementById('owners-content').innerHTML='<div class="empty-state"><div class="empty-state-icon">⚠️</div><div>Failed to load owners.</div></div>';
+    showToast('Failed to load owners','error');
   }
 }
-
-function updateBreadcrumb() {
-  const bar = document.getElementById("breadcrumb-bar");
-  const bcDept = document.getElementById("bc-dept");
-  const bcAgent = document.getElementById("bc-agent");
-  const agentSep = document.querySelector(".bc-agent-sep");
-
-  if (currentView === "board" || currentView === "departments") {
-    bar.classList.add("hidden");
+function stageBadgeClass(stage){
+  const m={'New Lead':'st-newlead','Verified':'st-verified','Email Sent':'st-emailsent','Mail Sent':'st-mailsent','Called':'st-called','Responded':'st-responded','Listed':'st-listed','Dead':'st-dead','Do Not Contact':'st-donotcontact'};
+  return m[stage]||'st-newlead';
+}
+function ctBadgeClass(ct){
+  const m={'Individual':'ct-individual','LLC':'ct-llc','Trust':'ct-trust'};
+  return m[ct]||'ct-individual';
+}
+function renderOwners(){
+  const search=document.getElementById('owners-search').value.toLowerCase();
+  const filtered=owners.filter(o=>{
+    if(!search)return true;
+    return (o.name||'').toLowerCase().includes(search)||(o.mailing_state||'').toLowerCase().includes(search)||(o.county||'').toLowerCase().includes(search)||(o.primary_phone||'').includes(search);
+  });
+  document.getElementById('owners-count').textContent=filtered.length+' records';
+  if(!filtered.length){
+    document.getElementById('owners-content').innerHTML='<div class="empty-state"><div class="empty-state-icon">🏠</div><div>'+(owners.length?'No matching owners.':'No owners found.')+'</div></div>';
     return;
   }
-  bar.classList.remove("hidden");
-
-  if (currentView === "dept-detail") {
-    const color = deptColor(currentDept);
-    bcDept.innerHTML = `<span class="bc-current" style="display:flex;align-items:center;gap:6px"><span class="dept-color-dot" style="background:${color}"></span>${esc(currentDept)}</span>`;
-    agentSep.classList.add("hidden");
-    bcAgent.textContent = "";
-  } else if (currentView === "agent-board") {
-    const color = deptColor(currentDept||agentDept(currentAgent));
-    bcDept.innerHTML = `<button class="bc-link" onclick="switchView('dept-detail','${esc(currentDept||agentDept(currentAgent))}')" style="display:inline-flex;align-items:center;gap:5px"><span class="dept-color-dot" style="background:${color}"></span>${esc(currentDept||agentDept(currentAgent))}</button>`;
-    agentSep.classList.remove("hidden");
-    bcAgent.textContent = currentAgent;
-  }
+  const rows=filtered.map(o=>`<tr><td><strong>${esc(o.name||'—')}</strong></td><td><span class="contact-badge ${ctBadgeClass(o.contact_type)}">${esc(o.contact_type||'—')}</span></td><td><span class="stage-badge ${stageBadgeClass(o.stage)}">${esc(o.stage||'—')}</span></td><td>${esc(o.primary_phone||'—')}</td><td>${esc(o.mailing_state||'—')}</td><td>${esc(o.county||'—')}</td><td style="text-align:center">${o.property_count||o.num_properties||0}</td></tr>`).join('');
+  document.getElementById('owners-content').innerHTML=`<table class="owners-table"><thead><tr><th>Name</th><th>Contact Type</th><th>Stage</th><th>Phone</th><th>State</th><th>County</th><th># Props</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
+function filterOwners(){renderOwners();}
 
-// ================================================================
-// KPI bar
-// ================================================================
-function updateKpi(agentFilter) {
-  const tasks = Object.values(board).filter(t => agentFilter ? (t.assignee||"unassigned")===agentFilter : true);
-  const c = {pending:0,in_progress:0,blocked:0,done:0};
-  tasks.forEach(t => { const k=t.status; if(k in c) c[k]++; });
-  document.getElementById("kpi-pending").textContent   = c.pending;
-  document.getElementById("kpi-inprogress").textContent = c.in_progress;
-  document.getElementById("kpi-blocked").textContent   = c.blocked;
-  document.getElementById("kpi-done").textContent      = c.done;
-  document.getElementById("kpi-total").textContent     = tasks.length;
-  document.getElementById("kpi-sync").textContent      = `Synced ${timeAgo(Math.floor(Date.now()/1000))}`;
-}
-
-// ================================================================
-// Board rendering
-// ================================================================
-function renderBoard(agentFilter, boardId, sidebarId, bodyId) {
-  const el = document.getElementById(boardId);
-  if (!el) return;
-  const tasks = Object.values(board).filter(t => agentFilter ? (t.assignee||"unassigned")===agentFilter : true);
-  const groups = {};
-  COLUMNS.forEach(c => groups[c.key] = []);
-  tasks.forEach(t => { const k=t.status||"pending"; if(!groups[k])groups[k]=[]; groups[k].push(t); });
-  COLUMNS.forEach(c => groups[c.key].sort((a,b)=>(a.created_at||0)-(b.created_at||0)));
-  const ctxKey = agentFilter ? "agent" : "board";
-
-  el.innerHTML = COLUMNS.map(col => {
-    const ct = groups[col.key]||[];
-    return `<div class="column">
-      <div class="col-header">
-        <div class="col-dot" style="background:${col.color}"></div>
-        <span class="col-title">${col.label}</span>
-        <span class="col-count">${ct.length}</span>
-      </div>
-      <div class="col-body">
-        ${ct.length ? ct.map(t => taskCard(t, ctxKey, sidebarId, bodyId)).join("") : '<div class="empty-col">No tasks</div>'}
-      </div>
-    </div>`;
-  }).join("");
-
-  // Reopen sidebar
-  const sel = selectedTask[ctxKey];
-  if (sel && board[sel]) populateSidebar(board[sel], sidebarId, bodyId);
-}
-
-function taskCard(task, ctxKey, sidebarId, bodyId) {
-  const agent = task.assignee || "unassigned";
-  const color = agentColor(agent);
-  return `<div class="task-card" onclick="openTask('${esc(task.id)}','${ctxKey}','${sidebarId}','${bodyId}')">
-    <div class="task-id">${esc(task.id.substring(0,10))}</div>
-    <div class="task-title">${esc(task.title||"(no title)")}</div>
-    <div class="task-footer">
-      <span class="agent-tag" style="background:${color}18;color:${color}">${esc(agent)}</span>
-      <span class="task-age">${timeAgo(task.created_at)}</span>
-    </div>
-  </div>`;
-}
-
-// ================================================================
-// Sidebar
-// ================================================================
-function openTask(id, ctxKey, sidebarId, bodyId) {
-  const task = board[id];
-  if (!task) return;
-  selectedTask[ctxKey] = id;
-  populateSidebar(task, sidebarId, bodyId);
-  document.getElementById(sidebarId).classList.remove("hidden");
-}
-function closeSidebar(id) {
-  const k = id === "sidebar" ? "board" : "agent";
-  selectedTask[k] = null;
-  document.getElementById(id).classList.add("hidden");
-}
-function populateSidebar(task, sidebarId, bodyId) {
-  const sc = statusColor(task.status);
-  const ac = agentColor(task.assignee||"unassigned");
-  const dept = agentDept(task.assignee||"unassigned");
-  document.getElementById(bodyId).innerHTML = `
-    <div class="detail-section">
-      <div class="detail-label">Status</div>
-      <div class="detail-value">
-        <span class="status-chip" style="background:${sc}22;color:${sc};border:1px solid ${sc}44">${esc(task.status||"unknown")}</span>
-      </div>
-    </div>
-    <div class="detail-section">
-      <div class="detail-label">Title</div>
-      <div class="detail-value">${esc(task.title||"(no title)")}</div>
-    </div>
-    ${task.body?`<div class="detail-section"><div class="detail-label">Description</div><div class="detail-pre">${esc(task.body)}</div></div>`:""}
-    <hr class="detail-divider">
-    <div class="detail-section">
-      <div class="detail-label">Assigned To</div>
-      <div class="detail-value" style="display:flex;align-items:center;gap:8px">
-        <span style="width:10px;height:10px;border-radius:3px;background:${ac};display:inline-block;flex-shrink:0"></span>
-        <a href="#" class="agent-link" onclick="switchView('agent-board','${esc(dept)}','${esc(task.assignee||'')}');return false">${esc(task.assignee||"unassigned")}</a>
-        <span style="color:var(--text3);font-size:11px">· ${esc(dept)}</span>
-      </div>
-    </div>
-    <div class="detail-section">
-      <div class="detail-label">Created</div>
-      <div class="detail-value">${task.created_at ? new Date(task.created_at*1000).toLocaleString() : "—"}</div>
-    </div>
-    ${task.started_at?`<div class="detail-section"><div class="detail-label">Started</div><div class="detail-value">${new Date(task.started_at*1000).toLocaleString()}</div></div>`:""}
-    ${task.completed_at?`<div class="detail-section"><div class="detail-label">Completed</div><div class="detail-value">${new Date(task.completed_at*1000).toLocaleString()}</div></div>`:""}
-    ${task.result?`<hr class="detail-divider"><div class="detail-section"><div class="detail-label">Result</div><div class="detail-pre">${esc(task.result)}</div></div>`:""}
-    ${task.last_failure_error?`<hr class="detail-divider"><div class="detail-section"><div class="detail-label" style="color:var(--blocked)">Last Error</div><div class="detail-pre" style="color:var(--blocked)">${esc(task.last_failure_error)}</div></div>`:""}
-    ${task.skills?`<hr class="detail-divider"><div class="detail-section"><div class="detail-label">Skills</div><div class="detail-value" style="font-size:12px">${esc(task.skills)}</div></div>`:""}
-    <hr class="detail-divider">
-    <div class="detail-section">
-      <div class="detail-label">Task ID</div>
-      <div class="detail-mono">${esc(task.id)}</div>
-    </div>
-    ${task.session_id?`<div class="detail-section"><div class="detail-label">Session ID</div><div class="detail-mono">${esc(task.session_id)}</div></div>`:""}
-  `;
-}
-
-// ================================================================
-// Departments view
-// ================================================================
-function buildDeptStats() {
-  const STATUS_KEYS = ["pending","in_progress","blocked","done","cancelled"];
-  const def = () => ({...Object.fromEntries(STATUS_KEYS.map(k=>[k,0])), total:0, last_active:0, agents:{}});
-  const depts = {};
-  for (const d of Object.keys(DEPT_CONFIG)) depts[d] = def();
-
-  Object.values(board).forEach(t => {
-    const agent = t.assignee||"unassigned";
-    const dept = agentDept(agent);
-    if (!depts[dept]) depts[dept] = def();
-    const d = depts[dept];
-    const s = t.status||"pending";
-    if (s in d) d[s]++;
-    d.total++;
-    const ts = Math.max(t.last_heartbeat_at||0, t.started_at||0, t.completed_at||0, t.created_at||0);
-    if (ts > d.last_active) d.last_active = ts;
-    if (!d.agents[agent]) d.agents[agent] = {...Object.fromEntries(STATUS_KEYS.map(k=>[k,0])), total:0, is_active:false};
-    const ag = d.agents[agent];
-    if (s in ag) ag[s]++;
-    ag.total++;
-    if (s==="in_progress") ag.is_active = true;
-  });
-  return depts;
-}
-
-function renderDepartments() {
-  const grid = document.getElementById("dept-grid");
-  const depts = buildDeptStats();
-  const total = Object.values(depts).reduce((a,d)=>a+d.total,0);
-  document.getElementById("dept-section-title").textContent = `${Object.keys(DEPT_CONFIG).length} Departments · ${total} Tasks`;
-
-  grid.innerHTML = Object.entries(DEPT_CONFIG).map(([name, cfg]) => {
-    const s = depts[name]||{pending:0,in_progress:0,blocked:0,done:0,cancelled:0,total:0,last_active:0,agents:{}};
-    const isActive = s.in_progress > 0;
-    const isBlocked = !isActive && s.blocked > 0;
-    let chipHtml;
-    if (isActive)       chipHtml = `<span class="dept-status-chip" style="background:#16a34a20;color:#22c55e;border:1px solid #16a34a44">● Active</span>`;
-    else if (isBlocked) chipHtml = `<span class="dept-status-chip" style="background:#dc262620;color:#ef4444;border:1px solid #dc262644">⊘ Blocked</span>`;
-    else                chipHtml = `<span class="dept-status-chip" style="background:#47556920;color:#64748b;border:1px solid #47556944">· Idle</span>`;
-
-    const agentRows = cfg.agents.map(a => {
-      const as = s.agents[a]||{};
-      return `<div class="agent-row" onclick="switchView('agent-board','${esc(name)}','${esc(a)}');event.stopPropagation()">
-        <div class="agent-row-avatar" style="background:${cfg.color}">${esc(a[0].toUpperCase())}</div>
-        <span class="agent-row-name">${esc(a)}</span>
-        <div class="agent-row-stats">
-          ${as.is_active ? '<span class="agent-active-pip" title="Active"></span>' : ""}
-          <span class="agent-row-stat"><span class="agent-row-dot" style="background:var(--done)"></span>${as.done||0}</span>
-          <span class="agent-row-stat"><span class="agent-row-dot" style="background:var(--blocked)"></span>${as.blocked||0}</span>
-          <span class="agent-row-stat" style="color:var(--text3)">${as.total||0} total</span>
-        </div>
-      </div>`;
-    }).join("");
-
-    return `<div class="dept-card" onclick="switchView('dept-detail','${esc(name)}')">
-      <div class="dept-card-top">
-        <div class="dept-card-header">
-          <div style="display:flex;align-items:flex-start;gap:12px;flex:1;min-width:0">
-            <div class="dept-icon-wrap" style="background:${cfg.color}20;border:1px solid ${cfg.color}44">${cfg.icon||"⬡"}</div>
-            <div>
-              <div class="dept-name">${esc(name)}</div>
-              <div class="dept-desc">${esc(cfg.description||"")}</div>
-            </div>
-          </div>
-          ${chipHtml}
-        </div>
-        <div class="dept-progress">
-          <div class="dept-progress-track">${progressBars(s, s.total)}</div>
-          <div class="dept-kpis">
-            <div class="dept-kpi"><div class="dept-kpi-num">${s.total}</div><div class="dept-kpi-label">Tasks</div></div>
-            <div class="dept-kpi"><div class="dept-kpi-num">${s.done}</div><div class="dept-kpi-label">Done</div></div>
-            <div class="dept-kpi"><div class="dept-kpi-num" style="color:var(--in-progress)">${s.in_progress}</div><div class="dept-kpi-label">Active</div></div>
-            <div class="dept-kpi"><div class="dept-kpi-num" style="color:var(--blocked)">${s.blocked}</div><div class="dept-kpi-label">Blocked</div></div>
-            <div class="dept-kpi"><div class="dept-kpi-num" style="color:var(--text3)">${timeAgo(s.last_active)}</div><div class="dept-kpi-label">Last Activity</div></div>
-          </div>
-        </div>
-      </div>
-      <div class="dept-card-agents">
-        <div class="agents-label">${cfg.agents.length} Agent${cfg.agents.length!==1?"s":""}</div>
-        ${agentRows}
-      </div>
-    </div>`;
-  }).join("");
-}
-
-// ================================================================
-// Department detail (agents grid)
-// ================================================================
-function renderDeptDetail(deptName) {
-  const cfg = DEPT_CONFIG[deptName];
-  if (!cfg) return;
-  const depts = buildDeptStats();
-  const s = depts[deptName]||{agents:{}};
-  document.getElementById("dept-detail-title").innerHTML =
-    `<span style="display:inline-flex;align-items:center;gap:8px">
-      <span style="width:10px;height:10px;border-radius:50%;background:${cfg.color};display:inline-block"></span>
-      ${esc(deptName)} — ${cfg.agents.length} Agent${cfg.agents.length!==1?"s":""}
-    </span>`;
-
-  const grid = document.getElementById("dept-agents-grid");
-  grid.innerHTML = cfg.agents.map(agentName => {
-    const as = s.agents[agentName]||{pending:0,in_progress:0,blocked:0,done:0,cancelled:0,total:0,is_active:false};
-    const total = as.total||1;
-    let chip;
-    if (as.is_active)       chip = `<span class="agent-chip" style="background:#16a34a20;color:#22c55e;border:1px solid #16a34a44">● Active</span>`;
-    else if (as.blocked>0)  chip = `<span class="agent-chip" style="background:#dc262620;color:#ef4444;border:1px solid #dc262644">⊘ Blocked</span>`;
-    else                    chip = `<span class="agent-chip" style="background:#47556920;color:#64748b;border:1px solid #47556944">Idle</span>`;
-
-    return `<div class="agent-card" onclick="switchView('agent-board','${esc(deptName)}','${esc(agentName)}')">
-      <div class="agent-card-header">
-        <div class="agent-avatar-lg" style="background:${cfg.color}">${esc(agentName[0].toUpperCase())}</div>
-        <div style="flex:1;min-width:0">
-          <div class="agent-card-name">${esc(agentName)}</div>
-          <div class="agent-card-sub">${esc(deptName)} · ${as.total} task${as.total!==1?"s":""}</div>
-        </div>
-        ${chip}
-      </div>
-      <div class="agent-progress-track">${agentProgressBars(as, total)}</div>
-      <div class="agent-stats-row">
-        <div class="agent-stat-item"><div class="agent-stat-dot" style="background:var(--done)"></div><span class="agent-stat-num">${as.done}</span><span class="agent-stat-lbl">done</span></div>
-        <div class="agent-stat-item"><div class="agent-stat-dot" style="background:var(--in-progress)"></div><span class="agent-stat-num">${as.in_progress}</span><span class="agent-stat-lbl">active</span></div>
-        <div class="agent-stat-item"><div class="agent-stat-dot" style="background:var(--blocked)"></div><span class="agent-stat-num">${as.blocked}</span><span class="agent-stat-lbl">blocked</span></div>
-        <div class="agent-stat-item"><div class="agent-stat-dot" style="background:var(--pending)"></div><span class="agent-stat-num">${as.pending}</span><span class="agent-stat-lbl">pending</span></div>
-      </div>
-    </div>`;
-  }).join("");
-}
-
-// ================================================================
-// SSE
-// ================================================================
-function setLive(on) {
-  document.getElementById("live-dot").classList.toggle("live", on);
-  document.getElementById("live-label").textContent = on ? "Live" : "Reconnecting";
-}
-function applyChanges() {
-  if (currentView === "board")       renderBoard(null, "board", "sidebar", "sidebar-body"), updateKpi(null);
-  else if (currentView === "departments") renderDepartments();
-  else if (currentView === "dept-detail") renderDeptDetail(currentDept);
-  else if (currentView === "agent-board") renderBoard(currentAgent, "board-agent", "sidebar-agent", "sidebar-agent-body"), updateKpi(currentAgent);
-}
-function connectSSE() {
-  if (eventSource) eventSource.close();
-  eventSource = new EventSource("/api/events");
-  eventSource.onopen = () => setLive(true);
-  eventSource.onmessage = e => {
-    const msg = JSON.parse(e.data);
-    if (msg.type === "snapshot") {
-      board = {};
-      (msg.data||[]).forEach(t => board[t.id] = t);
-      applyChanges();
-    } else if (msg.type === "update") {
-      (msg.data?.changed||[]).forEach(t => { if(t._deleted) delete board[t.id]; else board[t.id]=t; });
-      applyChanges();
-      const n = (msg.data?.changed||[]).length;
-      if (n) showToast(`${n} task${n>1?"s":""} updated`);
-    } else if (msg.type === "task_update" && msg.data?.id) {
-      board[msg.data.id] = msg.data;
-      applyChanges();
-    }
-  };
-  eventSource.onerror = () => { setLive(false); setTimeout(connectSSE, 5000); };
-}
-
-// ================================================================
-// Toast
-// ================================================================
-function showToast(msg, dur=3000) {
-  const el = Object.assign(document.createElement("div"), {className:"toast", textContent:msg});
-  document.getElementById("toasts").appendChild(el);
-  setTimeout(() => el.remove(), dur);
-}
-
-// ================================================================
-// Init
-// ================================================================
-async function init() {
-  await initUser();
-  connectSSE();
-  try {
-    const r = await fetch("/api/board");
-    const d = await r.json();
-    if (!Object.keys(board).length) {
-      board = {};
-      Object.values(d.columns||{}).flat().forEach(t => board[t.id] = t);
-      applyChanges();
-    }
-  } catch(e) { console.warn("REST fallback failed", e); }
-}
-
-init();
-
-// ================================================================
-// PIPELINE — Global State
-// ================================================================
-let pipeline         = {};     // stage_key → [records]
-let pipelineSearchTerm = '';
-let plBulkSending    = false;
-let pipelineInboxOpen = false;
-
-const PIPELINE_STAGES = [
-  { key: 'draft_ready',      label: 'Draft Ready',     icon: '✉️',  color: '#2563eb' },
-  { key: 'email_sent',       label: 'Email Sent',      icon: '📨',  color: '#0891b2' },
-  { key: 'replied',          label: 'Replied',          icon: '💬',  color: '#7c3aed' },
-  { key: 'follow_up_draft',  label: 'Follow-Up Draft',  icon: '📝',  color: '#ea580c' },
-  { key: 'approved',         label: 'Approved',         icon: '✅',  color: '#16a34a' },
-  { key: 'rejected',         label: 'Rejected',         icon: '❌',  color: '#dc2626' },
-];
-
-// ================================================================
-// PIPELINE — Load & Render
-// ================================================================
-async function loadPipeline() {
-  const boardEl = document.getElementById('pipeline-board');
-  if (!boardEl) return;
-  boardEl.innerHTML = '<div class="loading"><div class="spinner"></div>Loading pipeline…</div>';
-
-  try {
-    const r = await fetch('/api/pipeline');
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const data = await r.json();
-    // Accept { stages: {...} } or a flat { stage_key: [...] } object
-    pipeline = data.stages || data || {};
-    PIPELINE_STAGES.forEach(s => {
-      if (!Array.isArray(pipeline[s.key])) pipeline[s.key] = [];
-    });
+// ── PIPELINE ──────────────────────────────────────────────────────────────
+async function loadPipeline(){
+  document.getElementById('pipeline-board').innerHTML='<div class="loading"><div class="spinner"></div> Loading pipeline…</div>';
+  try{
+    const r=await api('/api/seller-pipeline');
+    if(!r.ok)throw new Error(r.statusText);
+    const data=await r.json();
+    pipeline=data||{stages:{"Draft":[],"Approved":[],"Sent":[],"Failed":[]}};
+    if(!pipeline.stages)pipeline.stages={"Draft":[],"Approved":[],"Sent":[],"Failed":[]};
     renderPipeline();
-  } catch (e) {
-    boardEl.innerHTML =
-      `<div class="loading" style="color:var(--blocked)">
-         Failed to load pipeline: ${esc(e.message)}
-         <button class="pipeline-btn" style="margin-top:12px" onclick="loadPipeline()">Retry</button>
-       </div>`;
+  }catch(e){
+    document.getElementById('pipeline-board').innerHTML='<div class="empty-state"><div class="empty-state-icon">⚠️</div><div>Failed to load pipeline.</div></div>';
+    showToast('Failed to load pipeline','error');
   }
 }
-
-function renderPipeline() {
-  const boardEl = document.getElementById('pipeline-board');
-  if (!boardEl) return;
-
-  const search = pipelineSearchTerm.toLowerCase().trim();
-
-  boardEl.innerHTML = PIPELINE_STAGES.map(stage => {
-    let records = (pipeline[stage.key] || []).slice();
-    if (search) {
-      records = records.filter(r =>
-        (r.deal_name        || '').toLowerCase().includes(search) ||
-        (r.title            || '').toLowerCase().includes(search) ||
-        (r.buyer_name       || '').toLowerCase().includes(search) ||
-        (r.buyer_email      || '').toLowerCase().includes(search) ||
-        (r.property_address || '').toLowerCase().includes(search)
-      );
-    }
-    return `<div class="column pipeline-column">
-      <div class="col-header">
-        <span style="font-size:14px;line-height:1;flex-shrink:0">${stage.icon}</span>
-        <span class="col-title">${stage.label}</span>
-        <span class="col-count">${records.length}</span>
-      </div>
-      <div class="col-body">
-        ${records.length
-          ? records.map(r => plCard(r, stage.key)).join('')
-          : '<div class="empty-col">No records</div>'}
-      </div>
-    </div>`;
-  }).join('');
-
-  // Update count label
-  const total = PIPELINE_STAGES.reduce((n, s) => n + (pipeline[s.key]?.length || 0), 0);
-  const el = document.getElementById('pipeline-count');
-  if (el) el.textContent = `${total} record${total !== 1 ? 's' : ''}`;
-
-  // Re-render inbox badge + body if open
-  renderPipelineInbox();
+function filterPipeline(){renderPipeline();}
+function renderPipeline(){
+  const search=(document.getElementById('pipeline-search')||{}).value||'';
+  const sq=search.toLowerCase();
+  const stages=['Draft','Approved','Sent','Failed'];
+  const colClasses={Draft:'pl-col-draft',Approved:'pl-col-approved',Sent:'pl-col-sent',Failed:'pl-col-failed'};
+  const board=document.getElementById('pipeline-board');
+  board.innerHTML='';
+  let total=0;
+  stages.forEach(stage=>{
+    const items=(pipeline.stages[stage]||[]).filter(r=>{
+      if(!sq)return true;
+      return (r.owner_name||'').toLowerCase().includes(sq)||(r.subject||'').toLowerCase().includes(sq);
+    });
+    total+=items.length;
+    const col=document.createElement('div');
+    col.className=`pl-col ${colClasses[stage]}`;
+    col.innerHTML=`<div class="pl-col-header"><span>${stage}</span><span class="pl-col-count">${items.length}</span></div>`;
+    items.forEach(r=>{
+      col.appendChild(makePipelineCard(r,stage));
+    });
+    if(!items.length){const e=document.createElement('div');e.className='empty-state';e.style.cssText='padding:20px;font-size:12px';e.textContent='No records';col.appendChild(e);}
+    board.appendChild(col);
+  });
+  const pc=document.getElementById('pipeline-count');
+  if(pc)pc.textContent=total+' records';
 }
-
-// ── Formatting helpers ────────────────────────────────────────────
-function plFmtMoney(val) {
-  if (val === null || val === undefined || val === '') return null;
-  const n = typeof val === 'string' ? parseFloat(val.replace(/[^0-9.-]/g, '')) : Number(val);
-  if (!isFinite(n)) return null;
-  if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`;
-  if (n >= 1000)    return `$${Math.round(n / 1000)}K`;
-  return `$${n}`;
+function makePipelineCard(r,stage){
+  const card=document.createElement('div');
+  card.className='pl-card';
+  card.dataset.id=r.id;
+  const ctClass={LLC:'ct-llc',Individual:'ct-individual',Trust:'ct-trust'}[r.contact_type]||'ct-individual';
+  let actions='';
+  if(stage==='Draft')actions=`<button class="btn btn-sm" onclick="openEditModal('${r.id}')">✏️ Edit</button><button class="btn btn-sm btn-green" onclick="approveRecord('${r.id}')">✅ Approve</button><button class="btn btn-sm" onclick="quickAiFix('${r.id}')">🤖 AI Fix</button>`;
+  else if(stage==='Approved')actions=`<button class="btn btn-sm" onclick="openEditModal('${r.id}')">✏️ Edit</button><button class="btn btn-sm btn-primary" onclick="openSendModal('${r.id}')">📨 Send</button><button class="btn btn-sm" onclick="unapproveRecord('${r.id}')">↩ Unapprove</button>`;
+  else if(stage==='Sent')actions=`<button class="btn btn-sm" onclick="openEditModal('${r.id}',true)">👁 View</button>`;
+  else if(stage==='Failed')actions=`<button class="btn btn-sm btn-primary" onclick="openSendModal('${r.id}')">↩ Retry</button>`;
+  card.innerHTML=`<div class="pl-card-top"><div class="pl-owner-name">${esc(r.owner_name||'Unknown')}</div></div><div class="pl-badges"><span class="contact-badge ${ctClass}" style="font-size:10px;padding:1px 6px">${esc(r.contact_type||'—')}</span>${r.mailing_state?`<span class="pl-state-chip">${esc(r.mailing_state)}</span>`:''}</div><div class="pl-subject">${esc(r.subject||'No subject')}</div><div class="pl-card-footer"><span class="pl-date">${formatDate(r.created_at)}</span><div class="pl-actions">${actions}</div></div>`;
+  return card;
 }
-
-function plScoreColor(score) {
-  const n = parseFloat(score);
-  if (!isFinite(n)) return 'var(--text3)';
-  if (n >= 8) return '#16a34a';
-  if (n >= 6) return '#ca8a04';
-  return '#dc2626';
+async function generateDrafts(){
+  const btn=document.getElementById('gen-drafts-btn');
+  btn.disabled=true;btn.textContent='⏳ Generating…';
+  try{
+    const r=await api('/api/seller-pipeline/generate',{method:'POST'});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.message||r.statusText);
+    showToast('Drafts generated!','success');
+    loadPipeline();
+  }catch(e){showToast('Generate failed: '+e.message,'error');}
+  finally{btn.disabled=false;btn.innerHTML='✨ Generate Drafts';}
 }
-
-// ── Card renderer ─────────────────────────────────────────────────
-function plCard(r, stageKey) {
-  const id       = esc(r.id);
-  const dealName = r.deal_name || r.title || '(Unnamed Deal)';
-
-  const askRaw   = r.price     ?? r.ask_price;
-  const arvRaw   = r.arv;
-  const sprdRaw  = r.spread    != null ? r.spread
-                 : (arvRaw != null && askRaw != null ? arvRaw - askRaw : null);
-
-  const ask   = plFmtMoney(askRaw);
-  const arv   = plFmtMoney(arvRaw);
-  const sprd  = plFmtMoney(sprdRaw);
-  const chips = [
-    ask  ? `<span class="pipeline-stat-chip">${ask} ask</span>`     : '',
-    arv  ? `<span class="pipeline-stat-chip">${arv} ARV</span>`     : '',
-    sprd ? `<span class="pipeline-stat-chip">${sprd} spread</span>` : '',
-  ].join('');
-
-  const score     = r.match_score ?? r.score;
-  const scoreHtml = score != null ? (() => {
-    const sc = plScoreColor(score);
-    return `<span class="match-score-badge" style="background:${sc}22;color:${sc};border:1px solid ${sc}44">${Number(score).toFixed(1)}</span>`;
-  })() : '';
-
-  return `<div class="pipeline-card">
-    <div class="pipeline-card-header">
-      <div class="pipeline-card-title">${esc(dealName)}</div>
-      ${scoreHtml}
-    </div>
-    ${r.buyer_name
-      ? `<div class="pipeline-card-buyer">${esc(r.buyer_name)}${r.buyer_email
-          ? ` · <span style="color:var(--text3)">${esc(r.buyer_email)}</span>` : ''}</div>`
-      : ''}
-    ${r.property_address
-      ? `<div class="pipeline-card-address">${esc(r.property_address)}</div>`
-      : ''}
-    ${chips ? `<div class="pipeline-stats-chips">${chips}</div>` : ''}
-    <div class="pipeline-card-footer">
-      <span class="task-age">${timeAgo(r.created_at)}</span>
-      <div class="pipeline-card-actions">${plCardActions(r, stageKey)}</div>
-    </div>
-  </div>`;
+async function approveRecord(id){
+  try{
+    const r=await api(`/api/seller-pipeline/${id}/approve`,{method:'POST'});
+    if(!r.ok)throw new Error(r.statusText);
+    showToast('Approved!','success');loadPipeline();
+  }catch(e){showToast('Failed to approve: '+e.message,'error');}
 }
-
-function plCardActions(r, stageKey) {
-  const id = esc(r.id);
-  switch (stageKey) {
-    case 'draft_ready':
-      return `<button class="pipeline-btn pipeline-btn-sm" onclick="openPipelineEdit('${id}')">✏️ Edit</button>
-              <button class="pipeline-btn pipeline-btn-sm pipeline-btn-primary" onclick="confirmSingleSend('${id}')">✅ Send</button>
-              <button class="pipeline-btn pipeline-btn-sm" onclick="openEditAndAiFix('${id}')">🤖 AI Fix</button>`;
-    case 'email_sent':
-      return `<button class="pipeline-btn pipeline-btn-sm" onclick="openPipelineEdit('${id}')">View</button>`;
-    case 'replied':
-      return `<button class="pipeline-btn pipeline-btn-sm" onclick="openReplyModal('${id}')">View Reply</button>
-              <button class="pipeline-btn pipeline-btn-sm pipeline-btn-primary" onclick="draftFollowUp('${id}',this)">Draft Follow-Up</button>`;
-    case 'follow_up_draft':
-      return `<button class="pipeline-btn pipeline-btn-sm" onclick="openPipelineEdit('${id}')">✏️ Edit</button>
-              <button class="pipeline-btn pipeline-btn-sm pipeline-btn-primary" onclick="confirmSingleSend('${id}')">✅ Send</button>`;
-    default:
-      return `<button class="pipeline-btn pipeline-btn-sm" onclick="openPipelineEdit('${id}')">View</button>`;
-  }
+async function unapproveRecord(id){
+  try{
+    const r=await api(`/api/seller-pipeline/${id}/unapprove`,{method:'POST'});
+    if(!r.ok)throw new Error(r.statusText);
+    showToast('Unapproved','');loadPipeline();
+  }catch(e){showToast('Failed: '+e.message,'error');}
 }
-
-// ── Record lookup ──────────────────────────────────────────────────
-function getPipelineRecord(id) {
-  for (const s of PIPELINE_STAGES) {
-    const found = (pipeline[s.key] || []).find(r => String(r.id) === String(id));
-    if (found) return found;
+function findRecord(id){
+  for(const stage of Object.values(pipeline.stages||{})){
+    const r=stage.find(r=>String(r.id)===String(id));
+    if(r)return r;
   }
   return null;
 }
-
-// ================================================================
-// PIPELINE — Edit / Draft Modal
-// ================================================================
-function openPipelineEdit(id) {
-  const r = getPipelineRecord(id);
-  if (!r) { showToast('Record not found'); return; }
-
-  document.getElementById('pl-modal-title').textContent  = r.deal_name || r.title || '(Unnamed Deal)';
-  document.getElementById('pl-modal-id').value           = r.id;
-  document.getElementById('pl-modal-subject').value      = r.email_subject || '';
-  document.getElementById('pl-modal-body-txt').value     = r.email_body    || '';
-  document.getElementById('pl-modal-errors').value       = r.error_notes   || '';
-
-  // Reset button states
-  ['pl-save-btn','pl-send-btn','pl-ai-fix-btn'].forEach(id => {
-    const btn = document.getElementById(id);
-    if (btn) btn.disabled = false;
-  });
-  document.getElementById('pl-save-btn').textContent  = '💾 Save Draft';
-  document.getElementById('pl-send-btn').textContent  = '📨 Send Email';
-  document.getElementById('pl-ai-fix-btn').textContent = '🤖 AI Fix';
-
-  document.getElementById('pl-edit-modal').classList.add('active');
-  setTimeout(() => document.getElementById('pl-modal-subject').focus(), 60);
+function openEditModal(id,readOnly=false){
+  const r=findRecord(id);
+  if(!r)return;
+  editModalReadOnly=readOnly;
+  document.getElementById('edit-modal-id').value=id;
+  document.getElementById('edit-modal-stage').value=r.stage||'';
+  document.getElementById('edit-modal-title').textContent=readOnly?'View Email':'Edit Draft';
+  document.getElementById('edit-subject').value=r.subject||'';
+  document.getElementById('edit-subject').readOnly=readOnly;
+  document.getElementById('edit-body').value=r.email_body||r.body||'';
+  document.getElementById('edit-body').readOnly=readOnly;
+  document.getElementById('edit-notes').value=r.notes||'';
+  document.getElementById('edit-notes').readOnly=readOnly;
+  document.getElementById('send-from-edit-btn').style.display=(r.stage==='Approved'&&!readOnly)?'inline-flex':'none';
+  document.getElementById('ai-fix-row').style.display='none';
+  document.getElementById('edit-modal').classList.add('open');
 }
-
-function openEditAndAiFix(id) {
-  openPipelineEdit(id);
-  setTimeout(() => runAiFix(), 150);
+function closeEditModal(){document.getElementById('edit-modal').classList.remove('open');}
+async function saveDraft(){
+  const id=document.getElementById('edit-modal-id').value;
+  const payload={subject:document.getElementById('edit-subject').value,email_body:document.getElementById('edit-body').value,notes:document.getElementById('edit-notes').value};
+  try{
+    const r=await api(`/api/seller-pipeline/${id}/draft`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!r.ok)throw new Error(r.statusText);
+    showToast('Draft saved','success');closeEditModal();loadPipeline();
+  }catch(e){showToast('Save failed: '+e.message,'error');}
 }
-
-function closePipelineEditModal() {
-  document.getElementById('pl-edit-modal').classList.remove('active');
+function sendFromEdit(){
+  const id=document.getElementById('edit-modal-id').value;
+  closeEditModal();
+  openSendModal(id);
 }
-
-async function savePipelineDraft() {
-  const id      = document.getElementById('pl-modal-id').value;
-  const subject = document.getElementById('pl-modal-subject').value.trim();
-  const body    = document.getElementById('pl-modal-body-txt').value;
-  const errors  = document.getElementById('pl-modal-errors').value;
-
-  const btn = document.getElementById('pl-save-btn');
-  btn.disabled    = true;
-  btn.textContent = '💾 Saving…';
-
-  try {
-    const r = await fetch(`/api/pipeline/${encodeURIComponent(id)}/draft`, {
-      method:  'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ email_subject: subject, email_body: body, error_notes: errors }),
-    });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    // Update local cache
-    const rec = getPipelineRecord(id);
-    if (rec) {
-      rec.email_subject = subject;
-      rec.email_body    = body;
-      rec.error_notes   = errors;
-    }
-    showToast('Draft saved ✓');
-  } catch (e) {
-    showToast(`Save failed: ${e.message}`, 5000);
-  } finally {
-    btn.disabled    = false;
-    btn.textContent = '💾 Save Draft';
+function showAiFix(){document.getElementById('ai-fix-row').style.display='flex';}
+function hideAiFix(){document.getElementById('ai-fix-row').style.display='none';}
+async function runAiFix(){
+  const id=document.getElementById('edit-modal-id').value;
+  const desc=document.getElementById('ai-fix-input').value;
+  if(!desc)return showToast('Enter fix instructions first','error');
+  try{
+    showToast('Running AI fix…');
+    const r=await api(`/api/seller-pipeline/${id}/ai-fix`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({error_description:desc})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.message||r.statusText);
+    if(d.subject)document.getElementById('edit-subject').value=d.subject;
+    if(d.email_body||d.body)document.getElementById('edit-body').value=d.email_body||d.body;
+    document.getElementById('ai-fix-input').value='';
+    hideAiFix();
+    showToast('AI fix applied!','success');
+  }catch(e){showToast('AI fix failed: '+e.message,'error');}
+}
+async function quickAiFix(id){
+  const desc=prompt('Describe what to fix:');
+  if(!desc)return;
+  try{
+    showToast('Running AI fix…');
+    const r=await api(`/api/seller-pipeline/${id}/ai-fix`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({error_description:desc})});
+    if(!r.ok)throw new Error(r.statusText);
+    showToast('AI fix applied!','success');loadPipeline();
+  }catch(e){showToast('AI fix failed: '+e.message,'error');}
+}
+function openSendModal(id){
+  sendTargetId=id;
+  const r=findRecord(id);
+  if(!r)return;
+  document.getElementById('send-preview-name').textContent=r.owner_name||'Unknown';
+  document.getElementById('send-preview-email').textContent=r.recipient_email||r.email||'No email on file';
+  document.getElementById('send-preview-subject').textContent=r.subject||'No subject';
+  document.getElementById('send-preview-body').textContent=(r.email_body||r.body||'').slice(0,300);
+  document.getElementById('send-modal').classList.add('open');
+}
+function closeSendModal(){document.getElementById('send-modal').classList.remove('open');sendTargetId=null;}
+async function confirmSend(){
+  if(!sendTargetId)return;
+  const id=sendTargetId;
+  closeSendModal();
+  try{
+    const r=await api(`/api/seller-pipeline/${id}/send`,{method:'POST'});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.message||r.statusText);
+    showToast('Email sent!','success');loadPipeline();
+  }catch(e){showToast('Send failed: '+e.message,'error');}
+}
+function sendAllApproved(){
+  const approved=pipeline.stages['Approved']||[];
+  if(!approved.length){showToast('No approved records to send','');return;}
+  const list=document.getElementById('bulk-list');
+  list.innerHTML=approved.map(r=>`<div class="bulk-item"><span>${esc(r.owner_name||'Unknown')}</span><span class="bulk-email">${esc(r.recipient_email||r.email||'—')}</span></div>`).join('');
+  document.getElementById('bulk-progress-wrap').style.display='none';
+  document.getElementById('bulk-send-btn').disabled=false;
+  document.getElementById('bulk-cancel-btn').textContent='Cancel';
+  document.getElementById('bulk-modal').classList.add('open');
+}
+function closeBulkModal(){document.getElementById('bulk-modal').classList.remove('open');}
+async function executeBulkSend(){
+  const approved=pipeline.stages['Approved']||[];
+  if(!approved.length)return;
+  document.getElementById('bulk-send-btn').disabled=true;
+  document.getElementById('bulk-progress-wrap').style.display='block';
+  const fill=document.getElementById('bulk-progress-fill');
+  const lbl=document.getElementById('bulk-progress-label');
+  try{
+    const r=await api('/api/seller-pipeline/send-all',{method:'POST'});
+    if(!r.ok)throw new Error(r.statusText);
+    fill.style.width='100%';lbl.textContent='Done!';
+    showToast('All emails sent!','success');
+    setTimeout(()=>{closeBulkModal();loadPipeline();},1000);
+  }catch(e){
+    showToast('Bulk send failed: '+e.message,'error');
+    document.getElementById('bulk-send-btn').disabled=false;
   }
 }
 
-async function sendFromModal() {
-  const id      = document.getElementById('pl-modal-id').value;
-  const subject = document.getElementById('pl-modal-subject').value.trim();
-  const body    = document.getElementById('pl-modal-body-txt').value;
-  const errors  = document.getElementById('pl-modal-errors').value;
-
-  const btn = document.getElementById('pl-send-btn');
-  btn.disabled    = true;
-  btn.textContent = '📨 Sending…';
-
-  try {
-    // Persist edits first so the server has the latest content
-    await fetch(`/api/pipeline/${encodeURIComponent(id)}/draft`, {
-      method:  'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ email_subject: subject, email_body: body, error_notes: errors }),
-    });
-    const r = await fetch(`/api/pipeline/${encodeURIComponent(id)}/send`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    showToast('Email sent ✓');
-    closePipelineEditModal();
-    await loadPipeline();
-  } catch (e) {
-    showToast(`Send failed: ${e.message}`, 5000);
-    btn.disabled    = false;
-    btn.textContent = '📨 Send Email';
-  }
-}
-
-async function runAiFix() {
-  const id   = document.getElementById('pl-modal-id').value;
-  const desc = document.getElementById('pl-modal-errors').value.trim() || 'General correction';
-
-  const btn = document.getElementById('pl-ai-fix-btn');
-  btn.disabled    = true;
-  btn.textContent = '🤖 Fixing…';
-
-  try {
-    const r = await fetch(`/api/pipeline/${encodeURIComponent(id)}/ai-fix`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ error_description: desc }),
-    });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const data = await r.json();
-    const bodyVal    = data.email_body    || data.body    || null;
-    const subjectVal = data.email_subject || data.subject || null;
-    if (bodyVal    != null) document.getElementById('pl-modal-body-txt').value = bodyVal;
-    if (subjectVal != null) document.getElementById('pl-modal-subject').value  = subjectVal;
-    showToast('AI fix applied ✓');
-  } catch (e) {
-    showToast(`AI fix failed: ${e.message}`, 5000);
-  } finally {
-    btn.disabled    = false;
-    btn.textContent = '🤖 AI Fix';
-  }
-}
-
-// ================================================================
-// PIPELINE — Single Send Modal
-// ================================================================
-let _singleSendId = null;
-
-function confirmSingleSend(id) {
-  const r = getPipelineRecord(id);
-  if (!r) { showToast('Record not found'); return; }
-  _singleSendId = id;
-
-  const fmt = (n) => n ? `$${(n/1000).toFixed(0)}K` : '—';
-  const score = r.match_score;
-  const scoreColor = score >= 8 ? '#16a34a' : score >= 6 ? '#d97706' : '#dc2626';
-
-  document.getElementById('pl-single-details').innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:14px">
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px">
-        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">${esc(r.deal_name||'(no name)')}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
-          <div><span style="color:var(--text3)">To</span><br><span style="font-weight:600">${esc(r.buyer_name||'—')}</span></div>
-          <div><span style="color:var(--text3)">Email</span><br><span style="color:#2563eb">${esc(r.buyer_email||'—')}</span></div>
-          <div><span style="color:var(--text3)">Property</span><br>${esc(r.property_address||'—')}</div>
-          <div><span style="color:var(--text3)">Match Score</span><br><span style="font-weight:700;color:${scoreColor}">${score != null ? score+'/10' : '—'}</span></div>
-        </div>
-        ${r.purchase_price||r.arv ? `<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-          ${r.purchase_price ? `<span style="background:#1e2535;border:1px solid #252d3e;border-radius:4px;padding:2px 8px;font-size:11px;color:#94a3b8">${fmt(r.purchase_price)} ask</span>` : ''}
-          ${r.arv ? `<span style="background:#1e2535;border:1px solid #252d3e;border-radius:4px;padding:2px 8px;font-size:11px;color:#94a3b8">${fmt(r.arv)} ARV</span>` : ''}
-          ${r.equity_spread ? `<span style="background:rgba(22,163,74,0.12);border:1px solid rgba(22,163,74,0.3);border-radius:4px;padding:2px 8px;font-size:11px;color:#4ade80">${fmt(r.equity_spread)} spread</span>` : ''}
-        </div>` : ''}
-      </div>
-      <div>
-        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Subject</div>
-        <div style="font-size:12px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 10px">${esc(r.email_subject||'(no subject)')}</div>
-      </div>
-      <div>
-        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Email Preview</div>
-        <div style="font-size:11px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;max-height:100px;overflow:hidden;white-space:pre-wrap;line-height:1.5">${esc((r.email_body||'(no body)').substring(0,300))}${(r.email_body||'').length>300?'…':''}</div>
-      </div>
-    </div>`;
-
-  const btn = document.getElementById('pl-single-confirm-btn');
-  btn.textContent = '📨 Send Now';
-  btn.disabled = false;
-  document.getElementById('pl-single-modal').classList.add('active');
-}
-
-function closeSingleSendModal() {
-  document.getElementById('pl-single-modal').classList.remove('active');
-  _singleSendId = null;
-}
-
-async function executeSingleSend() {
-  if (!_singleSendId) return;
-  const id = _singleSendId;
-  const btn = document.getElementById('pl-single-confirm-btn');
-  btn.textContent = 'Sending…';
-  btn.disabled = true;
-
-  try {
-    const resp = await fetch(`/api/pipeline/${encodeURIComponent(id)}/send`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const data = await resp.json().catch(() => ({}));
-    if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
-    closeSingleSendModal();
-    showToast('✓ Email sent successfully');
-    await loadPipeline();
-  } catch (e) {
-    btn.textContent = '📨 Send Now';
-    btn.disabled = false;
-    showToast(`Send failed: ${e.message}`, 5000);
-  }
-}
-
-// ================================================================
-// PIPELINE — Reply View Modal
-// ================================================================
-function openReplyModal(id) {
-  const r = getPipelineRecord(id);
-  if (!r) { showToast('Record not found'); return; }
-
-  document.getElementById('pl-reply-title').textContent  = r.deal_name || r.title || '(Unnamed Deal)';
-  document.getElementById('pl-reply-id').value           = r.id;
-  document.getElementById('pl-reply-from').textContent   =
-    [r.buyer_name, r.buyer_email].filter(Boolean).join(' · ') || '—';
-  document.getElementById('pl-reply-body-txt').textContent =
-    r.reply_body || r.reply || r.reply_text || '(No reply content available)';
-
-  document.getElementById('pl-reply-modal').classList.add('active');
-}
-
-function closePipelineReplyModal() {
-  document.getElementById('pl-reply-modal').classList.remove('active');
-}
-
-function startDraftFollowUpFromReply() {
-  const id = document.getElementById('pl-reply-id').value;
-  closePipelineReplyModal();
-  draftFollowUp(id, null);
-}
-
-async function draftFollowUp(id, btn) {
-  if (btn) { btn.disabled = true; btn.textContent = 'Drafting…'; }
-  try {
-    const r = await fetch(`/api/pipeline/${encodeURIComponent(id)}/ai-fix`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ type: 'follow_up' }),
-    });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    showToast('Follow-up draft created ✓');
-    await loadPipeline();
-  } catch (e) {
-    showToast(`Draft follow-up failed: ${e.message}`, 5000);
-    if (btn) { btn.disabled = false; btn.textContent = 'Draft Follow-Up'; }
-  }
-}
-
-// ================================================================
-// PIPELINE — Bulk Send Modal
-// ================================================================
-function openBulkSend() {
-  const drafts = pipeline['draft_ready'] || [];
-  if (!drafts.length) {
-    showToast('No Draft Ready records to send', 3000);
-    return;
-  }
-
-  document.getElementById('pl-bulk-count').textContent =
-    `${drafts.length} email${drafts.length !== 1 ? 's' : ''} ready to send:`;
-
-  document.getElementById('pl-bulk-list').innerHTML = drafts.map(r =>
-    `<div class="pl-bulk-recipient">
-      <span class="pl-bulk-rname">${esc(r.buyer_name || 'Unknown')}</span>
-      <span class="pl-bulk-remail">${esc(r.buyer_email || '—')}</span>
-      <span class="pl-bulk-rdeal">${esc(r.deal_name || r.title || '')}</span>
-    </div>`
-  ).join('');
-
-  // Reset progress UI
-  document.getElementById('pl-bulk-progress').style.display   = 'none';
-  document.getElementById('pl-bulk-bar').style.width          = '0%';
-  document.getElementById('pl-bulk-progress-text').textContent = '';
-  document.getElementById('pl-bulk-confirm-btn').style.display = '';
-  document.getElementById('pl-bulk-cancel-btn').style.display  = '';
-  document.getElementById('pl-bulk-close-btn').style.display   = '';
-  plBulkSending = false;
-
-  document.getElementById('pl-bulk-modal').classList.add('active');
-}
-
-function closeBulkSendModal() {
-  if (plBulkSending) return;
-  document.getElementById('pl-bulk-modal').classList.remove('active');
-}
-
-async function confirmBulkSend() {
-  const drafts = (pipeline['draft_ready'] || []).slice();
-  if (!drafts.length) return;
-
-  plBulkSending = true;
-  const confirmBtn  = document.getElementById('pl-bulk-confirm-btn');
-  const cancelBtn   = document.getElementById('pl-bulk-cancel-btn');
-  const closeBtn    = document.getElementById('pl-bulk-close-btn');
-  const progressEl  = document.getElementById('pl-bulk-progress');
-  const bar         = document.getElementById('pl-bulk-bar');
-  const progressTxt = document.getElementById('pl-bulk-progress-text');
-
-  confirmBtn.style.display = 'none';
-  cancelBtn.style.display  = 'none';
-  closeBtn.style.display   = 'none';
-  progressEl.style.display = '';
-  progressTxt.textContent  = `Sending ${drafts.length} emails…`;
-  bar.style.width = '10%';
-
-  const total = drafts.length;
-  let succeeded = 0, failed = 0;
-  const failedNames = [];
-
-  try {
-    // Primary: bulk send endpoint — sends all draft_ready records in one call
-    const resp = await fetch('/api/pipeline/send-all', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ ids: drafts.map(r => r.id) }),
-    });
-    if (resp.ok) {
-      const data = await resp.json();
-      // Server may return { sent, failed, errors } or just { sent }
-      succeeded = data.sent  ?? total;
-      failed    = data.failed ?? 0;
-      if (Array.isArray(data.errors)) {
-        data.errors.forEach(e => failedNames.push(e.name || e.id || 'unknown'));
-      }
-      bar.style.width = '100%';
-      progressTxt.textContent = `Sent ${succeeded} of ${total}`;
-    } else {
-      // Fallback: send per-record if bulk endpoint fails
-      throw new Error(`HTTP ${resp.status}`);
-    }
-  } catch (_bulkErr) {
-    // Fallback: iterate individually
-    for (const r of drafts) {
-      const sent = succeeded + failed + 1;
-      progressTxt.textContent = `Sending ${sent} of ${total}… ${esc(r.buyer_name || r.id)}`;
-      try {
-        const resp = await fetch(`/api/pipeline/${encodeURIComponent(r.id)}/send`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        succeeded++;
-      } catch (e) {
-        failed++;
-        failedNames.push(r.buyer_name || r.id);
-      }
-      bar.style.width = `${Math.round((succeeded + failed) / total * 100)}%`;
-    }
-  }
-
-  plBulkSending = false;
-  document.getElementById('pl-bulk-modal').classList.remove('active');
-
-  const preview = failedNames.slice(0, 3).join(', ') + (failedNames.length > 3 ? '…' : '');
-  const summary = failed === 0
-    ? `✓ All ${succeeded} emails sent successfully`
-    : `Sent ${succeeded} of ${total} · ${failed} failed: ${preview}`;
-  showToast(summary, failed > 0 ? 7000 : 4000);
-
-  await loadPipeline();
-}
-
-// ================================================================
-// PIPELINE — Inbox Section
-// ================================================================
-function togglePipelineInbox() {
-  pipelineInboxOpen = !pipelineInboxOpen;
-  const body    = document.getElementById('pipeline-inbox-body');
-  const chevron = document.getElementById('pipeline-inbox-chevron');
-  body.classList.toggle('open', pipelineInboxOpen);
-  chevron.classList.toggle('open', pipelineInboxOpen);
-  if (pipelineInboxOpen) renderPipelineInbox();
-}
-
-function renderPipelineInbox() {
-  const body  = document.getElementById('pipeline-inbox-body');
-  const badge = document.getElementById('pipeline-inbox-badge');
-  if (!body) return;
-
-  const replied  = pipeline['replied']         || [];
-  const followUp = pipeline['follow_up_draft'] || [];
-  const count    = replied.length + followUp.length;
-
-  if (badge) {
-    badge.textContent = count;
-    badge.classList.toggle('empty', count === 0);
-  }
-
-  if (!pipelineInboxOpen) return;
-
-  if (!count) {
-    body.innerHTML =
-      '<div style="color:var(--text3);font-size:12px;padding:6px 0">No replies or follow-up drafts.</div>';
-    return;
-  }
-
-  const parts = [];
-
-  if (replied.length) {
-    parts.push(`<div class="inbox-section-label">Replies (${replied.length})</div>`);
-    replied.forEach(r => parts.push(plInboxCard(r, 'replied')));
-  }
-
-  if (followUp.length) {
-    parts.push(`<div class="inbox-section-label" style="padding-top:10px">Follow-Up Drafts (${followUp.length})</div>`);
-    followUp.forEach(r => parts.push(plInboxCard(r, 'follow_up_draft')));
-  }
-
-  body.innerHTML = parts.join('');
-}
-
-function plInboxCard(r, stageKey) {
-  const id       = esc(r.id);
-  const dealName = r.deal_name || r.title || '(Unnamed Deal)';
-  const snippet  = stageKey === 'replied'
-    ? (r.reply_body || r.reply || r.reply_text || '')
-    : (r.email_body || '');
-
-  const actions = stageKey === 'replied'
-    ? `<button class="pipeline-btn pipeline-btn-sm" onclick="openReplyModal('${id}')">View Reply</button>
-       <button class="pipeline-btn pipeline-btn-sm pipeline-btn-primary" onclick="draftFollowUp('${id}',this)">Draft Follow-Up</button>`
-    : `<button class="pipeline-btn pipeline-btn-sm" onclick="openPipelineEdit('${id}')">✏️ Edit</button>
-       <button class="pipeline-btn pipeline-btn-sm pipeline-btn-primary" onclick="confirmSingleSend('${id}')">✅ Send</button>`;
-
-  return `<div class="inbox-card">
-    <div class="inbox-card-left">
-      <div class="inbox-deal-name">${esc(dealName)}</div>
-      <div class="inbox-buyer">${esc(r.buyer_name || '')}${r.buyer_email ? ' · ' + esc(r.buyer_email) : ''}</div>
-      ${snippet ? `<div class="inbox-reply-snippet">${esc(snippet)}</div>` : ''}
-    </div>
-    <div class="inbox-card-actions">${actions}</div>
-  </div>`;
-}
-
-async function checkPipelineInbox() {
-  try {
-    const r = await fetch('/api/pipeline/inbox-check');
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const data = await r.json();
-    const newReplies = data.new_replies ?? data.count ?? 0;
-    showToast(newReplies > 0
-      ? `Inbox: ${newReplies} new repl${newReplies !== 1 ? 'ies' : 'y'} found ✓`
-      : 'Inbox checked — no new replies');
-    await loadPipeline();
-  } catch (e) {
-    showToast(`Inbox check failed: ${e.message}`, 5000);
-  }
-}
-
-// ================================================================
-// PIPELINE — Extend switchView to handle 'pipeline'
-// ================================================================
-(function patchSwitchView() {
-  const _orig = switchView;
-
-  switchView = function(view, dept, agent) {
-    const pipelineEl = document.getElementById('view-pipeline');
-
-    if (view === 'pipeline') {
-      // Deactivate all existing views
-      ['board','departments','dept-detail','agent-board'].forEach(v => {
-        document.getElementById(`view-${v}`)?.classList.remove('active');
-      });
-      pipelineEl?.classList.add('active');
-
-      // Nav highlight
-      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-      document.querySelector('.nav-item[data-view="pipeline"]')?.classList.add('active');
-
-      // Hide KPI bar and breadcrumb (not relevant for pipeline)
-      document.getElementById('kpi-bar')?.classList.add('hidden');
-      document.getElementById('breadcrumb-bar')?.classList.add('hidden');
-
-      currentView = 'pipeline';
-      loadPipeline();
-      return;
-    }
-
-    // Ensure pipeline view is hidden for all other views
-    pipelineEl?.classList.remove('active');
-    _orig.call(this, view, dept, agent);
-  };
+// ── INIT ──────────────────────────────────────────────────────────────────
+(function init(){
+  loadUser();
+  connectSSE();
+  // load initial board via HTTP too
+  api('/api/board').then(r=>r.ok?r.json():null).then(d=>{if(d){applySnapshot(d);}}).catch(()=>{});
+  // hide kpi-bar for non-board views
+  document.getElementById('kpi-bar').style.display='flex';
 })();
 </script>
 </body>
