@@ -413,7 +413,7 @@ async def _get_comms_for_deal(deal_id: str) -> List[Dict]:
             'relation': {'contains': deal_id},
         }
     }
-    pages = await _notion_query(TCC_DS_ID, payload)
+    pages = await _notion_query(TCM_DS_ID, payload)
     return [_parse_comm(p) for p in pages]
 
 
@@ -724,7 +724,7 @@ async def list_pending_comms(request: Request):
             'select': {'equals': 'Pending Approval'},
         }
     }
-    pages = await _notion_query(TCC_DS_ID, payload)
+    pages = await _notion_query(TCM_DS_ID, payload)
     comms = [_parse_comm(p) for p in pages]
     return {'comms': comms, 'total': len(comms)}
 
@@ -878,7 +878,7 @@ async def _check_existing_comm_by_msg_id(msg_id: str) -> bool:
             'rich_text': {'equals': msg_id},
         }
     }
-    pages = await _notion_query(TCC_DS_ID, payload)
+    pages = await _notion_query(TCM_DS_ID, payload)
     return len(pages) > 0
 
 
