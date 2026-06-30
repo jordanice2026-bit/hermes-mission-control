@@ -249,6 +249,7 @@ def _parse_deal(page: Dict) -> Dict:
 
 def _parse_comm(page: Dict) -> Dict:
     p = page.get('properties', {})
+    body = _rt(p.get('Body'))
     return {
         'id': page.get('id', ''),
         'subject': _title(p.get('Subject')),
@@ -256,15 +257,19 @@ def _parse_comm(page: Dict) -> Dict:
         'to_email': _email_prop(p.get('To Email')),
         'to_name': _rt(p.get('To Name')),
         'recipient_role': _sel(p.get('Recipient Role')),
-        'body': _rt(p.get('Body')),
+        'role': _sel(p.get('Recipient Role')),        # alias for frontend
+        'body': body,
+        'body_preview': body[:200] if body else '',   # frontend preview field
         'status': _sel(p.get('Status')),
         'approved': _chk(p.get('Approved')),
         'date_created': _date(p.get('Date Created')),
         'sent_date': _date(p.get('Sent Date')),
+        'sent_at': _date(p.get('Sent Date')),         # alias for frontend
         'gmail_thread_id': _rt(p.get('Gmail Thread ID')),
         'triggered_by': _sel(p.get('Triggered By')),
         'incoming_email_id': _rt(p.get('Incoming Email ID')),
         'notes': _rt(p.get('Notes')),
+        'deal_address': '',   # enriched by caller when needed
     }
 
 
@@ -723,6 +728,39 @@ async def list_pending_comms(request: Request):
             'property': 'Status',
             'select': {'equals': 'Pending Approval'},
         }
+    }
+    pages = await _notion_query(TCM_DS_ID, payload)
+    comms = [_parse_comm(p) for p in pages]
+    # Enrich with deal address
+    deal_ids = list({d for c in comms for d in c.get('deal_ids', [])})
+    deal_addr: Dict[str, str] = {}
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        for did in deal_ids:
+            try:
+                r = await client.get(f'{NOTION_BASE}/pages/{did}', headers=_notion_headers())
+                if r.status_code == 200:
+                    pg = r.json()
+                    addr = _title(pg.get('properties', {}).get('Property Address'))
+                    deal_addr[did] = addr
+            except Exception:
+                pass
+    for c in comms:
+        ids = c.get('deal_ids', [])
+        c['deal_address'] = deal_addr.get(ids[0], '') if ids else ''
+    return {'comms': comms, 'total': len(comms)}
+
+
+@router.get('/api/tc/sent')
+async def list_sent_comms(request: Request):
+    """Return all TC comms with Status=Sent, most recent first."""
+    _require_auth(request)
+    payload = {
+        'filter': {
+            'property': 'Status',
+            'select': {'equals': 'Sent'},
+        },
+        'sorts': [{'property': 'Sent Date', 'direction': 'descending'}],
+        'page_size': 20,
     }
     pages = await _notion_query(TCM_DS_ID, payload)
     comms = [_parse_comm(p) for p in pages]

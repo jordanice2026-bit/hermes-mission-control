@@ -1718,10 +1718,10 @@ async function approveAndSend(commId){
     showToast('Approving and sending…');
     const r1=await api(`/api/tc/${commId}/approve`,{method:'POST'});
     const d1=await r1.json().catch(()=>({}));
-    if(!r1.ok)throw new Error(d1.message||'Approve failed: '+r1.statusText);
+    if(!r1.ok)throw new Error(d1.detail||d1.error||d1.message||'Approve failed: '+r1.statusText);
     const r2=await api(`/api/tc/${commId}/send`,{method:'POST'});
     const d2=await r2.json().catch(()=>({}));
-    if(!r2.ok)throw new Error(d2.message||'Send failed: '+r2.statusText);
+    if(!r2.ok)throw new Error(d2.detail||d2.error||d2.message||'Send failed: '+r2.statusText);
     showToast('Email approved and sent!','success');
     loadTcInbox();
   }catch(e){showToast(e.message,'error');}
@@ -1739,15 +1739,14 @@ async function rejectComm(commId){
 
 async function checkGmail(){
   const btn=document.getElementById('check-gmail-btn');
-  if(btn){
-    btn.disabled=true;
-    btn.innerHTML='<span class="spinner" style="display:inline-block;width:14px;height:14px;border-width:2px;margin-right:4px;vertical-align:middle"></span>Checking…';
-  }
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner" style="display:inline-block;width:14px;height:14px;border-width:2px;margin-right:4px;vertical-align:middle"></span>Checking…';}
   try{
     const r=await api('/api/tc/gmail-monitor');
     const d=await r.json().catch(()=>({}));
-    if(!r.ok)throw new Error(d.message||r.statusText);
-    showToast(d.message||'Gmail check complete','success');
+    if(!r.ok)throw new Error(d.detail||d.error||d.message||r.statusText);
+    const drafts=d.new_drafts??d.drafts_created??0;
+    const checked=d.checked??d.emails_checked??0;
+    showToast(drafts>0?`${drafts} new reply draft${drafts!==1?'s':''} queued for approval`:`Gmail checked — no new emails from deal parties`,'success');
     loadTcInbox();
   }catch(e){showToast('Gmail check failed: '+e.message,'error');}
   finally{if(btn){btn.disabled=false;btn.textContent='🔄 Check Gmail';}}
