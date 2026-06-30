@@ -722,14 +722,18 @@ async def list_deal_comms(request: Request, deal_id: str):
 
 @router.get('/api/tc/pending')
 async def list_pending_comms(request: Request):
+    """Return all actionable comms: Pending Approval + Approved-but-not-sent."""
     _require_auth(request)
-    payload = {
+    # Fetch both statuses so nothing gets stuck invisible after a failed send
+    pending_payload = {
         'filter': {
-            'property': 'Status',
-            'select': {'equals': 'Pending Approval'},
+            'or': [
+                {'property': 'Status', 'select': {'equals': 'Pending Approval'}},
+                {'property': 'Status', 'select': {'equals': 'Approved'}},
+            ]
         }
     }
-    pages = await _notion_query(TCM_DS_ID, payload)
+    pages = await _notion_query(TCM_DS_ID, pending_payload)
     comms = [_parse_comm(p) for p in pages]
     # Enrich with deal address
     deal_ids = list({d for c in comms for d in c.get('deal_ids', [])})
