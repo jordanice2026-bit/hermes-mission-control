@@ -1109,6 +1109,25 @@
     </div>
   </div>
 
+  <!-- ─── Single Send Confirmation Modal ─── -->
+  <div class="pl-modal-overlay" id="pl-single-modal" onclick="if(event.target===this)closeSingleSendModal()">
+    <div class="pl-modal-card" style="max-width:520px">
+      <div class="pl-modal-header">
+        <h2 class="pl-modal-title">📨 Send Email</h2>
+        <button class="close-btn" onclick="closeSingleSendModal()">✕</button>
+      </div>
+      <div class="pl-modal-body">
+        <div id="pl-single-details"></div>
+      </div>
+      <div class="pl-modal-footer">
+        <button class="pipeline-btn" onclick="closeSingleSendModal()">Cancel</button>
+        <button class="pipeline-btn pipeline-btn-primary" id="pl-single-confirm-btn" onclick="executeSingleSend()">
+          📨 Send Now
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ─── Bulk Send Confirmation Modal ─── -->
   <div class="pl-modal-overlay" id="pl-bulk-modal"
        onclick="if(event.target===this&&!plBulkSending)closeBulkSendModal()">
@@ -1905,22 +1924,76 @@ async function runAiFix() {
 }
 
 // ================================================================
-// PIPELINE — Single Send (from card button)
+// PIPELINE — Single Send Modal
 // ================================================================
-async function confirmSingleSend(id) {
-  const r    = getPipelineRecord(id);
-  const name = r ? (r.deal_name || r.title || id) : id;
-  if (!confirm(`Send email for "${name}"?`)) return;
+let _singleSendId = null;
+
+function confirmSingleSend(id) {
+  const r = getPipelineRecord(id);
+  if (!r) { showToast('Record not found'); return; }
+  _singleSendId = id;
+
+  const fmt = (n) => n ? `$${(n/1000).toFixed(0)}K` : '—';
+  const score = r.match_score;
+  const scoreColor = score >= 8 ? '#16a34a' : score >= 6 ? '#d97706' : '#dc2626';
+
+  document.getElementById('pl-single-details').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px">
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">${esc(r.deal_name||'(no name)')}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+          <div><span style="color:var(--text3)">To</span><br><span style="font-weight:600">${esc(r.buyer_name||'—')}</span></div>
+          <div><span style="color:var(--text3)">Email</span><br><span style="color:#2563eb">${esc(r.buyer_email||'—')}</span></div>
+          <div><span style="color:var(--text3)">Property</span><br>${esc(r.property_address||'—')}</div>
+          <div><span style="color:var(--text3)">Match Score</span><br><span style="font-weight:700;color:${scoreColor}">${score != null ? score+'/10' : '—'}</span></div>
+        </div>
+        ${r.purchase_price||r.arv ? `<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          ${r.purchase_price ? `<span style="background:#1e2535;border:1px solid #252d3e;border-radius:4px;padding:2px 8px;font-size:11px;color:#94a3b8">${fmt(r.purchase_price)} ask</span>` : ''}
+          ${r.arv ? `<span style="background:#1e2535;border:1px solid #252d3e;border-radius:4px;padding:2px 8px;font-size:11px;color:#94a3b8">${fmt(r.arv)} ARV</span>` : ''}
+          ${r.equity_spread ? `<span style="background:rgba(22,163,74,0.12);border:1px solid rgba(22,163,74,0.3);border-radius:4px;padding:2px 8px;font-size:11px;color:#4ade80">${fmt(r.equity_spread)} spread</span>` : ''}
+        </div>` : ''}
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Subject</div>
+        <div style="font-size:12px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 10px">${esc(r.email_subject||'(no subject)')}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Email Preview</div>
+        <div style="font-size:11px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;max-height:100px;overflow:hidden;white-space:pre-wrap;line-height:1.5">${esc((r.email_body||'(no body)').substring(0,300))}${(r.email_body||'').length>300?'…':''}</div>
+      </div>
+    </div>`;
+
+  const btn = document.getElementById('pl-single-confirm-btn');
+  btn.textContent = '📨 Send Now';
+  btn.disabled = false;
+  document.getElementById('pl-single-modal').classList.add('active');
+}
+
+function closeSingleSendModal() {
+  document.getElementById('pl-single-modal').classList.remove('active');
+  _singleSendId = null;
+}
+
+async function executeSingleSend() {
+  if (!_singleSendId) return;
+  const id = _singleSendId;
+  const btn = document.getElementById('pl-single-confirm-btn');
+  btn.textContent = 'Sending…';
+  btn.disabled = true;
 
   try {
     const resp = await fetch(`/api/pipeline/${encodeURIComponent(id)}/send`, {
-      method:  'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    showToast('Email sent ✓');
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
+    closeSingleSendModal();
+    showToast('✓ Email sent successfully');
     await loadPipeline();
   } catch (e) {
+    btn.textContent = '📨 Send Now';
+    btn.disabled = false;
     showToast(`Send failed: ${e.message}`, 5000);
   }
 }
