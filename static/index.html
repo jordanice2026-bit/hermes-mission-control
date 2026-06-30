@@ -231,6 +231,97 @@ nav{display:flex;gap:2px;flex:1}
 .send-preview-body{font-size:12px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;white-space:pre-wrap;max-height:180px;overflow-y:auto}
 
 @media(max-width:768px){.kanban{padding:10px;gap:8px}.kanban-col{min-width:240px}.exports-grid{grid-template-columns:1fr}.sidebar{position:fixed;right:0;top:52px;bottom:0;z-index:200}}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DEAL PIPELINE — new styles
+   ═══════════════════════════════════════════════════════════════════ */
+.deal-kanban-wrap{display:flex;flex:1;overflow-x:auto;padding:16px;gap:12px;align-items:flex-start}
+.deal-col{min-width:260px;max-width:300px;flex:1;display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;max-height:calc(100vh - 160px);overflow-y:auto}
+.deal-col-header{display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0}
+.deal-col-count{background:rgba(255,255,255,.1);border-radius:10px;padding:1px 7px;font-size:11px}
+
+/* Deal column accent colors */
+.deal-col-contract .deal-col-header{color:#ca8a04;border-left:3px solid #ca8a04}
+.deal-col-inspection .deal-col-header{color:#ea580c;border-left:3px solid #ea580c}
+.deal-col-financing .deal-col-header{color:#2563eb;border-left:3px solid #2563eb}
+.deal-col-ctc .deal-col-header{color:#16a34a;border-left:3px solid #16a34a}
+.deal-col-closed .deal-col-header{color:#7c3aed;border-left:3px solid #7c3aed}
+
+/* Deal cards */
+.deal-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;transition:all .15s;cursor:pointer}
+.deal-card:hover{border-color:var(--border2);background:var(--surface3)}
+.deal-card.urgent{border-left:3px solid #dc2626}
+.deal-address{font-size:13px;font-weight:600;margin-bottom:4px;line-height:1.3}
+.deal-buyer{font-size:11px;color:var(--text3);margin-bottom:6px}
+.deal-closing{font-size:12px;margin-bottom:6px}
+.countdown-urgent{color:#ef4444;font-weight:600}
+.countdown-warn{color:#f97316;font-weight:600}
+.countdown-ok{color:#22c55e;font-weight:600}
+.deal-deadline-chip{display:inline-block;font-size:10px;background:var(--surface3);border:1px solid var(--border2);border-radius:4px;padding:2px 6px;color:var(--text2)}
+
+/* Deal intake modal */
+.deal-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1000;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px}
+.deal-modal-overlay.open{display:flex}
+.deal-modal-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);width:100%;max-width:760px;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.65);margin:auto}
+.deal-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0;position:sticky;top:0;background:var(--surface);z-index:2;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.deal-modal-title{font-size:16px;font-weight:600}
+.deal-modal-body{padding:20px;overflow-y:auto}
+.deal-modal-footer{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid var(--border);flex-shrink:0;position:sticky;bottom:0;background:var(--surface);border-radius:0 0 var(--radius-lg) var(--radius-lg)}
+.deal-section{margin-bottom:24px}
+.deal-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:14px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.deal-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.deal-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* PDF parse indicators */
+.parse-ok{display:inline-block;margin-left:4px;color:#22c55e;font-size:12px;vertical-align:middle}
+.parse-warn{display:inline-block;color:#f97316;font-size:12px}
+.pdf-parse-warnings{margin-top:8px;padding:8px 12px;background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);border-radius:var(--radius-sm);font-size:12px;color:#fb923c}
+.pdf-parse-info{margin-top:8px;padding:8px 12px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:var(--radius-sm);font-size:12px;color:#4ade80}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TC INBOX — new styles
+   ═══════════════════════════════════════════════════════════════════ */
+.tc-sections{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0}
+.tc-section{display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.tc-section-a{flex:0 0 60%}
+.tc-section-b{flex:0 0 40%;border-top:2px solid var(--border2)}
+.tc-section-header{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);font-size:13px;font-weight:600;flex-shrink:0}
+.tc-section-scroll{overflow-y:auto;flex:1;padding:12px 16px}
+.tc-count-badge{background:var(--accent2);color:#fff;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:600}
+
+/* TC pending cards */
+.tc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px;transition:border-color .15s}
+.tc-card:hover{border-color:var(--border2)}
+.tc-deal-addr{font-size:13px;font-weight:600;color:var(--accent2);margin-bottom:4px;cursor:pointer;display:inline-block}
+.tc-deal-addr:hover{text-decoration:underline}
+.tc-subject{font-size:13px;font-weight:500;margin-bottom:4px}
+.tc-to{font-size:12px;color:var(--text3);margin-bottom:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.tc-trigger-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.tc-body-preview{font-size:12px;color:var(--text2);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5;margin-bottom:8px;padding:8px;background:var(--surface2);border-radius:var(--radius-sm)}
+.tc-actions{display:flex;gap:6px;flex-wrap:wrap}
+
+/* Role badges */
+.role-badge{font-size:10px;border-radius:4px;padding:1px 5px;font-weight:600;white-space:nowrap}
+.role-title{background:rgba(124,58,237,.2);color:#c4b5fd}
+.role-buyer-agent{background:rgba(37,99,235,.2);color:#60a5fa}
+.role-inspector{background:rgba(234,88,12,.2);color:#fb923c}
+.role-lender{background:rgba(22,163,74,.2);color:#4ade80}
+.role-buyer{background:rgba(16,185,129,.2);color:#6ee7b7}
+
+/* Trigger badges */
+.trigger-badge{font-size:10px;border-radius:4px;padding:2px 6px;font-weight:600;white-space:nowrap}
+.trigger-deadline{background:rgba(220,38,38,.2);color:#fca5a5}
+.trigger-incoming{background:rgba(37,99,235,.2);color:#93c5fd}
+.trigger-manual{background:rgba(100,116,139,.2);color:#94a3b8}
+
+/* TC recent sent list */
+.tc-sent-list{background:var(--surface)}
+.tc-sent-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:12px}
+.tc-sent-item:last-child{border-bottom:none}
+.tc-sent-addr{font-weight:600;min-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.tc-sent-subject{flex:1;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tc-sent-to{color:var(--text3);white-space:nowrap;font-size:11px;min-width:80px;overflow:hidden;text-overflow:ellipsis}
+.tc-sent-date{color:var(--text3);white-space:nowrap;font-size:11px}
 </style>
 </head>
 <body>
@@ -250,6 +341,8 @@ nav{display:flex;gap:2px;flex:1}
     <button class="nav-item" data-view="owners">Owners</button>
     <button class="nav-item" data-view="pipeline">Outreach Pipeline</button>
     <button class="nav-item" data-view="exports">Exports</button>
+    <button class="nav-item" data-view="deals">Deal Pipeline</button>
+    <button class="nav-item" data-view="tc">TC Inbox</button>
   </nav>
   <div class="topbar-right">
     <div class="live-dot-wrap"><div class="live-dot" id="live-dot"></div><span id="live-label">Connecting</span></div>
@@ -397,6 +490,66 @@ nav{display:flex;gap:2px;flex:1}
       </div>
     </div>
   </div>
+
+  <!-- DEAL PIPELINE VIEW -->
+  <div class="view" id="view-deals">
+    <div class="action-bar">
+      <button class="btn btn-green" onclick="openDealModal()">+ New Deal</button>
+      <button class="btn" onclick="loadDeals()">🔄 Refresh</button>
+      <div class="spacer"></div>
+      <span class="record-count" id="deals-count"></span>
+    </div>
+    <div class="deal-kanban-wrap">
+      <div class="deal-col deal-col-contract" id="deal-col-contract">
+        <div class="deal-col-header">Under Contract <span class="deal-col-count">0</span></div>
+      </div>
+      <div class="deal-col deal-col-inspection" id="deal-col-inspection">
+        <div class="deal-col-header">Inspection <span class="deal-col-count">0</span></div>
+      </div>
+      <div class="deal-col deal-col-financing" id="deal-col-financing">
+        <div class="deal-col-header">Financing <span class="deal-col-count">0</span></div>
+      </div>
+      <div class="deal-col deal-col-ctc" id="deal-col-ctc">
+        <div class="deal-col-header">Clear to Close <span class="deal-col-count">0</span></div>
+      </div>
+      <div class="deal-col deal-col-closed" id="deal-col-closed">
+        <div class="deal-col-header">Closed <span class="deal-col-count">0</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TC INBOX VIEW -->
+  <div class="view" id="view-tc">
+    <div class="action-bar">
+      <button class="btn btn-primary" id="check-gmail-btn" onclick="checkGmail()">🔄 Check Gmail</button>
+      <button class="btn" onclick="loadTcInbox()">🔄 Refresh</button>
+      <div class="spacer"></div>
+      <span class="record-count" id="tc-pending-action-count"></span>
+    </div>
+    <div class="tc-sections">
+      <!-- Section A: Pending Approval (60%) -->
+      <div class="tc-section tc-section-a">
+        <div class="tc-section-header">
+          Pending Approval
+          <span class="tc-count-badge" id="tc-pending-badge">0</span>
+        </div>
+        <div class="tc-section-scroll" id="tc-pending-scroll">
+          <div class="loading"><div class="spinner"></div> Loading…</div>
+        </div>
+      </div>
+      <!-- Section B: Recent Sent (40%) -->
+      <div class="tc-section tc-section-b">
+        <div class="tc-section-header">
+          Recently Sent
+          <span class="tc-count-badge" id="tc-sent-count">0</span>
+        </div>
+        <div class="tc-section-scroll" id="tc-sent-scroll">
+          <div class="loading"><div class="spinner"></div> Loading…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- TOAST CONTAINER -->
@@ -484,6 +637,185 @@ nav{display:flex;gap:2px;flex:1}
   </div>
 </div>
 
+<!-- DEAL INTAKE MODAL -->
+<div class="deal-modal-overlay" id="deal-modal">
+  <div class="deal-modal-card">
+    <div class="deal-modal-header">
+      <div class="deal-modal-title">New Deal</div>
+      <button class="pl-modal-close" onclick="closeDealModal()">✕</button>
+    </div>
+    <div class="deal-modal-body">
+      <form id="deal-modal-form" onsubmit="return false">
+
+        <!-- Section 1: Property -->
+        <div class="deal-section">
+          <div class="deal-section-title">Property</div>
+          <div class="form-group">
+            <label class="form-label">Property Address *</label>
+            <input class="form-input" id="deal-address" required placeholder="123 Main St, City, State 12345">
+          </div>
+          <div class="deal-row-2">
+            <div class="form-group">
+              <label class="form-label">MLS Number</label>
+              <input class="form-input" id="deal-mls" placeholder="MLS#">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              <select class="form-input" id="deal-status">
+                <option value="Under Contract">Under Contract</option>
+                <option value="Inspection">Inspection</option>
+                <option value="Financing">Financing</option>
+                <option value="Clear to Close">Clear to Close</option>
+              </select>
+            </div>
+          </div>
+          <div class="deal-row-3">
+            <div class="form-group">
+              <label class="form-label">Purchase Price ($)</label>
+              <input class="form-input" id="deal-price" type="number" min="0" step="1" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Earnest Money ($)</label>
+              <input class="form-input" id="deal-earnest" type="number" min="0" step="1" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Commission %</label>
+              <input class="form-input" id="deal-commission" type="number" step="0.01" value="2.5" placeholder="2.5">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Key Dates -->
+        <div class="deal-section">
+          <div class="deal-section-title">Key Dates</div>
+          <div class="deal-row-2">
+            <div class="form-group">
+              <label class="form-label">Contract Date</label>
+              <input class="form-input" id="deal-contract-date" type="date">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Closing Date</label>
+              <input class="form-input" id="deal-closing-date" type="date">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Inspection Deadline</label>
+              <input class="form-input" id="deal-inspection-deadline" type="date">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Financing Deadline</label>
+              <input class="form-input" id="deal-financing-deadline" type="date">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Parties -->
+        <div class="deal-section">
+          <div class="deal-section-title">Parties</div>
+          <div class="form-group">
+            <label class="form-label">Buyer Name</label>
+            <input class="form-input" id="deal-buyer-name" placeholder="Full legal name">
+          </div>
+          <div class="deal-row-2">
+            <div class="form-group">
+              <label class="form-label">Buyer Agent Name</label>
+              <input class="form-input" id="deal-buyer-agent-name" placeholder="Name">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Buyer Agent Email</label>
+              <input class="form-input" id="deal-buyer-agent-email" type="email" placeholder="agent@example.com">
+            </div>
+          </div>
+          <div class="deal-row-2">
+            <div class="form-group">
+              <label class="form-label">Lender Name</label>
+              <input class="form-input" id="deal-lender-name" placeholder="Name">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Lender Email</label>
+              <input class="form-input" id="deal-lender-email" type="email" placeholder="lender@example.com">
+            </div>
+          </div>
+          <div class="deal-row-2">
+            <div class="form-group">
+              <label class="form-label">Inspector Name</label>
+              <input class="form-input" id="deal-inspector-name" placeholder="Name">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Inspector Email</label>
+              <input class="form-input" id="deal-inspector-email" type="email" placeholder="inspector@example.com">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Title Company</label>
+            <input class="form-input" id="deal-title-company" placeholder="Company name">
+          </div>
+          <div class="deal-row-2">
+            <div class="form-group">
+              <label class="form-label">Title Rep Name</label>
+              <input class="form-input" id="deal-title-rep-name" placeholder="Name">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Title Rep Email</label>
+              <input class="form-input" id="deal-title-rep-email" type="email" placeholder="title@example.com">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: PDF Upload -->
+        <div class="deal-section">
+          <div class="deal-section-title">Purchase Agreement PDF</div>
+          <div class="form-group">
+            <label class="form-label">Upload PDF</label>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <input class="form-input" id="deal-pdf-input" type="file" accept=".pdf" style="flex:1;min-width:0">
+              <button type="button" class="btn" id="parse-pdf-btn" onclick="parsePdfPreview(document.getElementById('deal-pdf-input').files[0])">📄 Parse PDF</button>
+            </div>
+          </div>
+          <div id="pdf-parse-result"></div>
+        </div>
+
+        <!-- Section 5: Notes -->
+        <div class="deal-section">
+          <div class="deal-section-title">Notes</div>
+          <div class="form-group">
+            <textarea class="form-textarea" id="deal-notes" rows="4" placeholder="Internal notes…" style="min-height:80px"></textarea>
+          </div>
+        </div>
+
+      </form>
+    </div>
+    <div class="deal-modal-footer">
+      <button class="btn" onclick="closeDealModal()">Cancel</button>
+      <button class="btn btn-primary" id="save-deal-btn" onclick="saveDeal()">💾 Save Deal</button>
+    </div>
+  </div>
+</div>
+
+<!-- TC EDIT MODAL -->
+<div class="pl-modal-overlay" id="tc-edit-modal">
+  <div class="pl-modal-card" style="max-width:640px">
+    <div class="pl-modal-header">
+      <div class="pl-modal-title">Edit TC Communication</div>
+      <button class="pl-modal-close" onclick="closeTcEditModal()">✕</button>
+    </div>
+    <div class="pl-modal-body">
+      <div class="form-group">
+        <label class="form-label">Subject</label>
+        <input class="form-input" id="tc-edit-subject" placeholder="Subject line…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Body</label>
+        <textarea class="form-textarea" id="tc-edit-body" rows="10" placeholder="Email body…"></textarea>
+      </div>
+    </div>
+    <div class="pl-modal-footer">
+      <button class="btn" onclick="closeTcEditModal()">Cancel</button>
+      <button class="btn" onclick="saveTcEdit()">💾 Save</button>
+      <button class="btn btn-green" onclick="approveAndSendFromEdit()">✅ Approve &amp; Send</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── STATE ──────────────────────────────────────────────────────────────────
 let board = {};
@@ -539,13 +871,19 @@ function switchView(view){
   const kpiBar=document.getElementById('kpi-bar');
   kpiBar.style.display=view==='board'?'flex':'none';
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===view));
-  const mapping={'board':'view-board','departments':'view-departments','dept-detail':'view-dept-detail','agent-board':'view-agent-board','owners':'view-owners','pipeline':'view-pipeline','exports':'view-exports'};
+  const mapping={
+    'board':'view-board','departments':'view-departments','dept-detail':'view-dept-detail',
+    'agent-board':'view-agent-board','owners':'view-owners','pipeline':'view-pipeline',
+    'exports':'view-exports','deals':'view-deals','tc':'view-tc'
+  };
   const vid=mapping[view]||('view-'+view);
   const el=document.getElementById(vid);
   if(el)el.classList.add('active');
   if(view==='owners')loadOwners();
   if(view==='pipeline')loadPipeline();
   if(view==='departments')loadDepartments();
+  if(view==='deals')loadDeals();
+  if(view==='tc')loadTcInbox();
 }
 document.querySelectorAll('.nav-item').forEach(btn=>{
   btn.addEventListener('click',()=>switchView(btn.dataset.view));
@@ -1008,6 +1346,464 @@ async function executeBulkSend(){
     showToast('Bulk send failed: '+e.message,'error');
     document.getElementById('bulk-send-btn').disabled=false;
   }
+}
+
+// ── DEAL PIPELINE ─────────────────────────────────────────────────────────
+let deals = [];
+let tcPending = [];
+let tcSent = [];
+let dealModalParsedData = {};
+let tcEditId = null;
+
+function daysUntil(dateStr){
+  if(!dateStr)return null;
+  try{
+    const d=new Date(dateStr);
+    if(isNaN(d.getTime()))return null;
+    const now=new Date();
+    now.setHours(0,0,0,0);
+    d.setHours(0,0,0,0);
+    return Math.round((d-now)/(1000*60*60*24));
+  }catch(e){return null;}
+}
+
+async function loadDeals(){
+  const countEl=document.getElementById('deals-count');
+  if(countEl)countEl.textContent='Loading…';
+  try{
+    const r=await api('/api/deals');
+    if(!r.ok)throw new Error(r.statusText);
+    const data=await r.json();
+    deals=data.deals||data||[];
+    renderDeals();
+  }catch(e){
+    showToast('Failed to load deals: '+e.message,'error');
+    if(countEl)countEl.textContent='Error';
+  }
+}
+
+function renderDeals(){
+  const STATUS_TO_COL={
+    'Under Contract':'contract',
+    'Inspection':'inspection',
+    'Financing':'financing',
+    'Clear to Close':'ctc',
+    'Closed':'closed'
+  };
+  const grouped={contract:[],inspection:[],financing:[],ctc:[],closed:[]};
+  deals.forEach(d=>{
+    const col=STATUS_TO_COL[d.status]||'contract';
+    if(grouped[col])grouped[col].push(d);
+  });
+  Object.entries(grouped).forEach(([colKey,colDeals])=>{
+    const colEl=document.getElementById('deal-col-'+colKey);
+    if(!colEl)return;
+    colEl.querySelectorAll('.deal-card').forEach(c=>c.remove());
+    colDeals.forEach(d=>colEl.appendChild(makeDealCard(d)));
+    const cnt=colEl.querySelector('.deal-col-count');
+    if(cnt)cnt.textContent=colDeals.length;
+  });
+  const total=deals.length;
+  const countEl=document.getElementById('deals-count');
+  if(countEl)countEl.textContent=total+' deal'+(total===1?'':'s');
+}
+
+function makeDealCard(deal){
+  const card=document.createElement('div');
+  card.className='deal-card';
+  card.dataset.id=deal.id;
+
+  // Check urgent: any deadline is tomorrow
+  const tomorrow=new Date();
+  tomorrow.setDate(tomorrow.getDate()+1);
+  tomorrow.setHours(0,0,0,0);
+  const tomorrowStr=tomorrow.toISOString().split('T')[0];
+  let isUrgent=false;
+  ['inspection_deadline','financing_deadline'].forEach(k=>{
+    if(deal[k]){
+      const ds=String(deal[k]).split('T')[0];
+      if(ds===tomorrowStr)isUrgent=true;
+    }
+  });
+  if(isUrgent)card.classList.add('urgent');
+
+  // Closing countdown
+  const days=daysUntil(deal.closing_date);
+  let countdownHtml='';
+  if(days!==null){
+    let cls='countdown-ok';
+    if(days<=3)cls='countdown-urgent';
+    else if(days<=7)cls='countdown-warn';
+    let label;
+    if(days<0)label=`Closed ${Math.abs(days)}d ago`;
+    else if(days===0)label='Closes today';
+    else label=`Closes in ${days}d`;
+    countdownHtml=`<div class="deal-closing"><span class="${cls}">${esc(label)}</span></div>`;
+  }
+
+  // Next upcoming deadline chip
+  let nextDeadlineHtml='';
+  const deadlines=[];
+  if(deal.inspection_deadline){
+    const d=daysUntil(deal.inspection_deadline);
+    if(d!==null&&d>=0)deadlines.push({label:'Inspection',days:d});
+  }
+  if(deal.financing_deadline){
+    const d=daysUntil(deal.financing_deadline);
+    if(d!==null&&d>=0)deadlines.push({label:'Financing',days:d});
+  }
+  if(deadlines.length){
+    deadlines.sort((a,b)=>a.days-b.days);
+    const next=deadlines[0];
+    const label=next.days===0?'today':next.days+'d';
+    nextDeadlineHtml=`<div style="margin-top:4px"><span class="deal-deadline-chip">⏰ ${esc(next.label)}: ${label}</span></div>`;
+  }
+
+  card.innerHTML=`
+    <div class="deal-address">${esc(deal.address||'Unknown address')}</div>
+    <div class="deal-buyer">${esc(deal.buyer_name||'No buyer assigned')}</div>
+    ${countdownHtml}
+    ${nextDeadlineHtml}
+  `;
+  return card;
+}
+
+async function openDealModal(){
+  dealModalParsedData={};
+  const form=document.getElementById('deal-modal-form');
+  if(form)form.reset();
+  document.querySelectorAll('#deal-modal .parse-ok').forEach(el=>el.remove());
+  const pr=document.getElementById('pdf-parse-result');
+  if(pr)pr.innerHTML='';
+  const comm=document.getElementById('deal-commission');
+  if(comm)comm.value='2.5';
+  document.getElementById('deal-modal').classList.add('open');
+}
+
+function closeDealModal(){
+  document.getElementById('deal-modal').classList.remove('open');
+}
+
+async function parsePdfPreview(file){
+  if(!file){showToast('Please select a PDF file first','error');return;}
+  const fd=new FormData();
+  fd.append('pdf',file);
+  const btn=document.getElementById('parse-pdf-btn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Parsing…';}
+  try{
+    const r=await api('/api/deals/parse-pdf-preview',{method:'POST',body:fd});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.message||r.statusText);
+    dealModalParsedData=d;
+    fillFormFromParsed(d);
+    showToast('PDF parsed successfully!','success');
+  }catch(e){
+    showToast('PDF parse failed: '+e.message,'error');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='📄 Parse PDF';}
+  }
+}
+
+function fillFormFromParsed(data){
+  const fieldMap={
+    address:'deal-address',
+    mls_number:'deal-mls',
+    purchase_price:'deal-price',
+    earnest_money:'deal-earnest',
+    commission_pct:'deal-commission',
+    status:'deal-status',
+    contract_date:'deal-contract-date',
+    inspection_deadline:'deal-inspection-deadline',
+    financing_deadline:'deal-financing-deadline',
+    closing_date:'deal-closing-date',
+    buyer_name:'deal-buyer-name',
+    buyer_agent_name:'deal-buyer-agent-name',
+    buyer_agent_email:'deal-buyer-agent-email',
+    lender_name:'deal-lender-name',
+    lender_email:'deal-lender-email',
+    inspector_name:'deal-inspector-name',
+    inspector_email:'deal-inspector-email',
+    title_company:'deal-title-company',
+    title_rep_name:'deal-title-rep-name',
+    title_rep_email:'deal-title-rep-email',
+    notes:'deal-notes'
+  };
+  const parseResult=document.getElementById('pdf-parse-result');
+  const filled=[];
+  Object.entries(fieldMap).forEach(([key,inputId])=>{
+    if(data[key]!==undefined&&data[key]!==null&&data[key]!==''){
+      const el=document.getElementById(inputId);
+      if(el){
+        el.value=data[key];
+        // Add or refresh ✅ indicator next to the label
+        const parent=el.parentNode;
+        let ind=parent.querySelector('.parse-ok');
+        if(!ind){
+          ind=document.createElement('span');
+          ind.className='parse-ok';
+          // Insert after the label
+          const lbl=parent.querySelector('.form-label');
+          if(lbl)lbl.insertAdjacentElement('afterend',ind);
+          else parent.appendChild(ind);
+        }
+        ind.textContent=' ✅';
+        filled.push(key.replace(/_/g,' '));
+      }
+    }
+  });
+  const warnings=data.warnings||[];
+  let html='';
+  if(filled.length)html+=`<div class="pdf-parse-info">✅ Auto-filled ${filled.length} field(s) from PDF.</div>`;
+  if(warnings&&warnings.length)html+=`<div class="pdf-parse-warnings">⚠️ Could not parse: ${esc(warnings.join(', '))}</div>`;
+  if(parseResult)parseResult.innerHTML=html;
+}
+
+async function saveDeal(){
+  const addrEl=document.getElementById('deal-address');
+  const addr=(addrEl&&addrEl.value)||'';
+  if(!addr.trim()){showToast('Property address is required','error');return;}
+  const g=id=>{ const el=document.getElementById(id); return el?el.value:''; };
+  const payload={
+    address:addr.trim(),
+    mls_number:g('deal-mls'),
+    purchase_price:g('deal-price')||null,
+    earnest_money:g('deal-earnest')||null,
+    commission_pct:g('deal-commission')||null,
+    status:g('deal-status'),
+    contract_date:g('deal-contract-date')||null,
+    inspection_deadline:g('deal-inspection-deadline')||null,
+    financing_deadline:g('deal-financing-deadline')||null,
+    closing_date:g('deal-closing-date')||null,
+    buyer_name:g('deal-buyer-name'),
+    buyer_agent_name:g('deal-buyer-agent-name'),
+    buyer_agent_email:g('deal-buyer-agent-email'),
+    lender_name:g('deal-lender-name'),
+    lender_email:g('deal-lender-email'),
+    inspector_name:g('deal-inspector-name'),
+    inspector_email:g('deal-inspector-email'),
+    title_company:g('deal-title-company'),
+    title_rep_name:g('deal-title-rep-name'),
+    title_rep_email:g('deal-title-rep-email'),
+    notes:g('deal-notes')
+  };
+  const btn=document.getElementById('save-deal-btn');
+  if(btn){btn.disabled=true;btn.textContent='💾 Saving…';}
+  try{
+    const r=await api('/api/deals',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.message||r.statusText);
+    const newId=d.id||d.deal_id;
+    // Upload PDF if present
+    const pdfInput=document.getElementById('deal-pdf-input');
+    const pdfFile=pdfInput&&pdfInput.files[0];
+    if(pdfFile&&newId){
+      const fd=new FormData();
+      fd.append('pdf',pdfFile);
+      await api(`/api/deals/${newId}/parse-pdf`,{method:'POST',body:fd}).catch(()=>{});
+    }
+    showToast('Deal saved!','success');
+    closeDealModal();
+    loadDeals();
+  }catch(e){showToast('Save failed: '+e.message,'error');}
+  finally{if(btn){btn.disabled=false;btn.textContent='💾 Save Deal';}}
+}
+
+// ── TC INBOX ──────────────────────────────────────────────────────────────
+async function loadTcInbox(){
+  const ps=document.getElementById('tc-pending-scroll');
+  const ss=document.getElementById('tc-sent-scroll');
+  if(ps)ps.innerHTML='<div class="loading"><div class="spinner"></div> Loading…</div>';
+  if(ss)ss.innerHTML='<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try{
+    const [pendRes,sentRes]=await Promise.all([
+      api('/api/tc/pending'),
+      api('/api/tc/sent')
+    ]);
+    const pendData=pendRes.ok?await pendRes.json():{};
+    const sentData=sentRes.ok?await sentRes.json():{};
+    tcPending=pendData.comms||pendData||[];
+    tcSent=sentData.comms||sentData||[];
+    renderTcPending(tcPending);
+    renderTcSent(tcSent);
+  }catch(e){
+    showToast('Failed to load TC inbox: '+e.message,'error');
+    if(ps)ps.innerHTML='<div class="empty-state"><div class="empty-state-icon">⚠️</div><div>Failed to load</div></div>';
+    if(ss)ss.innerHTML='';
+  }
+}
+
+function renderTcPending(comms){
+  const el=document.getElementById('tc-pending-scroll');
+  const badge=document.getElementById('tc-pending-badge');
+  const actionCount=document.getElementById('tc-pending-action-count');
+  if(badge)badge.textContent=comms.length;
+  if(actionCount)actionCount.textContent=comms.length+' pending approval';
+  if(!el)return;
+  if(!comms.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-state-icon">✅</div><div>No pending approvals</div></div>';
+    return;
+  }
+  el.innerHTML='';
+  comms.forEach(c=>{
+    const card=document.createElement('div');
+    card.className='tc-card';
+    // Role badge class
+    const roleCls={
+      'Title':'role-title',
+      'Buyer Agent':'role-buyer-agent',
+      'Inspector':'role-inspector',
+      'Lender':'role-lender',
+      'Buyer':'role-buyer'
+    }[c.role]||'role-buyer';
+    // Trigger badge class
+    const trigCls={
+      'Deadline Alert':'trigger-deadline',
+      'Incoming Email':'trigger-incoming',
+      'Manual':'trigger-manual'
+    }[c.triggered_by]||'trigger-manual';
+    const cid=esc(String(c.id||''));
+    card.innerHTML=`
+      <div>
+        <span class="tc-deal-addr" onclick="switchView('deals')">${esc(c.deal_address||'Unknown deal')}</span>
+      </div>
+      <div class="tc-subject">${esc(c.subject||'No subject')}</div>
+      <div class="tc-to">
+        To: <strong>${esc(c.to_name||'')}</strong>
+        ${c.to_email?'&lt;'+esc(c.to_email)+'&gt;':''}
+        <span class="role-badge ${roleCls}">${esc(c.role||'')}</span>
+      </div>
+      <div class="tc-trigger-row">
+        <span class="trigger-badge ${trigCls}">${esc(c.triggered_by||'Manual')}</span>
+      </div>
+      <div class="tc-body-preview">${esc(c.body_preview||c.body||'No preview available')}</div>
+      <div class="tc-actions">
+        <button class="btn btn-sm btn-green" onclick="approveAndSend('${cid}')">✅ Approve &amp; Send</button>
+        <button class="btn btn-sm" onclick="openTcEdit('${cid}')">✏️ Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="rejectComm('${cid}')">❌ Reject</button>
+      </div>
+    `;
+    el.appendChild(card);
+  });
+}
+
+function renderTcSent(comms){
+  const el=document.getElementById('tc-sent-scroll');
+  const badge=document.getElementById('tc-sent-count');
+  if(badge)badge.textContent=comms.length;
+  if(!el)return;
+  if(!comms.length){
+    el.innerHTML='<div class="empty-state" style="padding:20px;font-size:12px"><div class="empty-state-icon" style="font-size:24px">📭</div><div>No sent emails yet</div></div>';
+    return;
+  }
+  const items=comms.slice(0,20);
+  const wrap=document.createElement('div');
+  wrap.className='tc-sent-list';
+  items.forEach(c=>{
+    const row=document.createElement('div');
+    row.className='tc-sent-item';
+    row.innerHTML=`
+      <span class="tc-sent-addr" title="${esc(c.deal_address||'')}">${esc(c.deal_address||'—')}</span>
+      <span class="tc-sent-subject" title="${esc(c.subject||'')}">${esc(c.subject||'—')}</span>
+      <span class="tc-sent-to" title="${esc(c.to_name||c.to_email||'')}">${esc(c.to_name||c.to_email||'—')}</span>
+      <span class="tc-sent-date">${formatDate(c.sent_at||c.updated_at)}</span>
+    `;
+    wrap.appendChild(row);
+  });
+  el.innerHTML='';
+  el.appendChild(wrap);
+}
+
+async function approveAndSend(commId){
+  try{
+    showToast('Approving and sending…');
+    const r1=await api(`/api/tc/${commId}/approve`,{method:'POST'});
+    const d1=await r1.json().catch(()=>({}));
+    if(!r1.ok)throw new Error(d1.message||'Approve failed: '+r1.statusText);
+    const r2=await api(`/api/tc/${commId}/send`,{method:'POST'});
+    const d2=await r2.json().catch(()=>({}));
+    if(!r2.ok)throw new Error(d2.message||'Send failed: '+r2.statusText);
+    showToast('Email approved and sent!','success');
+    loadTcInbox();
+  }catch(e){showToast(e.message,'error');}
+}
+
+async function rejectComm(commId){
+  try{
+    const r=await api(`/api/tc/${commId}/reject`,{method:'POST'});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.message||r.statusText);
+    showToast('Communication rejected','');
+    loadTcInbox();
+  }catch(e){showToast('Reject failed: '+e.message,'error');}
+}
+
+async function checkGmail(){
+  const btn=document.getElementById('check-gmail-btn');
+  if(btn){
+    btn.disabled=true;
+    btn.innerHTML='<span class="spinner" style="display:inline-block;width:14px;height:14px;border-width:2px;margin-right:4px;vertical-align:middle"></span>Checking…';
+  }
+  try{
+    const r=await api('/api/tc/gmail-monitor');
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.message||r.statusText);
+    showToast(d.message||'Gmail check complete','success');
+    loadTcInbox();
+  }catch(e){showToast('Gmail check failed: '+e.message,'error');}
+  finally{if(btn){btn.disabled=false;btn.textContent='🔄 Check Gmail';}}
+}
+
+async function openTcEdit(commId){
+  tcEditId=commId;
+  const comm=tcPending.find(c=>String(c.id)===String(commId));
+  if(!comm){showToast('Communication not found','error');return;}
+  const subj=document.getElementById('tc-edit-subject');
+  const body=document.getElementById('tc-edit-body');
+  if(subj)subj.value=comm.subject||'';
+  if(body)body.value=comm.body||comm.body_preview||'';
+  document.getElementById('tc-edit-modal').classList.add('open');
+}
+
+function closeTcEditModal(){
+  document.getElementById('tc-edit-modal').classList.remove('open');
+  tcEditId=null;
+}
+
+async function saveTcEdit(){
+  if(!tcEditId)return;
+  const subjEl=document.getElementById('tc-edit-subject');
+  const bodyEl=document.getElementById('tc-edit-body');
+  const payload={
+    subject:subjEl?subjEl.value:'',
+    body:bodyEl?bodyEl.value:''
+  };
+  try{
+    const r=await api(`/api/tc/${tcEditId}/draft`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.message||r.statusText);
+    showToast('Saved','success');
+    closeTcEditModal();
+    loadTcInbox();
+  }catch(e){showToast('Save failed: '+e.message,'error');}
+}
+
+async function approveAndSendFromEdit(){
+  // Save edits first, then approve & send
+  if(!tcEditId)return;
+  const subjEl=document.getElementById('tc-edit-subject');
+  const bodyEl=document.getElementById('tc-edit-body');
+  const payload={
+    subject:subjEl?subjEl.value:'',
+    body:bodyEl?bodyEl.value:''
+  };
+  const idToSend=tcEditId;
+  try{
+    // Attempt save; don't abort if it fails
+    const rs=await api(`/api/tc/${idToSend}/draft`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!rs.ok){const ds=await rs.json().catch(()=>({}));showToast('Save warning: '+(ds.message||rs.statusText));}
+  }catch(e){showToast('Save warning: '+e.message);}
+  closeTcEditModal();
+  await approveAndSend(idToSend);
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────

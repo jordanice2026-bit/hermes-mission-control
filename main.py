@@ -62,6 +62,12 @@ DEPARTMENTS: dict[str, dict] = {
         "description": "Listing coordination & market analysis for IN multi-family",
         "agents": ["listing-agent", "market-researcher"],
     },
+    "Transaction Coordination": {
+        "icon": "📋",
+        "color": "#ca8a04",
+        "description": "Deal pipeline, deadline tracking & party communication",
+        "agents": ["tc-intake", "pdf-parser", "deadline-monitor", "gmail-monitor", "tc-communicator"],
+    },
     "Follow-Up": {
         "icon": "📞",
         "color": "#7c3aed",
@@ -130,9 +136,16 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Pipeline router (Notion + Gmail)
+# Pipeline router (Notion + Gmail — seller outreach)
 from pipeline import router as pipeline_router
 app.include_router(pipeline_router)
+
+# Transaction Coordination router
+try:
+    from tc import router as tc_router
+    app.include_router(tc_router)
+except Exception as _tc_err:
+    logger.warning("TC router failed to load: %s", _tc_err)
 
 
 # ---------------------------------------------------------------------------
