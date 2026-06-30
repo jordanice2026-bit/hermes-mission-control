@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 # ── Notion config ─────────────────────────────────────────────────────────────
 NOTION_API_BASE  = "https://api.notion.com/v1"
-NOTION_VERSION   = "2022-06-28"
+NOTION_VERSION   = "2025-09-03"
 
 OWNERS_DB_ID     = "af076d45-42d5-42a1-9bc6-8d9471c31530"
 OWNERS_DS_ID     = "d215a50d-ec81-457c-808b-cd9be5ee3b9a"
@@ -133,7 +133,7 @@ def _parse_owner(page: dict) -> dict:
 def _parse_draft(page: dict, owner_map: dict = None) -> dict:
     p = page.get("properties", {})
     owner_ids = _rel(p.get("Owner"))
-    owner = owner_map.get(owner_ids[0]) if owner_map and owner_ids else {}
+    owner = (owner_map or {}).get(owner_ids[0], {}) if owner_ids else {}
     return {
         "id":               page.get("id",""),
         "subject":          _title(p.get("Subject Line")),
@@ -147,12 +147,12 @@ def _parse_draft(page: dict, owner_map: dict = None) -> dict:
         "date_created":     _date(p.get("Date Created")),
         "notes":            _rt(p.get("Notes")),
         "owner_id":         owner_ids[0] if owner_ids else "",
-        # Enriched from owner
-        "owner_name":         owner.get("name",""),
-        "owner_contact_type": owner.get("contact_type",""),
-        "owner_outreach_stage": owner.get("outreach_stage",""),
-        "owner_mailing_state":  owner.get("mailing_state",""),
-        "owner_county":         owner.get("county",""),
+        # Enriched from owner_map (empty strings when not available)
+        "owner_name":           owner.get("name",""),
+        "owner_contact_type":   owner.get("contact_type",""),
+        "outreach_stage":       owner.get("outreach_stage",""),
+        "mailing_state":        owner.get("mailing_state",""),
+        "county":               owner.get("county",""),
         "owner_phone":          owner.get("primary_phone",""),
     }
 
@@ -177,6 +177,7 @@ def _parse_property(page: dict) -> dict:
 # ── Notion query helpers ───────────────────────────────────────────────────────
 async def _query_all(client: httpx.AsyncClient, ds_id: str,
                      filter_payload: dict = None) -> list[dict]:
+    """Query a data_source (Notion API 2025-09-03 terminology for databases)."""
     records, cursor = [], None
     while True:
         payload: dict = {"page_size": 100}

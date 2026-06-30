@@ -499,13 +499,21 @@ let editModalReadOnly = false;
 
 // ── UTILS ──────────────────────────────────────────────────────────────────
 function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function formatDate(ts){
+  if(!ts)return '';
+  try{return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+  catch(e){return String(ts);}
+}
 function timeAgo(ts){
   if(!ts)return '';
-  const d=new Date(ts),now=Date.now(),diff=Math.floor((now-d)/1000);
-  if(diff<60)return diff+'s ago';
-  if(diff<3600)return Math.floor(diff/60)+'m ago';
-  if(diff<86400)return Math.floor(diff/3600)+'h ago';
-  return Math.floor(diff/86400)+'d ago';
+  try{
+    const d=new Date(ts),now=Date.now(),diff=Math.floor((now-d)/1000);
+    if(isNaN(diff)||diff<0)return formatDate(ts);
+    if(diff<60)return diff+'s ago';
+    if(diff<3600)return Math.floor(diff/60)+'m ago';
+    if(diff<86400)return Math.floor(diff/3600)+'h ago';
+    return Math.floor(diff/86400)+'d ago';
+  }catch(e){return String(ts);}
 }
 function api(path,opts={}){
   return fetch(path,{credentials:'include',...opts});
@@ -523,7 +531,6 @@ function downloadCSV(url,filename){
   document.body.appendChild(a);a.click();a.remove();
   showToast('Download started','success');
 }
-function formatDate(ts){if(!ts)return '';return new Date(ts).toLocaleDateString();}
 
 // ── NAV ───────────────────────────────────────────────────────────────────
 function switchView(view){
@@ -671,31 +678,35 @@ async function loadDepartments(){
   grid.innerHTML='<div class="loading"><div class="spinner"></div> Loading…</div>';
   try{
     const [deptRes,agentRes]=await Promise.all([api('/api/departments'),api('/api/agents')]);
-    const depts=deptRes.ok?await deptRes.json():[];
-    allAgents=agentRes.ok?await agentRes.json():[];
-    renderDepartments(depts);
-  }catch(e){renderDepartments([]);}
+    const deptData=deptRes.ok?await deptRes.json():{};
+    const agentData=agentRes.ok?await agentRes.json():{};
+    // /api/departments returns {departments:[...]}
+    // /api/agents returns {agents:[...]}
+    const depts=deptData.departments||deptData||[];
+    allAgents=agentData.agents||agentData||[];
+    renderDepartments(Array.isArray(depts)?depts:[]);
+  }catch(e){console.error('loadDepartments:',e);renderDepartments([]);}
 }
 function renderDepartments(apiDepts){
   const grid=document.getElementById('dept-grid');
   grid.innerHTML='';
-  const defs=apiDepts.length?apiDepts:DEPT_DEFS;
-  defs.forEach(d=>{
-    const def=DEPT_DEFS.find(dd=>dd.id===d.id)||d;
-    const icon=def.icon||d.icon||'🏢';
-    const color=def.color||d.color||'#2563eb';
-    const agents=(allAgents||[]).filter(a=>a.department_id===d.id||a.dept_id===d.id||a.department===d.name);
-    const total=d.total_tasks||agents.reduce((s,a)=>s+(a.total_tasks||0),0)||0;
-    const done=d.completed_tasks||agents.reduce((s,a)=>s+(a.completed_tasks||0),0)||0;
+  // Always use our local DEPT_DEFS for icons/colors; merge in live task counts if API returned them
+  const deptCountMap={};
+  (apiDepts||[]).forEach(d=>{deptCountMap[d.name]={total:d.stats?.total||0,done:d.stats?.done||0,agents:d.agents||[]};});
+  DEPT_DEFS.forEach(def=>{
+    const live=deptCountMap[def.name]||{total:0,done:0,agents:[]};
+    const total=live.total;
+    const done=live.done;
     const pct=total?Math.round(done/total*100):0;
+    // agent chips from API or from DEPT_DEFS default (main.py DEPARTMENTS config)
+    const agentNames=live.agents.length?live.agents.map(a=>a.name||a):(allAgents||[]).filter(a=>a.department===def.name||a.dept===def.name).map(a=>a.name);
     const card=document.createElement('div');
     card.className='dept-card';
-    card.innerHTML=`<div class="dept-icon">${icon}</div><div class="dept-name">${esc(d.name)}</div><div class="dept-desc">${esc(def.desc||d.description||'')}</div><div class="dept-progress-wrap"><div class="dept-progress-label"><span>${pct}% complete</span><span>${done}/${total} tasks</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${color}"></div></div></div><div class="dept-agents">${agents.slice(0,5).map(a=>`<span class="dept-agent-chip">${esc(a.name)}</span>`).join('')}${agents.length>5?`<span class="dept-agent-chip">+${agents.length-5}</span>`:''}</div>`;
-    card.onclick=()=>openDeptDetail(d);
-    card.style.borderTop=`3px solid ${color}`;
+    card.style.borderTop=`3px solid ${def.color}`;
+    card.innerHTML=`<div class="dept-icon">${def.icon}</div><div class="dept-name">${esc(def.name)}</div><div class="dept-desc">${esc(def.desc)}</div><div class="dept-progress-wrap"><div class="dept-progress-label"><span>${pct}% complete</span><span>${done}/${total} tasks</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${def.color}"></div></div></div><div class="dept-agents">${agentNames.slice(0,5).map(n=>`<span class="dept-agent-chip">${esc(n)}</span>`).join('')}${agentNames.length>5?`<span class="dept-agent-chip">+${agentNames.length-5}</span>`:''}</div>`;
+    card.onclick=()=>openDeptDetail(def);
     grid.appendChild(card);
   });
-  if(!grid.children.length)grid.innerHTML='<div class="empty-state"><div class="empty-state-icon">🏢</div><div>No departments found.</div></div>';
 }
 function openDeptDetail(dept){
   currentDept=dept;
@@ -761,8 +772,20 @@ async function loadOwners(){
   }
 }
 function stageBadgeClass(stage){
-  const m={'New Lead':'st-newlead','Verified':'st-verified','Email Sent':'st-emailsent','Mail Sent':'st-mailsent','Called':'st-called','Responded':'st-responded','Listed':'st-listed','Dead':'st-dead','Do Not Contact':'st-donotcontact'};
-  return m[stage]||'st-newlead';
+  if(!stage)return 'st-newlead';
+  const s=stage.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z-]/g,'');
+  const m={
+    'new-lead':'st-newlead',
+    'verified':'st-verified',
+    'email-sent':'st-emailsent',
+    'mail-sent':'st-mailsent',
+    'called':'st-called',
+    'responded':'st-responded',
+    'listed':'st-listed',
+    'dead':'st-dead',
+    'do-not-contact':'st-donotcontact'
+  };
+  return m[s]||'st-newlead';
 }
 function ctBadgeClass(ct){
   const m={'Individual':'ct-individual','LLC':'ct-llc','Trust':'ct-trust'};
@@ -830,13 +853,16 @@ function makePipelineCard(r,stage){
   const card=document.createElement('div');
   card.className='pl-card';
   card.dataset.id=r.id;
-  const ctClass={LLC:'ct-llc',Individual:'ct-individual',Trust:'ct-trust'}[r.contact_type]||'ct-individual';
+  // Use the correct field names from _parse_draft: owner_contact_type, mailing_state
+  const ct=r.owner_contact_type||r.contact_type||'';
+  const ctClass={LLC:'ct-llc',Individual:'ct-individual',Trust:'ct-trust'}[ct]||'ct-individual';
+  const state=r.mailing_state||r.owner_mailing_state||'';
   let actions='';
   if(stage==='Draft')actions=`<button class="btn btn-sm" onclick="openEditModal('${r.id}')">✏️ Edit</button><button class="btn btn-sm btn-green" onclick="approveRecord('${r.id}')">✅ Approve</button><button class="btn btn-sm" onclick="quickAiFix('${r.id}')">🤖 AI Fix</button>`;
   else if(stage==='Approved')actions=`<button class="btn btn-sm" onclick="openEditModal('${r.id}')">✏️ Edit</button><button class="btn btn-sm btn-primary" onclick="openSendModal('${r.id}')">📨 Send</button><button class="btn btn-sm" onclick="unapproveRecord('${r.id}')">↩ Unapprove</button>`;
   else if(stage==='Sent')actions=`<button class="btn btn-sm" onclick="openEditModal('${r.id}',true)">👁 View</button>`;
   else if(stage==='Failed')actions=`<button class="btn btn-sm btn-primary" onclick="openSendModal('${r.id}')">↩ Retry</button>`;
-  card.innerHTML=`<div class="pl-card-top"><div class="pl-owner-name">${esc(r.owner_name||'Unknown')}</div></div><div class="pl-badges"><span class="contact-badge ${ctClass}" style="font-size:10px;padding:1px 6px">${esc(r.contact_type||'—')}</span>${r.mailing_state?`<span class="pl-state-chip">${esc(r.mailing_state)}</span>`:''}</div><div class="pl-subject">${esc(r.subject||'No subject')}</div><div class="pl-card-footer"><span class="pl-date">${formatDate(r.created_at)}</span><div class="pl-actions">${actions}</div></div>`;
+  card.innerHTML=`<div class="pl-card-top"><div class="pl-owner-name">${esc(r.owner_name||'Unknown')}</div></div><div class="pl-badges"><span class="contact-badge ${ctClass}" style="font-size:10px;padding:1px 6px">${esc(ct||'—')}</span>${state?`<span class="pl-state-chip">${esc(state)}</span>`:''}</div><div class="pl-subject">${esc(r.subject||'No subject')}</div><div class="pl-card-footer"><span class="pl-date">${formatDate(r.date_created)}</span><div class="pl-actions">${actions}</div></div>`;
   return card;
 }
 async function generateDrafts(){
@@ -936,10 +962,10 @@ function openSendModal(id){
   sendTargetId=id;
   const r=findRecord(id);
   if(!r)return;
-  document.getElementById('send-preview-name').textContent=r.owner_name||'Unknown';
-  document.getElementById('send-preview-email').textContent=r.recipient_email||r.email||'No email on file';
+  document.getElementById('send-preview-name').textContent=r.owner_name||r.recipient_name||'Unknown';
+  document.getElementById('send-preview-email').textContent=r.recipient_email||'No email on file';
   document.getElementById('send-preview-subject').textContent=r.subject||'No subject';
-  document.getElementById('send-preview-body').textContent=(r.email_body||r.body||'').slice(0,300);
+  document.getElementById('send-preview-body').textContent=(r.email_body||'').slice(0,300);
   document.getElementById('send-modal').classList.add('open');
 }
 function closeSendModal(){document.getElementById('send-modal').classList.remove('open');sendTargetId=null;}
