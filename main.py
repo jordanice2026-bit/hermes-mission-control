@@ -281,6 +281,45 @@ async def get_stats(user: dict = Depends(require_user)):
     })
 
 
+@app.get("/api/agents")
+async def get_agents(user: dict = Depends(require_user)):
+    tasks = list(_board.values())
+    STATUS_KEYS = ["pending", "in_progress", "blocked", "done", "cancelled"]
+    agents: dict[str, dict] = {}
+
+    for t in tasks:
+        name = t.get("assignee") or "unassigned"
+        if name not in agents:
+            agents[name] = {k: 0 for k in STATUS_KEYS}
+            agents[name]["other"] = 0
+            agents[name]["total"] = 0
+            agents[name]["last_active"] = 0
+        s = t.get("status", "pending")
+        if s in STATUS_KEYS:
+            agents[name][s] += 1
+        else:
+            agents[name]["other"] += 1
+        agents[name]["total"] += 1
+        ts = max(
+            t.get("last_heartbeat_at") or 0,
+            t.get("started_at") or 0,
+            t.get("completed_at") or 0,
+            t.get("created_at") or 0,
+        )
+        if ts > agents[name]["last_active"]:
+            agents[name]["last_active"] = ts
+
+    result = []
+    for name, stats in sorted(agents.items(), key=lambda x: -x[1]["total"]):
+        result.append({
+            "name": name,
+            "stats": stats,
+            "is_active": stats["in_progress"] > 0,
+        })
+
+    return JSONResponse({"agents": result})
+
+
 # ---------------------------------------------------------------------------
 # SSE real-time stream
 # ---------------------------------------------------------------------------
