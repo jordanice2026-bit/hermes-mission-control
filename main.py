@@ -46,6 +46,51 @@ GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 
 # ---------------------------------------------------------------------------
+# Department configuration — maps agent roles → business departments
+# ---------------------------------------------------------------------------
+
+DEPARTMENTS: dict[str, dict] = {
+    "Acquisitions": {
+        "icon": "🏢",
+        "color": "#1a56db",
+        "description": "Property sourcing, deal screening & underwriting",
+        "agents": ["property-sourcer", "deal-screener", "underwriter"],
+    },
+    "Sales": {
+        "icon": "📊",
+        "color": "#0891b2",
+        "description": "Buyer sourcing, outreach & investor matching",
+        "agents": ["buyer-sourcer", "prospector", "matchmaker"],
+    },
+    "Marketing": {
+        "icon": "📣",
+        "color": "#7c3aed",
+        "description": "Listings, content & brand communications",
+        "agents": ["marketing-agent"],
+    },
+    "Research & Intelligence": {
+        "icon": "🔍",
+        "color": "#0ea5e9",
+        "description": "Market intelligence & neighborhood analysis",
+        "agents": ["research-agent"],
+    },
+    "Client Relations": {
+        "icon": "🤝",
+        "color": "#059669",
+        "description": "Lead qualification & investor relations",
+        "agents": ["lead-agent", "investor-profiler", "owner-researcher"],
+    },
+}
+
+
+def _agent_department(agent_name: str) -> str:
+    for dept, cfg in DEPARTMENTS.items():
+        if agent_name in cfg["agents"]:
+            return dept
+    return "Operations"
+
+
+# ---------------------------------------------------------------------------
 # In-memory store (task board + SSE subscribers)
 # ---------------------------------------------------------------------------
 
@@ -313,11 +358,78 @@ async def get_agents(user: dict = Depends(require_user)):
     for name, stats in sorted(agents.items(), key=lambda x: -x[1]["total"]):
         result.append({
             "name": name,
+            "department": _agent_department(name),
             "stats": stats,
             "is_active": stats["in_progress"] > 0,
         })
 
     return JSONResponse({"agents": result})
+
+
+@app.get("/api/departments")
+async def get_departments(user: dict = Depends(require_user)):
+    tasks = list(_board.values())
+    STATUS_KEYS = ["pending", "in_progress", "blocked", "done", "cancelled"]
+
+    def empty_stats() -> dict:
+        return {k: 0 for k in [*STATUS_KEYS, "total", "last_active"]}
+
+    def empty_agent_stats() -> dict:
+        return {**{k: 0 for k in STATUS_KEYS}, "total": 0, "is_active": False}
+
+    # Seed dept_stats from config
+    dept_stats: dict[str, dict] = {}
+    for dept_name in DEPARTMENTS:
+        dept_stats[dept_name] = {**empty_stats(), "agents": {}}
+
+    for t in tasks:
+        agent = t.get("assignee") or "unassigned"
+        dept = _agent_department(agent)
+        if dept not in dept_stats:
+            dept_stats[dept] = {**empty_stats(), "agents": {}}
+        d = dept_stats[dept]
+        s = t.get("status", "pending")
+        if s in STATUS_KEYS:
+            d[s] += 1
+        d["total"] += 1
+        ts = max(
+            t.get("last_heartbeat_at") or 0,
+            t.get("started_at") or 0,
+            t.get("completed_at") or 0,
+            t.get("created_at") or 0,
+        )
+        if ts > d["last_active"]:
+            d["last_active"] = ts
+        if agent not in d["agents"]:
+            d["agents"][agent] = empty_agent_stats()
+        ag = d["agents"][agent]
+        ag[s if s in STATUS_KEYS else "pending"] += 1
+        ag["total"] += 1
+        if s == "in_progress":
+            ag["is_active"] = True
+
+    result = []
+    for dept_name, cfg in DEPARTMENTS.items():
+        d = dept_stats.get(dept_name, {**empty_stats(), "agents": {}})
+        agents_list = [
+            {
+                "name": a,
+                "is_active": d["agents"].get(a, empty_agent_stats()).get("is_active", False),
+                "stats": d["agents"].get(a, empty_agent_stats()),
+            }
+            for a in cfg["agents"]
+        ]
+        result.append({
+            "name": dept_name,
+            "icon": cfg["icon"],
+            "color": cfg["color"],
+            "description": cfg["description"],
+            "stats": {k: d.get(k, 0) for k in [*STATUS_KEYS, "total", "last_active"]},
+            "agents": agents_list,
+            "is_active": d.get("in_progress", 0) > 0,
+        })
+
+    return JSONResponse({"departments": result})
 
 
 # ---------------------------------------------------------------------------
