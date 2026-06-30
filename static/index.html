@@ -349,7 +349,124 @@ nav{display:flex;gap:2px;flex:1}
 .tc-sent-subject{flex:1;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tc-sent-to{color:var(--text3);white-space:nowrap;font-size:11px;min-width:80px;overflow:hidden;text-overflow:ellipsis}
 .tc-sent-date{color:var(--text3);white-space:nowrap;font-size:11px}
-/* ── Light mode overrides for hardcoded values ── */
+/* ── ADVANCED FEATURES ── */
+.nav-badge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--blocked);color:#fff;font-size:10px;font-weight:700;margin-left:2px}
+.view-title{font-size:16px;font-weight:600;letter-spacing:.01em}
+/* Global search */
+.global-search-wrap{position:relative}
+.global-search{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);padding:6px 12px;font-family:inherit;font-size:12px;width:230px;outline:none;transition:all .2s}
+.global-search:focus{border-color:var(--accent2);width:280px;box-shadow:0 0 0 1px var(--accent-glow)}
+.search-dropdown{position:absolute;top:38px;right:0;width:380px;max-height:440px;overflow-y:auto;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);box-shadow:0 8px 32px rgba(0,0,0,.5);z-index:200;display:none}
+.search-dropdown.open{display:block}
+.search-result{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s}
+.search-result:hover{background:var(--surface2)}
+.search-result:last-child{border-bottom:none}
+.search-type-tag{font-size:9px;text-transform:uppercase;letter-spacing:.06em;padding:2px 6px;border-radius:4px;font-weight:600;flex-shrink:0}
+.search-type-deal{background:rgba(41,121,255,.15);color:var(--accent2)}
+.search-type-owner{background:rgba(0,230,118,.12);color:var(--done)}
+.search-type-comm{background:rgba(0,212,255,.12);color:var(--neon)}
+.search-result-title{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.search-result-sub{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.search-empty{padding:16px;text-align:center;color:var(--text3);font-size:12px}
+/* Alerts */
+.alerts-wrap{padding:20px;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
+.alert-card{display:flex;align-items:flex-start;gap:14px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--text3);border-radius:var(--radius);padding:14px 16px;transition:all .15s}
+.alert-card:hover{border-color:var(--border2);background:var(--surface2)}
+.alert-card.critical{border-left-color:var(--blocked);background:rgba(255,23,68,.04)}
+.alert-card.warning{border-left-color:#ffab00;background:rgba(255,171,0,.04)}
+.alert-icon{font-size:20px;flex-shrink:0;line-height:1.2}
+.alert-body{flex:1;min-width:0}
+.alert-title{font-size:14px;font-weight:600;margin-bottom:2px}
+.alert-detail{font-size:12px;color:var(--text2);line-height:1.4}
+.alert-action{flex-shrink:0}
+.alert-empty{text-align:center;padding:60px 20px;color:var(--text3)}
+.alert-empty-icon{font-size:48px;margin-bottom:12px;opacity:.5}
+.alerts-summary{display:flex;gap:10px;padding:14px 20px 0}
+.alert-stat{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;text-align:center}
+.alert-stat-num{font-size:26px;font-weight:700}
+.alert-stat-num.crit{color:var(--blocked)}
+.alert-stat-num.warn{color:#ffab00}
+.alert-stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-top:2px}
+/* SLA strip on deals view */
+.sla-strip{display:flex;gap:10px;padding:12px 20px;flex-wrap:wrap}
+.sla-card{flex:1;min-width:130px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;position:relative;overflow:hidden}
+.sla-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent-glow),transparent)}
+.sla-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.sla-value{font-size:20px;font-weight:700}
+.sla-value.accent{color:var(--accent2)}
+.sla-value.warn{color:#ffab00}
+.sla-value.done{color:var(--done)}
+/* Calendar */
+.cal-grid-head{display:grid;grid-template-columns:repeat(7,1fr);padding:0 20px;gap:6px}
+.cal-grid-head div{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);text-align:center;padding:6px 0;font-weight:600}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:0 20px 20px;overflow-y:auto}
+.cal-cell{min-height:92px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px;display:flex;flex-direction:column;gap:3px}
+.cal-cell.other-month{opacity:.35}
+.cal-cell.today{border-color:var(--accent2);box-shadow:inset 0 0 0 1px var(--accent-glow)}
+.cal-daynum{font-size:11px;color:var(--text2);font-weight:600;margin-bottom:2px}
+.cal-event{font-size:10px;padding:2px 5px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.3}
+.cal-event.accent{background:rgba(41,121,255,.18);color:var(--accent2)}
+.cal-event.warning{background:rgba(255,171,0,.18);color:#ffab00}
+.cal-event.info{background:rgba(0,212,255,.15);color:var(--neon)}
+.cal-event.done{background:rgba(0,230,118,.15);color:var(--done)}
+.cal-legend{display:flex;gap:14px;font-size:11px;color:var(--text3);align-items:center}
+.cal-legend span{display:flex;align-items:center;gap:5px}
+.cal-legend .dot,.alert-stat .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot.accent{background:var(--accent2)}.dot.warning{background:#ffab00}.dot.info{background:var(--neon)}.dot.done{background:var(--done)}
+/* Analytics */
+.analytics-wrap{padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:20px}
+.analytics-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px}
+.chart-card-title{font-size:13px;font-weight:600;margin-bottom:14px;color:var(--text2)}
+.funnel-stage{margin-bottom:10px}
+.funnel-bar-row{display:flex;align-items:center;gap:10px}
+.funnel-bar{height:30px;border-radius:var(--radius-sm);background:linear-gradient(90deg,var(--accent),var(--neon));display:flex;align-items:center;padding:0 10px;color:#fff;font-weight:600;font-size:12px;min-width:40px;transition:width .4s}
+.funnel-label{font-size:12px;color:var(--text2);min-width:110px}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.bar-label{font-size:12px;color:var(--text2);min-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:22px;background:var(--surface3);border-radius:var(--radius-sm);overflow:hidden}
+.bar-fill{height:100%;background:var(--accent2);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:flex-end;padding-right:8px;color:#fff;font-size:11px;font-weight:600;min-width:24px;transition:width .4s}
+/* Templates */
+.templates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;padding:20px;overflow-y:auto;align-content:start}
+.template-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;transition:all .15s}
+.template-card:hover{border-color:var(--border2)}
+.template-name{font-size:14px;font-weight:600;margin-bottom:6px}
+.template-subject{font-size:12px;color:var(--accent2);margin-bottom:8px}
+.template-body-preview{font-size:12px;color:var(--text2);line-height:1.5;max-height:90px;overflow:hidden;white-space:pre-wrap;margin-bottom:12px}
+.template-actions{display:flex;gap:6px}
+/* Settings */
+.settings-wrap{padding:20px;overflow-y:auto;max-width:640px}
+.settings-group{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:16px}
+.settings-group-title{font-size:14px;font-weight:600;margin-bottom:14px}
+.settings-field{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--border)}
+.settings-field:last-child{border-bottom:none}
+.settings-field-label{font-size:13px}
+.settings-field-desc{font-size:11px;color:var(--text3);margin-top:2px}
+.settings-field input[type=number]{width:80px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);padding:6px 10px;font-family:inherit;text-align:center}
+.settings-field input[type=text],.settings-field textarea{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);padding:6px 10px;font-family:inherit}
+.toggle{position:relative;width:42px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--surface3);border:1px solid var(--border2);border-radius:24px;transition:.2s;cursor:pointer}
+.toggle-slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:var(--text3);border-radius:50%;transition:.2s}
+.toggle input:checked+.toggle-slider{background:var(--accent2);border-color:var(--accent2)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(18px);background:#fff}
+/* Deal details modal */
+.dd-section{margin-bottom:18px}
+.dd-section-title{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:8px;font-weight:600}
+.dd-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px}
+.dd-field{display:flex;flex-direction:column;gap:2px}
+.dd-field-label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3)}
+.dd-field-value{font-size:13px;color:var(--text)}
+.dd-timeline{display:flex;flex-direction:column;gap:0}
+.dd-tl-item{display:flex;gap:12px;padding:8px 0;position:relative}
+.dd-tl-dot{width:10px;height:10px;border-radius:50%;background:var(--accent2);flex-shrink:0;margin-top:4px;box-shadow:0 0 8px var(--accent-glow)}
+.dd-tl-dot.past{background:var(--text3);box-shadow:none}
+.dd-tl-content{flex:1}
+.dd-tl-label{font-size:13px;font-weight:500}
+.dd-tl-date{font-size:11px;color:var(--text3)}
+.dd-comm{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px}
+.dd-comm-subj{font-size:13px;font-weight:500}
+.dd-comm-meta{font-size:11px;color:var(--text3);margin-top:2px}
 :root.light .pl-modal-overlay{background:rgba(8,13,42,.45)}
 :root.light .deal-modal-overlay{background:rgba(8,13,42,.45)}
 :root.light .pl-modal-card{box-shadow:0 8px 40px rgba(8,13,42,.18)}
@@ -391,14 +508,23 @@ nav{display:flex;gap:2px;flex:1}
   </div>
   <nav>
     <button class="nav-item active" data-view="board">Board</button>
-    <button class="nav-item" data-view="departments">Departments</button>
-    <button class="nav-item" data-view="owners">Owners</button>
-    <button class="nav-item" data-view="pipeline">Outreach Pipeline</button>
-    <button class="nav-item" data-view="exports">Exports</button>
+    <button class="nav-item" data-view="alerts">⚠️ Alerts <span class="nav-badge" id="alert-nav-badge" style="display:none"></span></button>
     <button class="nav-item" data-view="deals">Deal Pipeline</button>
     <button class="nav-item" data-view="tc">TC Inbox</button>
+    <button class="nav-item" data-view="calendar">Calendar</button>
+    <button class="nav-item" data-view="analytics">Analytics</button>
+    <button class="nav-item" data-view="pipeline">Outreach</button>
+    <button class="nav-item" data-view="owners">Owners</button>
+    <button class="nav-item" data-view="departments">Depts</button>
+    <button class="nav-item" data-view="templates">Templates</button>
+    <button class="nav-item" data-view="exports">Exports</button>
+    <button class="nav-item" data-view="settings">⚙️</button>
   </nav>
   <div class="topbar-right">
+    <div class="global-search-wrap">
+      <input type="text" id="global-search" class="global-search" placeholder="Search deals, owners, emails…" autocomplete="off">
+      <div class="search-dropdown" id="search-dropdown"></div>
+    </div>
     <button id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode" style="background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;flex-shrink:0;transition:border-color .15s,color .15s;" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--border2)'" onmouseout="this.style.color='var(--text2)'">🌙</button>
     <div class="live-dot-wrap"><div class="live-dot" id="live-dot"></div><span id="live-label">Connecting</span></div>
     <div class="user-wrap">
@@ -543,11 +669,30 @@ nav{display:flex;gap:2px;flex:1}
         <div class="export-desc">Download contact list with all phone numbers formatted for Mojo Dialer import. One row per owner with up to 3 phone numbers.</div>
         <button class="btn btn-primary" onclick="downloadCSV('/api/exports/mojo.csv','mojo.csv')">⬇️ Download CSV</button>
       </div>
+      <div class="export-card">
+        <div class="export-icon">🏠</div>
+        <div class="export-name">Deals</div>
+        <div class="export-desc">All deals with prices, deadlines, parties, and status. Useful for reporting, backups, or sharing with your title company / attorney.</div>
+        <button class="btn btn-primary" onclick="downloadCSV('/api/exports/deals.csv','deals.csv')">⬇️ Download CSV</button>
+      </div>
+      <div class="export-card">
+        <div class="export-icon">📧</div>
+        <div class="export-name">Email History</div>
+        <div class="export-desc">Full communication log — every TC email with recipient, status, and send dates. Audit trail of all outbound correspondence.</div>
+        <button class="btn btn-primary" onclick="downloadCSV('/api/exports/comms.csv','comms.csv')">⬇️ Download CSV</button>
+      </div>
+      <div class="export-card">
+        <div class="export-icon">⚙️</div>
+        <div class="export-name">Tasks</div>
+        <div class="export-desc">All agent tasks across departments with status, assignee, and creation time. Snapshot of what your AI staff is working on.</div>
+        <button class="btn btn-primary" onclick="downloadCSV('/api/exports/tasks.csv','tasks.csv')">⬇️ Download CSV</button>
+      </div>
     </div>
   </div>
 
   <!-- DEAL PIPELINE VIEW -->
   <div class="view" id="view-deals">
+    <div class="sla-strip" id="sla-strip"></div>
     <div class="action-bar">
       <button class="btn btn-green" onclick="openDealModal()">+ New Deal</button>
       <button class="btn" onclick="loadDeals()">🔄 Refresh</button>
@@ -605,10 +750,119 @@ nav{display:flex;gap:2px;flex:1}
     </div>
   </div>
 
+  <!-- ALERTS VIEW -->
+  <div class="view" id="view-alerts">
+    <div class="action-bar">
+      <h2 class="view-title">⚠️ Alert Board</h2>
+      <button class="btn" onclick="loadAlerts()">🔄 Refresh</button>
+      <div class="spacer"></div>
+      <span class="record-count" id="alerts-count"></span>
+    </div>
+    <div class="alerts-wrap" id="alerts-wrap">
+      <div class="loading"><div class="spinner"></div> Loading…</div>
+    </div>
+  </div>
+
+  <!-- CALENDAR VIEW -->
+  <div class="view" id="view-calendar">
+    <div class="action-bar">
+      <button class="btn btn-sm" onclick="calMove(-1)">‹ Prev</button>
+      <h2 class="view-title" id="cal-title" style="min-width:180px;text-align:center">—</h2>
+      <button class="btn btn-sm" onclick="calMove(1)">Next ›</button>
+      <button class="btn btn-sm" onclick="calMove(0)">Today</button>
+      <div class="spacer"></div>
+      <div class="cal-legend">
+        <span><i class="dot accent"></i>Closing</span>
+        <span><i class="dot warning"></i>Inspection/Financing</span>
+        <span><i class="dot info"></i>Contract</span>
+        <span><i class="dot done"></i>Milestone</span>
+      </div>
+    </div>
+    <div class="cal-grid-head">
+      <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+    </div>
+    <div class="cal-grid" id="cal-grid">
+      <div class="loading"><div class="spinner"></div> Loading…</div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS VIEW -->
+  <div class="view" id="view-analytics">
+    <div class="action-bar">
+      <h2 class="view-title">📊 Pipeline Analytics</h2>
+      <button class="btn" onclick="loadAnalytics()">🔄 Refresh</button>
+    </div>
+    <div class="analytics-wrap" id="analytics-wrap">
+      <div class="loading"><div class="spinner"></div> Loading…</div>
+    </div>
+  </div>
+
+  <!-- TEMPLATES VIEW -->
+  <div class="view" id="view-templates">
+    <div class="action-bar">
+      <h2 class="view-title">📧 Email Templates</h2>
+      <button class="btn btn-primary" onclick="openTemplateModal()">+ New Template</button>
+      <button class="btn" onclick="loadTemplates()">🔄 Refresh</button>
+    </div>
+    <div class="templates-grid" id="templates-grid">
+      <div class="loading"><div class="spinner"></div> Loading…</div>
+    </div>
+  </div>
+
+  <!-- SETTINGS VIEW -->
+  <div class="view" id="view-settings">
+    <div class="action-bar">
+      <h2 class="view-title">⚙️ Settings</h2>
+    </div>
+    <div class="settings-wrap" id="settings-wrap">
+      <div class="loading"><div class="spinner"></div> Loading…</div>
+    </div>
+  </div>
+
+</div>
+<div id="toast-container"></div>
+
+<!-- DEAL DETAILS MODAL -->
+<div class="deal-modal-overlay" id="dd-modal">
+  <div class="deal-modal-card">
+    <div class="deal-modal-header">
+      <div class="deal-modal-title" id="dd-title">Deal Details</div>
+      <button class="pl-modal-close" onclick="closeDealDetails()">✕</button>
+    </div>
+    <div class="deal-modal-body" id="dd-body">
+      <div class="loading"><div class="spinner"></div> Loading…</div>
+    </div>
+  </div>
 </div>
 
-<!-- TOAST CONTAINER -->
-<div id="toast-container"></div>
+<!-- TEMPLATE EDITOR MODAL -->
+<div class="pl-modal-overlay" id="template-modal">
+  <div class="pl-modal-card" style="max-width:640px">
+    <div class="pl-modal-header">
+      <div class="pl-modal-title" id="template-modal-title">New Template</div>
+      <button class="pl-modal-close" onclick="closeTemplateModal()">✕</button>
+    </div>
+    <div class="pl-modal-body">
+      <input type="hidden" id="template-id">
+      <div class="form-group">
+        <label class="form-label">Template Name</label>
+        <input class="form-input" id="template-name" placeholder="e.g. Out-of-State Owner Intro">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Subject Line</label>
+        <input class="form-input" id="template-subject" placeholder="Subject…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Body <span style="color:var(--text3);font-weight:400">— use {{owner_name}}, {{property_address}}, {{deadline}} as placeholders</span></label>
+        <textarea class="form-textarea" id="template-body" rows="12" placeholder="Email body…"></textarea>
+      </div>
+    </div>
+    <div class="pl-modal-footer">
+      <button class="btn" onclick="closeTemplateModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTemplate()">Save Template</button>
+    </div>
+  </div>
+</div>
 
 <!-- EDIT/VIEW MODAL -->
 <div class="pl-modal-overlay" id="edit-modal">
@@ -929,7 +1183,9 @@ function switchView(view){
   const mapping={
     'board':'view-board','departments':'view-departments','dept-detail':'view-dept-detail',
     'agent-board':'view-agent-board','owners':'view-owners','pipeline':'view-pipeline',
-    'exports':'view-exports','deals':'view-deals','tc':'view-tc'
+    'exports':'view-exports','deals':'view-deals','tc':'view-tc',
+    'alerts':'view-alerts','calendar':'view-calendar','analytics':'view-analytics',
+    'templates':'view-templates','settings':'view-settings'
   };
   const vid=mapping[view]||('view-'+view);
   const el=document.getElementById(vid);
@@ -937,8 +1193,13 @@ function switchView(view){
   if(view==='owners')loadOwners();
   if(view==='pipeline')loadPipeline();
   if(view==='departments')loadDepartments();
-  if(view==='deals')loadDeals();
+  if(view==='deals'){loadDeals();loadSlaStats();}
   if(view==='tc')loadTcInbox();
+  if(view==='alerts')loadAlerts();
+  if(view==='calendar')loadCalendar();
+  if(view==='analytics')loadAnalytics();
+  if(view==='templates')loadTemplates();
+  if(view==='settings')loadSettings();
 }
 document.querySelectorAll('.nav-item').forEach(btn=>{
   btn.addEventListener('click',()=>switchView(btn.dataset.view));
@@ -1051,12 +1312,39 @@ function closeAgentSidebar(){document.getElementById('agent-sidebar').classList.
 function renderTaskDetail(t){
   const badgeMap={pending:'badge-pending','in_progress':'badge-inprogress','in-progress':'badge-inprogress',blocked:'badge-blocked',done:'badge-done',completed:'badge-done',cancelled:'badge-cancelled'};
   const bc=badgeMap[t.status]||'badge-pending';
+  const agentList=(allAgents||[]).map(a=>a.name).filter(Boolean);
+  const curAssignee=t.assignee||t.agent||t.assigned_to||'unassigned';
+  const agentOptions=['unassigned',...agentList.filter(n=>n!=='unassigned')]
+    .map(n=>`<option value="${esc(n)}" ${n===curAssignee?'selected':''}>${esc(n)}</option>`).join('');
   return `<div class="detail-field"><div class="detail-label">Status</div><span class="status-badge ${bc}">${esc(t.status)}</span></div>
-<div class="detail-field"><div class="detail-label">Agent</div><div class="detail-value">${esc(t.agent||t.assigned_to||'—')}</div></div>
+<div class="detail-field"><div class="detail-label">Assignee</div>
+  <select class="form-input" id="task-assignee-${esc(t.id)}" onchange="assignTask('${esc(t.id)}',this.value)" style="margin-top:4px">${agentOptions}</select></div>
+<div class="detail-field"><div class="detail-label">Change Status</div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+    <button class="btn btn-sm" onclick="setTaskStatus('${esc(t.id)}','in_progress')">▶ Start</button>
+    <button class="btn btn-sm btn-green" onclick="setTaskStatus('${esc(t.id)}','done')">✓ Done</button>
+    <button class="btn btn-sm" onclick="setTaskStatus('${esc(t.id)}','blocked')">⛔ Block</button>
+    <button class="btn btn-sm btn-danger" onclick="setTaskStatus('${esc(t.id)}','cancelled')">✕ Cancel</button>
+  </div></div>
 <div class="detail-field"><div class="detail-label">Department</div><div class="detail-value">${esc(t.department||'—')}</div></div>
 <div class="detail-field"><div class="detail-label">Description</div><div class="detail-value" style="line-height:1.6;color:var(--text2)">${esc(t.description||'No description.')}</div></div>
 <div class="detail-field"><div class="detail-label">Created</div><div class="detail-value">${formatDate(t.created_at)}</div></div>
 <div class="detail-field"><div class="detail-label">Updated</div><div class="detail-value">${formatDate(t.updated_at)}</div></div>`;
+}
+async function assignTask(taskId,assignee){
+  try{
+    const r=await api('/api/tasks/'+taskId+'/assign',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({assignee})});
+    if(!r.ok)throw new Error(r.statusText);
+    showToast('Reassigned to '+assignee,'success');
+  }catch(e){showToast('Assign failed: '+e.message,'error');}
+}
+async function setTaskStatus(taskId,status){
+  try{
+    const r=await api('/api/tasks/'+taskId+'/status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+    if(!r.ok)throw new Error(r.statusText);
+    showToast('Status → '+status,'success');
+    refreshAlertBadge();
+  }catch(e){showToast('Status change failed: '+e.message,'error');}
 }
 
 // ── DEPARTMENTS ───────────────────────────────────────────────────────────
@@ -1538,6 +1826,7 @@ function makeDealCard(deal){
     ${countdownHtml}
     ${nextDeadlineHtml}
   `;
+  card.onclick=()=>openDealDetails(deal.id);
   return card;
 }
 
@@ -1879,6 +2168,446 @@ async function approveAndSendFromEdit(){
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// ADVANCED FEATURES
+// ═══════════════════════════════════════════════════════════════════════════
+function fmtMoney(n){
+  if(n===null||n===undefined||n==='')return '—';
+  const v=Number(n);if(isNaN(v))return '—';
+  if(v>=1000000)return '$'+(v/1000000).toFixed(2)+'M';
+  if(v>=1000)return '$'+(v/1000).toFixed(0)+'k';
+  return '$'+v.toLocaleString();
+}
+function fmtDate(s){
+  if(!s)return '—';
+  try{return new Date(s).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+  catch(e){return s;}
+}
+
+// ── ALERTS ─────────────────────────────────────────────────────────────────
+async function loadAlerts(){
+  const wrap=document.getElementById('alerts-wrap');
+  wrap.innerHTML='<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try{
+    const r=await api('/api/alerts');
+    if(!r.ok)throw new Error((await r.json().catch(()=>({}))).detail||r.statusText);
+    const d=await r.json();
+    renderAlerts(d);
+  }catch(e){
+    wrap.innerHTML=`<div class="alert-empty"><div class="alert-empty-icon">⚠️</div>Failed to load alerts: ${esc(e.message)}</div>`;
+  }
+}
+function renderAlerts(d){
+  const wrap=document.getElementById('alerts-wrap');
+  const alerts=d.alerts||[];
+  const c=d.counts||{};
+  document.getElementById('alerts-count').textContent=`${c.total||0} alert${c.total===1?'':'s'}`;
+  let html=`<div class="alerts-summary">
+    <div class="alert-stat"><div class="alert-stat-num crit">${c.critical||0}</div><div class="alert-stat-label">Critical</div></div>
+    <div class="alert-stat"><div class="alert-stat-num warn">${c.warning||0}</div><div class="alert-stat-label">Warnings</div></div>
+    <div class="alert-stat"><div class="alert-stat-num">${c.total||0}</div><div class="alert-stat-label">Total</div></div>
+  </div>`;
+  if(!alerts.length){
+    html+=`<div class="alert-empty"><div class="alert-empty-icon">✅</div>All clear — no active alerts.</div>`;
+    wrap.innerHTML=html;return;
+  }
+  const icons={deadline:'⏰',stalled_comm:'📨',task:'⚙️'};
+  alerts.forEach(a=>{
+    let action='';
+    if(a.deal_id)action=`<button class="btn btn-sm" onclick="openDealDetails('${a.deal_id}')">View Deal</button>`;
+    else if(a.comm_id)action=`<button class="btn btn-sm" onclick="switchView('tc')">Review</button>`;
+    else if(a.task_id)action=`<button class="btn btn-sm" onclick="switchView('board')">View Task</button>`;
+    html+=`<div class="alert-card ${esc(a.severity)}">
+      <div class="alert-icon">${icons[a.type]||'🔔'}</div>
+      <div class="alert-body">
+        <div class="alert-title">${esc(a.title)}</div>
+        <div class="alert-detail">${esc(a.detail||'')}</div>
+      </div>
+      <div class="alert-action">${action}</div>
+    </div>`;
+  });
+  wrap.innerHTML=html;
+}
+async function refreshAlertBadge(){
+  try{
+    const r=await api('/api/alerts');
+    if(!r.ok)return;
+    const d=await r.json();
+    const n=(d.counts&&d.counts.total)||0;
+    const badge=document.getElementById('alert-nav-badge');
+    if(n>0){badge.textContent=n;badge.style.display='inline-flex';
+      badge.style.background=(d.counts.critical>0)?'var(--blocked)':'#ffab00';}
+    else{badge.style.display='none';}
+  }catch(e){}
+}
+
+// ── SLA STATS ──────────────────────────────────────────────────────────────
+async function loadSlaStats(){
+  const strip=document.getElementById('sla-strip');
+  try{
+    const r=await api('/api/sla-stats');
+    if(!r.ok)return;
+    const s=await r.json();
+    strip.innerHTML=`
+      <div class="sla-card"><div class="sla-label">Active Deals</div><div class="sla-value accent">${s.active_deals||0}</div></div>
+      <div class="sla-card"><div class="sla-label">Deadlines (7d)</div><div class="sla-value warn">${s.deadlines_week||0}</div></div>
+      <div class="sla-card"><div class="sla-label">Pending Approvals</div><div class="sla-value">${s.pending_approvals||0}</div></div>
+      <div class="sla-card"><div class="sla-label">Pipeline Value</div><div class="sla-value accent">${fmtMoney(s.pipeline_value)}</div></div>
+      <div class="sla-card"><div class="sla-label">Commission Pipeline</div><div class="sla-value done">${fmtMoney(s.commission_pipeline)}</div></div>
+      <div class="sla-card"><div class="sla-label">Close Rate</div><div class="sla-value">${s.close_rate||0}%</div></div>`;
+  }catch(e){strip.innerHTML='';}
+}
+
+// ── CALENDAR ───────────────────────────────────────────────────────────────
+let calRefDate=new Date();
+function calMove(dir){
+  if(dir===0)calRefDate=new Date();
+  else calRefDate.setMonth(calRefDate.getMonth()+dir);
+  loadCalendar();
+}
+async function loadCalendar(){
+  const grid=document.getElementById('cal-grid');
+  const y=calRefDate.getFullYear(),m=calRefDate.getMonth();
+  const first=new Date(y,m,1),last=new Date(y,m+1,0);
+  document.getElementById('cal-title').textContent=calRefDate.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  grid.innerHTML='<div class="loading"><div class="spinner"></div> Loading…</div>';
+  let events=[];
+  try{
+    const start=new Date(y,m,1-7).toISOString().split('T')[0];
+    const end=new Date(y,m+1,7).toISOString().split('T')[0];
+    const r=await api(`/api/calendar?start=${start}&end=${end}`);
+    if(r.ok)events=(await r.json()).events||[];
+  }catch(e){}
+  const byDate={};
+  events.forEach(ev=>{(byDate[ev.date]=byDate[ev.date]||[]).push(ev);});
+  const todayStr=new Date().toISOString().split('T')[0];
+  const startDow=first.getDay();
+  let html='';
+  for(let i=0;i<startDow;i++){
+    const d=new Date(y,m,1-(startDow-i));
+    html+=calCell(d,byDate,todayStr,true);
+  }
+  for(let day=1;day<=last.getDate();day++){
+    html+=calCell(new Date(y,m,day),byDate,todayStr,false);
+  }
+  const cells=startDow+last.getDate();
+  const trail=(7-(cells%7))%7;
+  for(let i=1;i<=trail;i++)html+=calCell(new Date(y,m+1,i),byDate,todayStr,true);
+  grid.innerHTML=html;
+}
+function calCell(d,byDate,todayStr,other){
+  const ds=d.toISOString().split('T')[0];
+  const evs=byDate[ds]||[];
+  const cls='cal-cell'+(other?' other-month':'')+(ds===todayStr?' today':'');
+  let evHtml=evs.slice(0,4).map(ev=>{
+    const click=ev.deal_id?`onclick="openDealDetails('${ev.deal_id}')"`:'';
+    return `<div class="cal-event ${esc(ev.color||'info')}" ${click} title="${esc(ev.label)}">${esc(ev.label)}</div>`;
+  }).join('');
+  if(evs.length>4)evHtml+=`<div class="cal-event" style="background:none;color:var(--text3)">+${evs.length-4} more</div>`;
+  return `<div class="${cls}"><div class="cal-daynum">${d.getDate()}</div>${evHtml}</div>`;
+}
+
+// ── ANALYTICS ──────────────────────────────────────────────────────────────
+async function loadAnalytics(){
+  const wrap=document.getElementById('analytics-wrap');
+  wrap.innerHTML='<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try{
+    const r=await api('/api/analytics');
+    if(!r.ok)throw new Error(r.statusText);
+    renderAnalytics(await r.json());
+  }catch(e){wrap.innerHTML=`<div class="alert-empty">Failed to load analytics: ${esc(e.message)}</div>`;}
+}
+function renderAnalytics(d){
+  const wrap=document.getElementById('analytics-wrap');
+  const funnel=d.funnel||[];
+  const maxF=Math.max(1,...funnel.map(f=>f.count));
+  let funnelHtml=funnel.map(f=>{
+    const pct=Math.max(8,Math.round(100*f.count/maxF));
+    return `<div class="funnel-stage"><div class="funnel-bar-row">
+      <div class="funnel-label">${esc(f.stage)}</div>
+      <div class="funnel-bar" style="width:${pct}%">${f.count}</div></div></div>`;
+  }).join('');
+  function barChart(obj){
+    const entries=Object.entries(obj||{});
+    if(!entries.length)return '<div style="color:var(--text3);font-size:12px">No data</div>';
+    const max=Math.max(1,...entries.map(([k,v])=>v));
+    return entries.map(([k,v])=>{
+      const pct=Math.max(6,Math.round(100*v/max));
+      return `<div class="bar-row"><div class="bar-label">${esc(k)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%">${v}</div></div></div>`;
+    }).join('');
+  }
+  const t=d.totals||{};
+  wrap.innerHTML=`
+    <div class="analytics-row">
+      <div class="chart-card" style="grid-column:1/-1">
+        <div class="chart-card-title">Conversion Funnel</div>${funnelHtml}</div>
+    </div>
+    <div class="analytics-row">
+      <div class="chart-card"><div class="chart-card-title">Deal Stages</div>${barChart(d.deal_stages)}</div>
+      <div class="chart-card"><div class="chart-card-title">Outreach Stages</div>${barChart(d.outreach_stages)}</div>
+      <div class="chart-card"><div class="chart-card-title">Email Status</div>${barChart(d.comm_status)}</div>
+    </div>
+    <div class="analytics-row">
+      <div class="sla-card"><div class="sla-label">Total Owners</div><div class="sla-value accent">${t.owners||0}</div></div>
+      <div class="sla-card"><div class="sla-label">Total Deals</div><div class="sla-value">${t.deals||0}</div></div>
+      <div class="sla-card"><div class="sla-label">Total Emails</div><div class="sla-value done">${t.comms||0}</div></div>
+    </div>`;
+}
+
+// ── TEMPLATES ──────────────────────────────────────────────────────────────
+let templates=[];
+async function loadTemplates(){
+  const grid=document.getElementById('templates-grid');
+  grid.innerHTML='<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try{
+    const r=await api('/api/templates');
+    templates=(await r.json()).templates||[];
+    renderTemplates();
+  }catch(e){grid.innerHTML=`<div class="alert-empty">Failed: ${esc(e.message)}</div>`;}
+}
+function renderTemplates(){
+  const grid=document.getElementById('templates-grid');
+  if(!templates.length){grid.innerHTML='<div class="alert-empty">No templates yet. Click "+ New Template".</div>';return;}
+  grid.innerHTML=templates.map(t=>`
+    <div class="template-card">
+      <div class="template-name">${esc(t.name)}</div>
+      <div class="template-subject">${esc(t.subject||'(no subject)')}</div>
+      <div class="template-body-preview">${esc(t.body||'')}</div>
+      <div class="template-actions">
+        <button class="btn btn-sm" onclick="editTemplate('${t.id}')">✏️ Edit</button>
+        <button class="btn btn-sm" onclick="copyTemplate('${t.id}')">📋 Copy</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteTemplate('${t.id}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+function openTemplateModal(){
+  document.getElementById('template-id').value='';
+  document.getElementById('template-name').value='';
+  document.getElementById('template-subject').value='';
+  document.getElementById('template-body').value='';
+  document.getElementById('template-modal-title').textContent='New Template';
+  document.getElementById('template-modal').classList.add('open');
+}
+function editTemplate(id){
+  const t=templates.find(x=>x.id===id);if(!t)return;
+  document.getElementById('template-id').value=t.id;
+  document.getElementById('template-name').value=t.name||'';
+  document.getElementById('template-subject').value=t.subject||'';
+  document.getElementById('template-body').value=t.body||'';
+  document.getElementById('template-modal-title').textContent='Edit Template';
+  document.getElementById('template-modal').classList.add('open');
+}
+function closeTemplateModal(){document.getElementById('template-modal').classList.remove('open');}
+async function saveTemplate(){
+  const body={
+    id:document.getElementById('template-id').value||undefined,
+    name:document.getElementById('template-name').value.trim(),
+    subject:document.getElementById('template-subject').value.trim(),
+    body:document.getElementById('template-body').value
+  };
+  if(!body.name){showToast('Template name required','error');return;}
+  try{
+    const r=await api('/api/templates',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok)throw new Error(r.statusText);
+    templates=(await r.json()).templates||[];
+    renderTemplates();closeTemplateModal();
+    showToast('Template saved','success');
+  }catch(e){showToast('Save failed: '+e.message,'error');}
+}
+async function deleteTemplate(id){
+  if(!confirm('Delete this template?'))return;
+  try{
+    const r=await api('/api/templates/'+id,{method:'DELETE'});
+    templates=(await r.json()).templates||[];
+    renderTemplates();showToast('Deleted','success');
+  }catch(e){showToast('Delete failed','error');}
+}
+function copyTemplate(id){
+  const t=templates.find(x=>x.id===id);if(!t)return;
+  const txt=`Subject: ${t.subject}\n\n${t.body}`;
+  navigator.clipboard.writeText(txt).then(()=>showToast('Copied to clipboard','success'))
+    .catch(()=>showToast('Copy failed','error'));
+}
+
+// ── SETTINGS ───────────────────────────────────────────────────────────────
+async function loadSettings(){
+  const wrap=document.getElementById('settings-wrap');
+  wrap.innerHTML='<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try{
+    const r=await api('/api/settings');
+    const s=await r.json();
+    renderSettings(s);
+  }catch(e){wrap.innerHTML=`<div class="alert-empty">Failed: ${esc(e.message)}</div>`;}
+}
+function renderSettings(s){
+  const wrap=document.getElementById('settings-wrap');
+  function tog(id,val){return `<label class="toggle"><input type="checkbox" id="${id}" ${val?'checked':''}><span class="toggle-slider"></span></label>`;}
+  wrap.innerHTML=`
+    <div class="settings-group">
+      <div class="settings-group-title">⏰ Deadline & Alert Timing</div>
+      <div class="settings-field">
+        <div><div class="settings-field-label">Deadline alert lead time</div>
+          <div class="settings-field-desc">Days before a deadline to alert you</div></div>
+        <input type="number" id="set-lead" min="0" max="14" value="${s.deadline_lead_days}"></div>
+      <div class="settings-field">
+        <div><div class="settings-field-label">"Closing soon" window</div>
+          <div class="settings-field-desc">Deadlines within N days show in Alert Board</div></div>
+        <input type="number" id="set-warn" min="1" max="30" value="${s.deadline_warning_days}"></div>
+      <div class="settings-field">
+        <div><div class="settings-field-label">Stalled email threshold</div>
+          <div class="settings-field-desc">Hours pending before flagging a stalled email</div></div>
+        <input type="number" id="set-stalled" min="1" max="336" value="${s.stalled_comm_hours}"></div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-group-title">🔔 Notifications</div>
+      <div class="settings-field"><div class="settings-field-label">New draft ready for approval</div>${tog('set-n-draft',s.notify_on_new_draft)}</div>
+      <div class="settings-field"><div class="settings-field-label">Deadline approaching</div>${tog('set-n-deadline',s.notify_on_deadline)}</div>
+      <div class="settings-field"><div class="settings-field-label">Incoming deal email</div>${tog('set-n-incoming',s.notify_on_incoming)}</div>
+      <div class="settings-field">
+        <div><div class="settings-field-label">Notify email</div></div>
+        <input type="text" id="set-email" value="${esc(s.notify_email||'')}"></div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-group-title">✍️ Default Signature</div>
+      <div class="settings-field" style="flex-direction:column;align-items:stretch">
+        <textarea id="set-sig" rows="4">${esc(s.default_signature||'')}</textarea></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>`;
+}
+async function saveSettings(){
+  const body={
+    deadline_lead_days:+document.getElementById('set-lead').value,
+    deadline_warning_days:+document.getElementById('set-warn').value,
+    stalled_comm_hours:+document.getElementById('set-stalled').value,
+    notify_on_new_draft:document.getElementById('set-n-draft').checked,
+    notify_on_deadline:document.getElementById('set-n-deadline').checked,
+    notify_on_incoming:document.getElementById('set-n-incoming').checked,
+    notify_email:document.getElementById('set-email').value.trim(),
+    default_signature:document.getElementById('set-sig').value
+  };
+  try{
+    const r=await api('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok)throw new Error(r.statusText);
+    showToast('Settings saved','success');
+    refreshAlertBadge();
+  }catch(e){showToast('Save failed: '+e.message,'error');}
+}
+
+// ── DEAL DETAILS MODAL ─────────────────────────────────────────────────────
+async function openDealDetails(dealId){
+  const modal=document.getElementById('dd-modal');
+  const body=document.getElementById('dd-body');
+  modal.classList.add('open');
+  body.innerHTML='<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try{
+    const [dr,cr]=await Promise.all([
+      api('/api/deals/'+dealId),
+      api('/api/deals/'+dealId+'/comms').catch(()=>null)
+    ]);
+    const deal=await dr.json();
+    const d=deal.deal||deal;
+    let comms=[];
+    if(cr&&cr.ok){const cd=await cr.json();comms=cd.comms||cd||[];}
+    renderDealDetails(d,comms);
+  }catch(e){body.innerHTML=`<div class="alert-empty">Failed to load deal: ${esc(e.message)}</div>`;}
+}
+function closeDealDetails(){document.getElementById('dd-modal').classList.remove('open');}
+function renderDealDetails(d,comms){
+  document.getElementById('dd-title').textContent=d.address||'Deal Details';
+  function f(label,val){return `<div class="dd-field"><div class="dd-field-label">${esc(label)}</div><div class="dd-field-value">${esc(val||'—')}</div></div>`;}
+  // Timeline
+  const tl=[
+    ['Contract',d.contract_date],['Inspection',d.inspection_deadline],
+    ['Financing',d.financing_deadline],['Closing',d.closing_date]
+  ].filter(x=>x[1]);
+  const today=new Date();today.setHours(0,0,0,0);
+  let tlHtml=tl.map(([label,dt])=>{
+    const past=new Date(dt)<today;
+    const du=daysUntil(dt);
+    let when=fmtDate(dt);
+    if(du!==null)when+= du<0?` (${Math.abs(du)}d ago)`:du===0?' (today)':` (in ${du}d)`;
+    return `<div class="dd-tl-item"><div class="dd-tl-dot ${past?'past':''}"></div>
+      <div class="dd-tl-content"><div class="dd-tl-label">${esc(label)}</div>
+      <div class="dd-tl-date">${esc(when)}</div></div></div>`;
+  }).join('')||'<div style="color:var(--text3);font-size:12px">No dates set</div>';
+  // Comms
+  let commsHtml=(comms&&comms.length)?comms.map(c=>`
+    <div class="dd-comm"><div class="dd-comm-subj">${esc(c.subject||'(no subject)')}</div>
+    <div class="dd-comm-meta">${esc(c.status||'')} · ${esc(c.to_name||c.to_email||'')} · ${fmtDate(c.sent_date||c.date_created)}</div></div>
+  `).join(''):'<div style="color:var(--text3);font-size:12px">No communications yet</div>';
+  document.getElementById('dd-body').innerHTML=`
+    <div class="dd-section"><div class="dd-section-title">Overview</div>
+      <div class="dd-grid">
+        ${f('Status',d.status)}${f('MLS #',d.mls_number)}
+        ${f('Purchase Price',fmtMoney(d.purchase_price))}${f('Commission',d.commission_pct?d.commission_pct+'%':'—')}
+        ${f('Earnest Money',fmtMoney(d.earnest_money))}${f('PDF Parsed',d.pdf_parsed?'✓ Yes':'No')}
+      </div></div>
+    <div class="dd-section"><div class="dd-section-title">Timeline</div>
+      <div class="dd-timeline">${tlHtml}</div></div>
+    <div class="dd-section"><div class="dd-section-title">Parties</div>
+      <div class="dd-grid">
+        ${f('Buyer',d.buyer_name)}${f('Buyer Agent',d.buyer_agent_name)}
+        ${f('Buyer Agent Email',d.buyer_agent_email)}${f('Lender',d.lender_name)}
+        ${f('Title Company',d.title_company)}${f('Title Rep',d.title_rep_name)}
+        ${f('Inspector',d.inspector_name)}${f('Lender Email',d.lender_email)}
+      </div></div>
+    <div class="dd-section"><div class="dd-section-title">Communications (${comms?comms.length:0})</div>
+      ${commsHtml}</div>
+    ${d.notes?`<div class="dd-section"><div class="dd-section-title">Notes</div>
+      <div class="dd-field-value" style="white-space:pre-wrap">${esc(d.notes)}</div></div>`:''}
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-primary" onclick="closeDealDetails();editDealFromDetails('${d.id}')">✏️ Edit Deal</button>
+      <button class="btn" onclick="closeDealDetails()">Close</button>
+    </div>`;
+}
+function editDealFromDetails(id){
+  // existing deal modal opens for create; reuse if an edit hook exists, else just show
+  if(typeof openDealModal==='function')openDealModal();
+}
+
+// ── GLOBAL SEARCH ──────────────────────────────────────────────────────────
+let searchTimer=null;
+function initGlobalSearch(){
+  const input=document.getElementById('global-search');
+  const dd=document.getElementById('search-dropdown');
+  if(!input)return;
+  input.addEventListener('input',()=>{
+    clearTimeout(searchTimer);
+    const q=input.value.trim();
+    if(q.length<2){dd.classList.remove('open');return;}
+    searchTimer=setTimeout(()=>runSearch(q),250);
+  });
+  input.addEventListener('focus',()=>{if(input.value.trim().length>=2)dd.classList.add('open');});
+  document.addEventListener('click',(e)=>{
+    if(!e.target.closest('.global-search-wrap'))dd.classList.remove('open');
+  });
+}
+async function runSearch(q){
+  const dd=document.getElementById('search-dropdown');
+  try{
+    const r=await api('/api/search?q='+encodeURIComponent(q));
+    const d=await r.json();
+    const results=d.results||[];
+    if(!results.length){dd.innerHTML='<div class="search-empty">No results</div>';dd.classList.add('open');return;}
+    dd.innerHTML=results.map(res=>`
+      <div class="search-result" onclick="gotoSearchResult('${res.view}','${res.type}','${res.id}')">
+        <span class="search-type-tag search-type-${esc(res.type)}">${esc(res.type)}</span>
+        <div style="flex:1;min-width:0">
+          <div class="search-result-title">${esc(res.title)}</div>
+          <div class="search-result-sub">${esc(res.subtitle||'')}</div>
+        </div>
+      </div>`).join('');
+    dd.classList.add('open');
+  }catch(e){dd.innerHTML='<div class="search-empty">Search failed</div>';dd.classList.add('open');}
+}
+function gotoSearchResult(view,type,id){
+  document.getElementById('search-dropdown').classList.remove('open');
+  document.getElementById('global-search').value='';
+  if(type==='deal'){switchView('deals');setTimeout(()=>openDealDetails(id),200);}
+  else{switchView(view);}
+}
+
 // ── THEME TOGGLE ─────────────────────────────────────────────────────────────
 function toggleTheme(){
   const isLight=document.documentElement.classList.toggle('light');
@@ -1899,6 +2628,9 @@ function initTheme(){
 
 (function init(){
   initTheme();
+  initGlobalSearch();
+  refreshAlertBadge();
+  setInterval(refreshAlertBadge, 60000);
   loadUser();
   connectSSE();
   // load initial board via HTTP too

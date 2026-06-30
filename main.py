@@ -147,6 +147,13 @@ try:
 except Exception as _tc_err:
     logger.warning("TC router failed to load: %s", _tc_err)
 
+# Advanced features router (alerts, SLA, analytics, calendar, search, settings, templates, exports)
+try:
+    from extras import router as extras_router
+    app.include_router(extras_router)
+except Exception as _ex_err:
+    logger.warning("Extras router failed to load: %s", _ex_err)
+
 
 # ---------------------------------------------------------------------------
 # Auth helpers
@@ -533,6 +540,39 @@ async def sync_single_task(request: Request, _=Depends(require_sync_token)):
     if old != body:
         _broadcast("task_update", body)
     return JSONResponse({"ok": True})
+
+
+@app.post("/api/tasks/{task_id}/assign")
+async def assign_task(task_id: str, request: Request, user: dict = Depends(require_user)):
+    """Reassign a task to an agent/owner. Updates in-memory board + broadcasts."""
+    task = _board.get(task_id)
+    if not task:
+        raise HTTPException(404, "Task not found")
+    body = await request.json()
+    assignee = (body.get("assignee") or "").strip() or "unassigned"
+    task["assignee"] = assignee
+    _board[task_id] = task
+    _broadcast("task_update", task)
+    return JSONResponse({"ok": True, "task_id": task_id, "assignee": assignee})
+
+
+@app.post("/api/tasks/{task_id}/status")
+async def set_task_status(task_id: str, request: Request, user: dict = Depends(require_user)):
+    """Change a task's status from the dashboard (e.g. retry a blocked task)."""
+    task = _board.get(task_id)
+    if not task:
+        raise HTTPException(404, "Task not found")
+    body = await request.json()
+    status = (body.get("status") or "").strip()
+    if status not in ("pending", "in_progress", "blocked", "done", "cancelled"):
+        raise HTTPException(400, "invalid status")
+    task["status"] = status
+    if status in ("pending", "in_progress"):
+        task.pop("error", None)
+        task.pop("last_error", None)
+    _board[task_id] = task
+    _broadcast("task_update", task)
+    return JSONResponse({"ok": True, "task_id": task_id, "status": status})
 
 
 # ---------------------------------------------------------------------------
