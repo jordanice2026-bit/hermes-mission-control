@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#07090f;--surface:#0d1117;--surface2:#131720;--surface3:#1a2030;--border:#1e2535;--border2:#252d3e;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--accent:#1d4ed8;--accent2:#2563eb;--accent-glow:rgba(29,78,216,0.15);--white:#fff;--pending:#475569;--in-progress:#2563eb;--blocked:#dc2626;--done:#16a34a;--cancelled:#374151;--radius-sm:6px;--radius:8px;--radius-lg:12px}
+:root.light{--bg:#f1f5f9;--surface:#ffffff;--surface2:#f8fafc;--surface3:#f1f5f9;--border:#e2e8f0;--border2:#cbd5e1;--text:#0f172a;--text2:#475569;--text3:#94a3b8;--accent:#1d4ed8;--accent2:#2563eb;--accent-glow:rgba(29,78,216,0.10);--white:#ffffff;--pending:#94a3b8;--in-progress:#2563eb;--blocked:#dc2626;--done:#16a34a;--cancelled:#94a3b8}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;font-size:14px}
 a{color:inherit;text-decoration:none}
@@ -322,6 +323,26 @@ nav{display:flex;gap:2px;flex:1}
 .tc-sent-subject{flex:1;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tc-sent-to{color:var(--text3);white-space:nowrap;font-size:11px;min-width:80px;overflow:hidden;text-overflow:ellipsis}
 .tc-sent-date{color:var(--text3);white-space:nowrap;font-size:11px}
+/* ── Light mode overrides for hardcoded dark values ── */
+:root.light .pl-modal-overlay{background:rgba(15,23,42,.5)}
+:root.light .deal-modal-overlay{background:rgba(15,23,42,.5)}
+:root.light .pl-modal-card{box-shadow:0 8px 40px rgba(15,23,42,.15)}
+:root.light .task-card{box-shadow:none}
+:root.light .task-card:hover{box-shadow:0 2px 8px rgba(15,23,42,.08)}
+:root.light .dept-card:hover{box-shadow:0 4px 16px rgba(15,23,42,.1)}
+:root.light .export-card{box-shadow:none}
+:root.light #topbar{box-shadow:0 1px 3px rgba(15,23,42,.06)}
+:root.light .toast{box-shadow:0 2px 12px rgba(15,23,42,.12)}
+:root.light .col-pending .col-header{background:rgba(71,85,105,.08)}
+:root.light .col-inprogress .col-header{background:rgba(37,99,235,.08)}
+:root.light .col-blocked .col-header{background:rgba(220,38,38,.08)}
+:root.light .col-done .col-header{background:rgba(22,163,74,.08)}
+:root.light .col-cancelled .col-header{background:rgba(55,65,81,.08)}
+:root.light .badge-pending{background:rgba(71,85,105,.12);color:#475569}
+:root.light .badge-inprogress{background:rgba(37,99,235,.12);color:#1d4ed8}
+:root.light .badge-blocked{background:rgba(220,38,38,.12);color:#dc2626}
+:root.light .badge-done{background:rgba(22,163,74,.12);color:#15803d}
+:root.light .status-badge{border:none}
 </style>
 </head>
 <body>
@@ -345,6 +366,7 @@ nav{display:flex;gap:2px;flex:1}
     <button class="nav-item" data-view="tc">TC Inbox</button>
   </nav>
   <div class="topbar-right">
+    <button id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode" style="background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;flex-shrink:0;transition:border-color .15s,color .15s;" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--border2)'" onmouseout="this.style.color='var(--text2)'">🌙</button>
     <div class="live-dot-wrap"><div class="live-dot" id="live-dot"></div><span id="live-label">Connecting</span></div>
     <div class="user-wrap">
       <div class="user-avatar" id="user-avatar">?</div>
@@ -1824,7 +1846,26 @@ async function approveAndSendFromEdit(){
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
+// ── THEME TOGGLE ─────────────────────────────────────────────────────────────
+function toggleTheme(){
+  const isLight=document.documentElement.classList.toggle('light');
+  localStorage.setItem('mc-theme', isLight ? 'light' : 'dark');
+  document.getElementById('theme-toggle').textContent = isLight ? '🌙' : '☀️';
+}
+function initTheme(){
+  const saved=localStorage.getItem('mc-theme');
+  const preferLight=saved==='light'||(saved===null&&window.matchMedia('(prefers-color-scheme: light)').matches);
+  if(preferLight){
+    document.documentElement.classList.add('light');
+    document.getElementById('theme-toggle').textContent='🌙';
+  } else {
+    document.documentElement.classList.remove('light');
+    document.getElementById('theme-toggle').textContent='☀️';
+  }
+}
+
 (function init(){
+  initTheme();
   loadUser();
   connectSSE();
   // load initial board via HTTP too
