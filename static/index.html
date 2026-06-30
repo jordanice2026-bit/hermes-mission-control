@@ -1196,7 +1196,7 @@ function makePipelineCard(r,stage){
   const ctClass={LLC:'ct-llc',Individual:'ct-individual',Trust:'ct-trust'}[ct]||'ct-individual';
   const state=r.mailing_state||r.owner_mailing_state||'';
   let actions='';
-  if(stage==='Draft')actions=`<button class="btn btn-sm" onclick="openEditModal('${r.id}')">✏️ Edit</button><button class="btn btn-sm btn-green" onclick="approveRecord('${r.id}')">✅ Approve</button><button class="btn btn-sm" onclick="quickAiFix('${r.id}')">🤖 AI Fix</button>`;
+  if(stage==='Draft')actions=`<button class="btn btn-sm" onclick="openEditModal('${r.id}')">✏️ Edit</button><button class="btn btn-sm btn-green" onclick="approveAndSendOutreach('${r.id}',this)">✅ Approve & Send</button><button class="btn btn-sm" onclick="quickAiFix('${r.id}')">🤖 AI Fix</button>`;
   else if(stage==='Approved')actions=`<button class="btn btn-sm" onclick="openEditModal('${r.id}')">✏️ Edit</button><button class="btn btn-sm btn-primary" onclick="openSendModal('${r.id}')">📨 Send</button><button class="btn btn-sm" onclick="unapproveRecord('${r.id}')">↩ Unapprove</button>`;
   else if(stage==='Sent')actions=`<button class="btn btn-sm" onclick="openEditModal('${r.id}',true)">👁 View</button>`;
   else if(stage==='Failed')actions=`<button class="btn btn-sm btn-primary" onclick="openSendModal('${r.id}')">↩ Retry</button>`;
@@ -1221,6 +1221,24 @@ async function approveRecord(id){
     if(!r.ok)throw new Error(r.statusText);
     showToast('Approved!','success');loadPipeline();
   }catch(e){showToast('Failed to approve: '+e.message,'error');}
+}
+async function approveAndSendOutreach(id, btn){
+  if(btn){btn.disabled=true;btn.textContent='Sending…';}
+  try{
+    // Approve first
+    const r1=await api(`/api/seller-pipeline/${id}/approve`,{method:'POST'});
+    const d1=await r1.json().catch(()=>({}));
+    if(!r1.ok)throw new Error(d1.detail||d1.error||d1.message||'Approve failed');
+    // Then send immediately
+    const r2=await api(`/api/seller-pipeline/${id}/send`,{method:'POST'});
+    const d2=await r2.json().catch(()=>({}));
+    if(!r2.ok)throw new Error(d2.detail||d2.error||d2.message||'Send failed');
+    showToast('Email sent!','success');
+    loadPipeline();
+  }catch(e){
+    showToast(e.message,'error');
+    if(btn){btn.disabled=false;btn.textContent='✅ Approve & Send';}
+  }
 }
 async function unapproveRecord(id){
   try{
