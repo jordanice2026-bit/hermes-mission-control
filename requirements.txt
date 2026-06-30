@@ -4,3 +4,6 @@ starlette==0.41.3
 itsdangerous==2.2.0
 httpx==0.28.1
 python-multipart==0.0.20
+google-api-python-client==2.169.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.1

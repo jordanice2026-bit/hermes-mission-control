@@ -1,0 +1,1257 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     ICE Inc. Mission Control — Pipeline View Fragment
+     Insert: <style> contents → into existing <style> block
+             <div id="view-pipeline"> → before <!-- Toast container -->
+             <script> contents → bottom of existing <script> block
+     ═══════════════════════════════════════════════════════════════ -->
+
+<style>
+/* ══════════════════════════════════════════════
+   PIPELINE VIEW
+   ══════════════════════════════════════════════ */
+
+/* ── Action bar ── */
+.pipeline-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.pipeline-send-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background: var(--accent2);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.pipeline-send-all-btn:hover {
+  background: var(--accent);
+  box-shadow: 0 0 18px rgba(37,99,235,0.45);
+}
+.pipeline-search-wrap { flex: 1; max-width: 320px; }
+.pipeline-search {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 7px 12px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.pipeline-search:focus { border-color: var(--accent2); }
+.pipeline-search::placeholder { color: var(--text3); }
+.pipeline-record-count {
+  font-size: 12px;
+  color: var(--text3);
+  white-space: nowrap;
+}
+.pipeline-refresh-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text3);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.pipeline-refresh-btn:hover {
+  color: var(--text);
+  border-color: var(--border2);
+  background: var(--surface3);
+}
+.pipeline-refresh-btn svg { width: 14px; height: 14px; }
+
+/* ── Pipeline board / columns ── */
+.pipeline-board { /* inherits .board layout */ }
+.pipeline-column { flex: 0 0 280px; min-width: 280px; }
+
+/* ── Pipeline card ── */
+.pipeline-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.pipeline-card:hover {
+  border-color: var(--accent2);
+  box-shadow: 0 0 0 1px var(--accent-glow);
+}
+.pipeline-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.pipeline-card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.45;
+  flex: 1;
+  min-width: 0;
+}
+.match-score-badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.pipeline-card-buyer {
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pipeline-card-address {
+  font-size: 11px;
+  color: var(--text3);
+  margin-bottom: 6px;
+  line-height: 1.35;
+}
+.pipeline-stats-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.pipeline-stat-chip {
+  font-size: 10px;
+  color: var(--text3);
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+.pipeline-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.pipeline-card-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+
+/* ── Pipeline buttons ── */
+.pipeline-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.pipeline-btn:hover {
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--accent2);
+}
+.pipeline-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.pipeline-btn-primary {
+  background: var(--accent2);
+  border-color: var(--accent2);
+  color: #fff;
+}
+.pipeline-btn-primary:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.pipeline-btn-sm { padding: 3px 7px; font-size: 10px; }
+
+/* ── Modals ── */
+.pl-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.pl-modal-overlay.active { display: flex; }
+.pl-modal-card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.65);
+}
+.pl-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.pl-modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--white);
+  margin: 0;
+}
+.pl-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.pl-modal-body::-webkit-scrollbar { width: 4px; }
+.pl-modal-body::-webkit-scrollbar-track { background: transparent; }
+.pl-modal-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.pl-modal-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.pl-field { display: flex; flex-direction: column; gap: 5px; }
+.pl-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.pl-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.pl-input:focus { border-color: var(--accent2); }
+.pl-textarea {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 12px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  outline: none;
+  resize: vertical;
+  line-height: 1.65;
+  transition: border-color 0.15s;
+}
+.pl-textarea:focus { border-color: var(--accent2); }
+.pl-textarea-lg { min-height: 240px; }
+.pl-textarea-sm {
+  min-height: 72px;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+/* Reply modal */
+.pl-reply-from {
+  font-size: 13px;
+  color: var(--text2);
+  padding: 7px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.pl-reply-body {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--text2);
+  white-space: pre-wrap;
+  line-height: 1.65;
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 0;
+}
+.pl-reply-body::-webkit-scrollbar { width: 3px; }
+.pl-reply-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* Bulk send modal */
+.pl-bulk-count {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.pl-bulk-recipient-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px;
+}
+.pl-bulk-recipient-list::-webkit-scrollbar { width: 3px; }
+.pl-bulk-recipient-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.pl-bulk-recipient {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+}
+.pl-bulk-rname {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  min-width: 110px;
+  white-space: nowrap;
+}
+.pl-bulk-remail {
+  font-size: 11px;
+  color: var(--text3);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pl-bulk-rdeal {
+  font-size: 11px;
+  color: var(--text2);
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pl-bulk-progress { margin-top: 16px; }
+.pl-bulk-progress-track {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.pl-bulk-progress-bar {
+  height: 100%;
+  background: var(--accent2);
+  border-radius: 3px;
+  transition: width 0.25s ease;
+}
+.pl-bulk-progress-text {
+  font-size: 12px;
+  color: var(--text2);
+  text-align: center;
+}
+
+/* ── Inbox replies section ── */
+.pipeline-inbox-section {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  max-height: 380px;
+  display: flex;
+  flex-direction: column;
+}
+.pipeline-inbox-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 24px;
+  flex-shrink: 0;
+}
+.pipeline-inbox-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+.pipeline-inbox-toggle-btn:hover { color: var(--text); }
+.inbox-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--accent2);
+  color: #fff;
+  min-width: 18px;
+  text-align: center;
+}
+.inbox-badge.empty {
+  background: var(--surface3);
+  color: var(--text3);
+  border: 1px solid var(--border2);
+}
+.inbox-chevron {
+  font-size: 10px;
+  color: var(--text3);
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+.inbox-chevron.open { transform: rotate(180deg); }
+.pipeline-inbox-body {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  padding: 0 24px 14px;
+}
+.pipeline-inbox-body.open { display: flex; }
+.pipeline-inbox-body::-webkit-scrollbar { width: 4px; }
+.pipeline-inbox-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.inbox-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 6px 0 4px;
+}
+.inbox-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 11px 12px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  transition: border-color 0.15s;
+}
+.inbox-card:hover { border-color: var(--border2); }
+.inbox-card-left { flex: 1; min-width: 0; }
+.inbox-deal-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.inbox-buyer {
+  font-size: 11px;
+  color: var(--text3);
+  margin-bottom: 5px;
+}
+.inbox-reply-snippet {
+  font-size: 11px;
+  color: var(--text2);
+  line-height: 1.5;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.inbox-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink: 0;
+}
+</style>
+
+
+<!-- ═══════════════════ VIEW: PIPELINE ═══════════════════ -->
+<div class="view" id="view-pipeline">
+
+  <!-- ─── Action Bar ─── -->
+  <div class="pipeline-action-bar">
+    <button class="pipeline-send-all-btn" onclick="openBulkSend()">
+      📨 Send All Drafts
+    </button>
+    <div class="pipeline-search-wrap">
+      <input
+        type="text"
+        id="pipeline-search"
+        class="pipeline-search"
+        placeholder="Search deals, buyers, addresses…"
+        oninput="pipelineSearchTerm=this.value;renderPipeline()"
+        autocomplete="off"
+      >
+    </div>
+    <span class="pipeline-record-count" id="pipeline-count">0 records</span>
+    <button class="pipeline-refresh-btn" onclick="loadPipeline()" title="Refresh pipeline">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M13.65 2.35A7 7 0 1 0 15 8"/>
+        <polyline points="11,2 14.5,2 14.5,5.5"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ─── Kanban Board ─── -->
+  <div class="board pipeline-board" id="pipeline-board">
+    <div class="loading"><div class="spinner"></div>Loading pipeline…</div>
+  </div>
+
+  <!-- ─── Inbox / Replies Section ─── -->
+  <div class="pipeline-inbox-section" id="pipeline-inbox-section">
+    <div class="pipeline-inbox-bar">
+      <button class="pipeline-inbox-toggle-btn" onclick="togglePipelineInbox()">
+        💬 Inbox &amp; Replies
+        <span class="inbox-badge empty" id="pipeline-inbox-badge">0</span>
+        <span class="inbox-chevron" id="pipeline-inbox-chevron">▲</span>
+      </button>
+      <button class="pipeline-btn pipeline-btn-sm" onclick="checkPipelineInbox()">🔄 Check Inbox</button>
+    </div>
+    <div class="pipeline-inbox-body" id="pipeline-inbox-body"></div>
+  </div>
+
+  <!-- ─── Edit / Draft Modal ─── -->
+  <div class="pl-modal-overlay" id="pl-edit-modal"
+       onclick="if(event.target===this)closePipelineEditModal()">
+    <div class="pl-modal-card">
+      <div class="pl-modal-header">
+        <h2 class="pl-modal-title" id="pl-modal-title">Edit Draft</h2>
+        <button class="close-btn" onclick="closePipelineEditModal()">✕</button>
+      </div>
+      <div class="pl-modal-body">
+        <input type="hidden" id="pl-modal-id">
+        <div class="pl-field">
+          <label class="pl-label" for="pl-modal-subject">Email Subject</label>
+          <input type="text" id="pl-modal-subject" class="pl-input" placeholder="Subject line…">
+        </div>
+        <div class="pl-field">
+          <label class="pl-label" for="pl-modal-body-txt">Email Body</label>
+          <textarea id="pl-modal-body-txt" class="pl-textarea pl-textarea-lg"
+                    placeholder="Email body will appear here…"></textarea>
+        </div>
+        <div class="pl-field">
+          <label class="pl-label" for="pl-modal-errors">Error Notes / Fix Instructions</label>
+          <textarea id="pl-modal-errors" class="pl-textarea pl-textarea-sm"
+                    placeholder="Describe any issues or instructions for the AI…"></textarea>
+        </div>
+      </div>
+      <div class="pl-modal-footer">
+        <button class="pipeline-btn" id="pl-ai-fix-btn" onclick="runAiFix()">🤖 AI Fix</button>
+        <div style="flex:1"></div>
+        <button class="pipeline-btn" onclick="closePipelineEditModal()">✕ Cancel</button>
+        <button class="pipeline-btn" id="pl-save-btn" onclick="savePipelineDraft()">💾 Save Draft</button>
+        <button class="pipeline-btn pipeline-btn-primary" id="pl-send-btn" onclick="sendFromModal()">📨 Send Email</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Reply View Modal ─── -->
+  <div class="pl-modal-overlay" id="pl-reply-modal"
+       onclick="if(event.target===this)closePipelineReplyModal()">
+    <div class="pl-modal-card">
+      <div class="pl-modal-header">
+        <h2 class="pl-modal-title" id="pl-reply-title">Buyer Reply</h2>
+        <button class="close-btn" onclick="closePipelineReplyModal()">✕</button>
+      </div>
+      <div class="pl-modal-body">
+        <input type="hidden" id="pl-reply-id">
+        <div class="pl-field">
+          <label class="pl-label">From</label>
+          <div class="pl-reply-from" id="pl-reply-from">—</div>
+        </div>
+        <div class="pl-field">
+          <label class="pl-label">Reply Content</label>
+          <pre class="pl-reply-body" id="pl-reply-body-txt"></pre>
+        </div>
+      </div>
+      <div class="pl-modal-footer">
+        <div style="flex:1"></div>
+        <button class="pipeline-btn" onclick="closePipelineReplyModal()">✕ Close</button>
+        <button class="pipeline-btn pipeline-btn-primary"
+                onclick="startDraftFollowUpFromReply()">📝 Draft Follow-Up</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Bulk Send Confirmation Modal ─── -->
+  <div class="pl-modal-overlay" id="pl-bulk-modal"
+       onclick="if(event.target===this&&!plBulkSending)closeBulkSendModal()">
+    <div class="pl-modal-card">
+      <div class="pl-modal-header">
+        <h2 class="pl-modal-title">📨 Send All Drafts</h2>
+        <button class="close-btn" id="pl-bulk-close-btn" onclick="closeBulkSendModal()">✕</button>
+      </div>
+      <div class="pl-modal-body">
+        <p class="pl-bulk-count" id="pl-bulk-count">0 emails ready to send</p>
+        <div class="pl-bulk-recipient-list" id="pl-bulk-list"></div>
+        <div class="pl-bulk-progress" id="pl-bulk-progress" style="display:none">
+          <div class="pl-bulk-progress-track">
+            <div class="pl-bulk-progress-bar" id="pl-bulk-bar"></div>
+          </div>
+          <div class="pl-bulk-progress-text" id="pl-bulk-progress-text">Preparing…</div>
+        </div>
+      </div>
+      <div class="pl-modal-footer">
+        <div style="flex:1"></div>
+        <button class="pipeline-btn" id="pl-bulk-cancel-btn"
+                onclick="closeBulkSendModal()">Cancel</button>
+        <button class="pipeline-btn pipeline-btn-primary" id="pl-bulk-confirm-btn"
+                onclick="confirmBulkSend()">📨 Confirm &amp; Send All</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<!-- ══════════════════════════════════════════════════════════ -->
+
+
+<script>
+// ================================================================
+// PIPELINE — Global State
+// ================================================================
+let pipeline         = {};     // stage_key → [records]
+let pipelineSearchTerm = '';
+let plBulkSending    = false;
+let pipelineInboxOpen = false;
+
+const PIPELINE_STAGES = [
+  { key: 'draft_ready',      label: 'Draft Ready',     icon: '✉️',  color: '#2563eb' },
+  { key: 'email_sent',       label: 'Email Sent',      icon: '📨',  color: '#0891b2' },
+  { key: 'replied',          label: 'Replied',          icon: '💬',  color: '#7c3aed' },
+  { key: 'follow_up_draft',  label: 'Follow-Up Draft',  icon: '📝',  color: '#ea580c' },
+  { key: 'approved',         label: 'Approved',         icon: '✅',  color: '#16a34a' },
+  { key: 'rejected',         label: 'Rejected',         icon: '❌',  color: '#dc2626' },
+];
+
+// ================================================================
+// PIPELINE — Load & Render
+// ================================================================
+async function loadPipeline() {
+  const boardEl = document.getElementById('pipeline-board');
+  if (!boardEl) return;
+  boardEl.innerHTML = '<div class="loading"><div class="spinner"></div>Loading pipeline…</div>';
+
+  try {
+    const r = await fetch('/api/pipeline');
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    // Accept { stages: {...} } or a flat { stage_key: [...] } object
+    pipeline = data.stages || data || {};
+    PIPELINE_STAGES.forEach(s => {
+      if (!Array.isArray(pipeline[s.key])) pipeline[s.key] = [];
+    });
+    renderPipeline();
+  } catch (e) {
+    boardEl.innerHTML =
+      `<div class="loading" style="color:var(--blocked)">
+         Failed to load pipeline: ${esc(e.message)}
+         <button class="pipeline-btn" style="margin-top:12px" onclick="loadPipeline()">Retry</button>
+       </div>`;
+  }
+}
+
+function renderPipeline() {
+  const boardEl = document.getElementById('pipeline-board');
+  if (!boardEl) return;
+
+  const search = pipelineSearchTerm.toLowerCase().trim();
+
+  boardEl.innerHTML = PIPELINE_STAGES.map(stage => {
+    let records = (pipeline[stage.key] || []).slice();
+    if (search) {
+      records = records.filter(r =>
+        (r.deal_name        || '').toLowerCase().includes(search) ||
+        (r.title            || '').toLowerCase().includes(search) ||
+        (r.buyer_name       || '').toLowerCase().includes(search) ||
+        (r.buyer_email      || '').toLowerCase().includes(search) ||
+        (r.property_address || '').toLowerCase().includes(search)
+      );
+    }
+    return `<div class="column pipeline-column">
+      <div class="col-header">
+        <span style="font-size:14px;line-height:1;flex-shrink:0">${stage.icon}</span>
+        <span class="col-title">${stage.label}</span>
+        <span class="col-count">${records.length}</span>
+      </div>
+      <div class="col-body">
+        ${records.length
+          ? records.map(r => plCard(r, stage.key)).join('')
+          : '<div class="empty-col">No records</div>'}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Update count label
+  const total = PIPELINE_STAGES.reduce((n, s) => n + (pipeline[s.key]?.length || 0), 0);
+  const el = document.getElementById('pipeline-count');
+  if (el) el.textContent = `${total} record${total !== 1 ? 's' : ''}`;
+
+  // Re-render inbox badge + body if open
+  renderPipelineInbox();
+}
+
+// ── Formatting helpers ────────────────────────────────────────────
+function plFmtMoney(val) {
+  if (val === null || val === undefined || val === '') return null;
+  const n = typeof val === 'string' ? parseFloat(val.replace(/[^0-9.-]/g, '')) : Number(val);
+  if (!isFinite(n)) return null;
+  if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`;
+  if (n >= 1000)    return `$${Math.round(n / 1000)}K`;
+  return `$${n}`;
+}
+
+function plScoreColor(score) {
+  const n = parseFloat(score);
+  if (!isFinite(n)) return 'var(--text3)';
+  if (n >= 8) return '#16a34a';
+  if (n >= 6) return '#ca8a04';
+  return '#dc2626';
+}
+
+// ── Card renderer ─────────────────────────────────────────────────
+function plCard(r, stageKey) {
+  const id       = esc(r.id);
+  const dealName = r.deal_name || r.title || '(Unnamed Deal)';
+
+  const askRaw   = r.price     ?? r.ask_price;
+  const arvRaw   = r.arv;
+  const sprdRaw  = r.spread    != null ? r.spread
+                 : (arvRaw != null && askRaw != null ? arvRaw - askRaw : null);
+
+  const ask   = plFmtMoney(askRaw);
+  const arv   = plFmtMoney(arvRaw);
+  const sprd  = plFmtMoney(sprdRaw);
+  const chips = [
+    ask  ? `<span class="pipeline-stat-chip">${ask} ask</span>`     : '',
+    arv  ? `<span class="pipeline-stat-chip">${arv} ARV</span>`     : '',
+    sprd ? `<span class="pipeline-stat-chip">${sprd} spread</span>` : '',
+  ].join('');
+
+  const score     = r.match_score ?? r.score;
+  const scoreHtml = score != null ? (() => {
+    const sc = plScoreColor(score);
+    return `<span class="match-score-badge" style="background:${sc}22;color:${sc};border:1px solid ${sc}44">${Number(score).toFixed(1)}</span>`;
+  })() : '';
+
+  return `<div class="pipeline-card">
+    <div class="pipeline-card-header">
+      <div class="pipeline-card-title">${esc(dealName)}</div>
+      ${scoreHtml}
+    </div>
+    ${r.buyer_name
+      ? `<div class="pipeline-card-buyer">${esc(r.buyer_name)}${r.buyer_email
+          ? ` · <span style="color:var(--text3)">${esc(r.buyer_email)}</span>` : ''}</div>`
+      : ''}
+    ${r.property_address
+      ? `<div class="pipeline-card-address">${esc(r.property_address)}</div>`
+      : ''}
+    ${chips ? `<div class="pipeline-stats-chips">${chips}</div>` : ''}
+    <div class="pipeline-card-footer">
+      <span class="task-age">${timeAgo(r.created_at)}</span>
+      <div class="pipeline-card-actions">${plCardActions(r, stageKey)}</div>
+    </div>
+  </div>`;
+}
+
+function plCardActions(r, stageKey) {
+  const id = esc(r.id);
+  switch (stageKey) {
+    case 'draft_ready':
+      return `<button class="pipeline-btn pipeline-btn-sm" onclick="openPipelineEdit('${id}')">✏️ Edit</button>
+              <button class="pipeline-btn pipeline-btn-sm pipeline-btn-primary" onclick="confirmSingleSend('${id}')">✅ Send</button>
+              <button class="pipeline-btn pipeline-btn-sm" onclick="openEditAndAiFix('${id}')">🤖 AI Fix</button>`;
+    case 'email_sent':
+      return `<button class="pipeline-btn pipeline-btn-sm" onclick="openPipelineEdit('${id}')">View</button>`;
+    case 'replied':
+      return `<button class="pipeline-btn pipeline-btn-sm" onclick="openReplyModal('${id}')">View Reply</button>
+              <button class="pipeline-btn pipeline-btn-sm pipeline-btn-primary" onclick="draftFollowUp('${id}',this)">Draft Follow-Up</button>`;
+    case 'follow_up_draft':
+      return `<button class="pipeline-btn pipeline-btn-sm" onclick="openPipelineEdit('${id}')">✏️ Edit</button>
+              <button class="pipeline-btn pipeline-btn-sm pipeline-btn-primary" onclick="confirmSingleSend('${id}')">✅ Send</button>`;
+    default:
+      return `<button class="pipeline-btn pipeline-btn-sm" onclick="openPipelineEdit('${id}')">View</button>`;
+  }
+}
+
+// ── Record lookup ──────────────────────────────────────────────────
+function getPipelineRecord(id) {
+  for (const s of PIPELINE_STAGES) {
+    const found = (pipeline[s.key] || []).find(r => String(r.id) === String(id));
+    if (found) return found;
+  }
+  return null;
+}
+
+// ================================================================
+// PIPELINE — Edit / Draft Modal
+// ================================================================
+function openPipelineEdit(id) {
+  const r = getPipelineRecord(id);
+  if (!r) { showToast('Record not found'); return; }
+
+  document.getElementById('pl-modal-title').textContent  = r.deal_name || r.title || '(Unnamed Deal)';
+  document.getElementById('pl-modal-id').value           = r.id;
+  document.getElementById('pl-modal-subject').value      = r.email_subject || '';
+  document.getElementById('pl-modal-body-txt').value     = r.email_body    || '';
+  document.getElementById('pl-modal-errors').value       = r.error_notes   || '';
+
+  // Reset button states
+  ['pl-save-btn','pl-send-btn','pl-ai-fix-btn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = false;
+  });
+  document.getElementById('pl-save-btn').textContent  = '💾 Save Draft';
+  document.getElementById('pl-send-btn').textContent  = '📨 Send Email';
+  document.getElementById('pl-ai-fix-btn').textContent = '🤖 AI Fix';
+
+  document.getElementById('pl-edit-modal').classList.add('active');
+  setTimeout(() => document.getElementById('pl-modal-subject').focus(), 60);
+}
+
+function openEditAndAiFix(id) {
+  openPipelineEdit(id);
+  setTimeout(() => runAiFix(), 150);
+}
+
+function closePipelineEditModal() {
+  document.getElementById('pl-edit-modal').classList.remove('active');
+}
+
+async function savePipelineDraft() {
+  const id      = document.getElementById('pl-modal-id').value;
+  const subject = document.getElementById('pl-modal-subject').value.trim();
+  const body    = document.getElementById('pl-modal-body-txt').value;
+  const errors  = document.getElementById('pl-modal-errors').value;
+
+  const btn = document.getElementById('pl-save-btn');
+  btn.disabled    = true;
+  btn.textContent = '💾 Saving…';
+
+  try {
+    const r = await fetch(`/api/pipeline/${encodeURIComponent(id)}/draft`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email_subject: subject, email_body: body, error_notes: errors }),
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    // Update local cache
+    const rec = getPipelineRecord(id);
+    if (rec) {
+      rec.email_subject = subject;
+      rec.email_body    = body;
+      rec.error_notes   = errors;
+    }
+    showToast('Draft saved ✓');
+  } catch (e) {
+    showToast(`Save failed: ${e.message}`, 5000);
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = '💾 Save Draft';
+  }
+}
+
+async function sendFromModal() {
+  const id      = document.getElementById('pl-modal-id').value;
+  const subject = document.getElementById('pl-modal-subject').value.trim();
+  const body    = document.getElementById('pl-modal-body-txt').value;
+  const errors  = document.getElementById('pl-modal-errors').value;
+
+  const btn = document.getElementById('pl-send-btn');
+  btn.disabled    = true;
+  btn.textContent = '📨 Sending…';
+
+  try {
+    // Persist edits first so the server has the latest content
+    await fetch(`/api/pipeline/${encodeURIComponent(id)}/draft`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email_subject: subject, email_body: body, error_notes: errors }),
+    });
+    const r = await fetch(`/api/pipeline/${encodeURIComponent(id)}/send`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    showToast('Email sent ✓');
+    closePipelineEditModal();
+    await loadPipeline();
+  } catch (e) {
+    showToast(`Send failed: ${e.message}`, 5000);
+    btn.disabled    = false;
+    btn.textContent = '📨 Send Email';
+  }
+}
+
+async function runAiFix() {
+  const id   = document.getElementById('pl-modal-id').value;
+  const desc = document.getElementById('pl-modal-errors').value.trim() || 'General correction';
+
+  const btn = document.getElementById('pl-ai-fix-btn');
+  btn.disabled    = true;
+  btn.textContent = '🤖 Fixing…';
+
+  try {
+    const r = await fetch(`/api/pipeline/${encodeURIComponent(id)}/ai-fix`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ error_description: desc }),
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    const bodyVal    = data.email_body    || data.body    || null;
+    const subjectVal = data.email_subject || data.subject || null;
+    if (bodyVal    != null) document.getElementById('pl-modal-body-txt').value = bodyVal;
+    if (subjectVal != null) document.getElementById('pl-modal-subject').value  = subjectVal;
+    showToast('AI fix applied ✓');
+  } catch (e) {
+    showToast(`AI fix failed: ${e.message}`, 5000);
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = '🤖 AI Fix';
+  }
+}
+
+// ================================================================
+// PIPELINE — Single Send (from card button)
+// ================================================================
+async function confirmSingleSend(id) {
+  const r    = getPipelineRecord(id);
+  const name = r ? (r.deal_name || r.title || id) : id;
+  if (!confirm(`Send email for "${name}"?`)) return;
+
+  try {
+    const resp = await fetch(`/api/pipeline/${encodeURIComponent(id)}/send`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    showToast('Email sent ✓');
+    await loadPipeline();
+  } catch (e) {
+    showToast(`Send failed: ${e.message}`, 5000);
+  }
+}
+
+// ================================================================
+// PIPELINE — Reply View Modal
+// ================================================================
+function openReplyModal(id) {
+  const r = getPipelineRecord(id);
+  if (!r) { showToast('Record not found'); return; }
+
+  document.getElementById('pl-reply-title').textContent  = r.deal_name || r.title || '(Unnamed Deal)';
+  document.getElementById('pl-reply-id').value           = r.id;
+  document.getElementById('pl-reply-from').textContent   =
+    [r.buyer_name, r.buyer_email].filter(Boolean).join(' · ') || '—';
+  document.getElementById('pl-reply-body-txt').textContent =
+    r.reply_body || r.reply || r.reply_text || '(No reply content available)';
+
+  document.getElementById('pl-reply-modal').classList.add('active');
+}
+
+function closePipelineReplyModal() {
+  document.getElementById('pl-reply-modal').classList.remove('active');
+}
+
+function startDraftFollowUpFromReply() {
+  const id = document.getElementById('pl-reply-id').value;
+  closePipelineReplyModal();
+  draftFollowUp(id, null);
+}
+
+async function draftFollowUp(id, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Drafting…'; }
+  try {
+    const r = await fetch(`/api/pipeline/${encodeURIComponent(id)}/ai-fix`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ type: 'follow_up' }),
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    showToast('Follow-up draft created ✓');
+    await loadPipeline();
+  } catch (e) {
+    showToast(`Draft follow-up failed: ${e.message}`, 5000);
+    if (btn) { btn.disabled = false; btn.textContent = 'Draft Follow-Up'; }
+  }
+}
+
+// ================================================================
+// PIPELINE — Bulk Send Modal
+// ================================================================
+function openBulkSend() {
+  const drafts = pipeline['draft_ready'] || [];
+  if (!drafts.length) {
+    showToast('No Draft Ready records to send', 3000);
+    return;
+  }
+
+  document.getElementById('pl-bulk-count').textContent =
+    `${drafts.length} email${drafts.length !== 1 ? 's' : ''} ready to send:`;
+
+  document.getElementById('pl-bulk-list').innerHTML = drafts.map(r =>
+    `<div class="pl-bulk-recipient">
+      <span class="pl-bulk-rname">${esc(r.buyer_name || 'Unknown')}</span>
+      <span class="pl-bulk-remail">${esc(r.buyer_email || '—')}</span>
+      <span class="pl-bulk-rdeal">${esc(r.deal_name || r.title || '')}</span>
+    </div>`
+  ).join('');
+
+  // Reset progress UI
+  document.getElementById('pl-bulk-progress').style.display   = 'none';
+  document.getElementById('pl-bulk-bar').style.width          = '0%';
+  document.getElementById('pl-bulk-progress-text').textContent = '';
+  document.getElementById('pl-bulk-confirm-btn').style.display = '';
+  document.getElementById('pl-bulk-cancel-btn').style.display  = '';
+  document.getElementById('pl-bulk-close-btn').style.display   = '';
+  plBulkSending = false;
+
+  document.getElementById('pl-bulk-modal').classList.add('active');
+}
+
+function closeBulkSendModal() {
+  if (plBulkSending) return;
+  document.getElementById('pl-bulk-modal').classList.remove('active');
+}
+
+async function confirmBulkSend() {
+  const drafts = (pipeline['draft_ready'] || []).slice();
+  if (!drafts.length) return;
+
+  plBulkSending = true;
+  const confirmBtn  = document.getElementById('pl-bulk-confirm-btn');
+  const cancelBtn   = document.getElementById('pl-bulk-cancel-btn');
+  const closeBtn    = document.getElementById('pl-bulk-close-btn');
+  const progressEl  = document.getElementById('pl-bulk-progress');
+  const bar         = document.getElementById('pl-bulk-bar');
+  const progressTxt = document.getElementById('pl-bulk-progress-text');
+
+  confirmBtn.style.display = 'none';
+  cancelBtn.style.display  = 'none';
+  closeBtn.style.display   = 'none';
+  progressEl.style.display = '';
+  progressTxt.textContent  = `Sending ${drafts.length} emails…`;
+  bar.style.width = '10%';
+
+  const total = drafts.length;
+  let succeeded = 0, failed = 0;
+  const failedNames = [];
+
+  try {
+    // Primary: bulk send endpoint — sends all draft_ready records in one call
+    const resp = await fetch('/api/pipeline/send-all', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ ids: drafts.map(r => r.id) }),
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      // Server may return { sent, failed, errors } or just { sent }
+      succeeded = data.sent  ?? total;
+      failed    = data.failed ?? 0;
+      if (Array.isArray(data.errors)) {
+        data.errors.forEach(e => failedNames.push(e.name || e.id || 'unknown'));
+      }
+      bar.style.width = '100%';
+      progressTxt.textContent = `Sent ${succeeded} of ${total}`;
+    } else {
+      // Fallback: send per-record if bulk endpoint fails
+      throw new Error(`HTTP ${resp.status}`);
+    }
+  } catch (_bulkErr) {
+    // Fallback: iterate individually
+    for (const r of drafts) {
+      const sent = succeeded + failed + 1;
+      progressTxt.textContent = `Sending ${sent} of ${total}… ${esc(r.buyer_name || r.id)}`;
+      try {
+        const resp = await fetch(`/api/pipeline/${encodeURIComponent(r.id)}/send`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        succeeded++;
+      } catch (e) {
+        failed++;
+        failedNames.push(r.buyer_name || r.id);
+      }
+      bar.style.width = `${Math.round((succeeded + failed) / total * 100)}%`;
+    }
+  }
+
+  plBulkSending = false;
+  document.getElementById('pl-bulk-modal').classList.remove('active');
+
+  const preview = failedNames.slice(0, 3).join(', ') + (failedNames.length > 3 ? '…' : '');
+  const summary = failed === 0
+    ? `✓ All ${succeeded} emails sent successfully`
+    : `Sent ${succeeded} of ${total} · ${failed} failed: ${preview}`;
+  showToast(summary, failed > 0 ? 7000 : 4000);
+
+  await loadPipeline();
+}
+
+// ================================================================
+// PIPELINE — Inbox Section
+// ================================================================
+function togglePipelineInbox() {
+  pipelineInboxOpen = !pipelineInboxOpen;
+  const body    = document.getElementById('pipeline-inbox-body');
+  const chevron = document.getElementById('pipeline-inbox-chevron');
+  body.classList.toggle('open', pipelineInboxOpen);
+  chevron.classList.toggle('open', pipelineInboxOpen);
+  if (pipelineInboxOpen) renderPipelineInbox();
+}
+
+function renderPipelineInbox() {
+  const body  = document.getElementById('pipeline-inbox-body');
+  const badge = document.getElementById('pipeline-inbox-badge');
+  if (!body) return;
+
+  const replied  = pipeline['replied']         || [];
+  const followUp = pipeline['follow_up_draft'] || [];
+  const count    = replied.length + followUp.length;
+
+  if (badge) {
+    badge.textContent = count;
+    badge.classList.toggle('empty', count === 0);
+  }
+
+  if (!pipelineInboxOpen) return;
+
+  if (!count) {
+    body.innerHTML =
+      '<div style="color:var(--text3);font-size:12px;padding:6px 0">No replies or follow-up drafts.</div>';
+    return;
+  }
+
+  const parts = [];
+
+  if (replied.length) {
+    parts.push(`<div class="inbox-section-label">Replies (${replied.length})</div>`);
+    replied.forEach(r => parts.push(plInboxCard(r, 'replied')));
+  }
+
+  if (followUp.length) {
+    parts.push(`<div class="inbox-section-label" style="padding-top:10px">Follow-Up Drafts (${followUp.length})</div>`);
+    followUp.forEach(r => parts.push(plInboxCard(r, 'follow_up_draft')));
+  }
+
+  body.innerHTML = parts.join('');
+}
+
+function plInboxCard(r, stageKey) {
+  const id       = esc(r.id);
+  const dealName = r.deal_name || r.title || '(Unnamed Deal)';
+  const snippet  = stageKey === 'replied'
+    ? (r.reply_body || r.reply || r.reply_text || '')
+    : (r.email_body || '');
+
+  const actions = stageKey === 'replied'
+    ? `<button class="pipeline-btn pipeline-btn-sm" onclick="openReplyModal('${id}')">View Reply</button>
+       <button class="pipeline-btn pipeline-btn-sm pipeline-btn-primary" onclick="draftFollowUp('${id}',this)">Draft Follow-Up</button>`
+    : `<button class="pipeline-btn pipeline-btn-sm" onclick="openPipelineEdit('${id}')">✏️ Edit</button>
+       <button class="pipeline-btn pipeline-btn-sm pipeline-btn-primary" onclick="confirmSingleSend('${id}')">✅ Send</button>`;
+
+  return `<div class="inbox-card">
+    <div class="inbox-card-left">
+      <div class="inbox-deal-name">${esc(dealName)}</div>
+      <div class="inbox-buyer">${esc(r.buyer_name || '')}${r.buyer_email ? ' · ' + esc(r.buyer_email) : ''}</div>
+      ${snippet ? `<div class="inbox-reply-snippet">${esc(snippet)}</div>` : ''}
+    </div>
+    <div class="inbox-card-actions">${actions}</div>
+  </div>`;
+}
+
+async function checkPipelineInbox() {
+  try {
+    const r = await fetch('/api/pipeline/inbox-check');
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    const newReplies = data.new_replies ?? data.count ?? 0;
+    showToast(newReplies > 0
+      ? `Inbox: ${newReplies} new repl${newReplies !== 1 ? 'ies' : 'y'} found ✓`
+      : 'Inbox checked — no new replies');
+    await loadPipeline();
+  } catch (e) {
+    showToast(`Inbox check failed: ${e.message}`, 5000);
+  }
+}
+
+// ================================================================
+// PIPELINE — Extend switchView to handle 'pipeline'
+// ================================================================
+(function patchSwitchView() {
+  const _orig = switchView;
+
+  switchView = function(view, dept, agent) {
+    const pipelineEl = document.getElementById('view-pipeline');
+
+    if (view === 'pipeline') {
+      // Deactivate all existing views
+      ['board','departments','dept-detail','agent-board'].forEach(v => {
+        document.getElementById(`view-${v}`)?.classList.remove('active');
+      });
+      pipelineEl?.classList.add('active');
+
+      // Nav highlight
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelector('.nav-item[data-view="pipeline"]')?.classList.add('active');
+
+      // Hide KPI bar and breadcrumb (not relevant for pipeline)
+      document.getElementById('kpi-bar')?.classList.add('hidden');
+      document.getElementById('breadcrumb-bar')?.classList.add('hidden');
+
+      currentView = 'pipeline';
+      loadPipeline();
+      return;
+    }
+
+    // Ensure pipeline view is hidden for all other views
+    pipelineEl?.classList.remove('active');
+    _orig.call(this, view, dept, agent);
+  };
+})();
+</script>

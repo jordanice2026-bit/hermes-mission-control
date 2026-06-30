@@ -136,6 +136,10 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Pipeline router (Notion + Gmail)
+from pipeline import router as pipeline_router
+app.include_router(pipeline_router)
+
 
 # ---------------------------------------------------------------------------
 # Auth helpers
