@@ -50,35 +50,29 @@ GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 # ---------------------------------------------------------------------------
 
 DEPARTMENTS: dict[str, dict] = {
-    "Acquisitions": {
-        "icon": "🏢",
-        "color": "#1a56db",
-        "description": "Property sourcing, deal screening & underwriting",
-        "agents": ["property-sourcer", "deal-screener", "underwriter"],
+    "Seller Outreach": {
+        "icon": "📬",
+        "color": "#2563eb",
+        "description": "Contact verification, email drafts & direct mail",
+        "agents": ["data-ingestion", "contact-verifier", "email-drafter"],
     },
-    "Sales": {
-        "icon": "📊",
-        "color": "#0891b2",
-        "description": "Buyer sourcing, outreach & investor matching",
-        "agents": ["buyer-sourcer", "prospector", "matchmaker"],
-    },
-    "Marketing": {
-        "icon": "📣",
-        "color": "#7c3aed",
-        "description": "Listings, content & brand communications",
-        "agents": ["marketing-agent"],
-    },
-    "Research & Intelligence": {
-        "icon": "🔍",
-        "color": "#0ea5e9",
-        "description": "Market intelligence & neighborhood analysis",
-        "agents": ["research-agent"],
-    },
-    "Client Relations": {
-        "icon": "🤝",
+    "Listings": {
+        "icon": "🏘️",
         "color": "#059669",
-        "description": "Lead qualification & investor relations",
-        "agents": ["lead-agent", "investor-profiler", "owner-researcher"],
+        "description": "Listing coordination & market analysis for IN multi-family",
+        "agents": ["listing-agent", "market-researcher"],
+    },
+    "Follow-Up": {
+        "icon": "📞",
+        "color": "#7c3aed",
+        "description": "Mojo dialer coordination & call log sync",
+        "agents": ["call-coordinator", "mojo-sync"],
+    },
+    "Operations": {
+        "icon": "⚙️",
+        "color": "#0891b2",
+        "description": "System monitoring, exports & automation",
+        "agents": ["export-agent", "notion-writer"],
     },
 }
 
