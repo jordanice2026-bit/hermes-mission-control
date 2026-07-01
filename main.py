@@ -154,6 +154,13 @@ try:
 except Exception as _ex_err:
     logger.warning("Extras router failed to load: %s", _ex_err)
 
+# Listing Management router (listings, doc upload, checklist, auto-promote to deals)
+try:
+    from listings import router as listings_router
+    app.include_router(listings_router)
+except Exception as _ls_err:
+    logger.warning("Listings router failed to load: %s", _ls_err)
+
 
 # ---------------------------------------------------------------------------
 # Auth helpers
@@ -573,6 +580,98 @@ async def set_task_status(task_id: str, request: Request, user: dict = Depends(r
     _board[task_id] = task
     _broadcast("task_update", task)
     return JSONResponse({"ok": True, "task_id": task_id, "status": status})
+
+
+# ---------------------------------------------------------------------------
+# Command Console — control agents (cron jobs) from the dashboard
+#
+# Architecture: agents run on the VPS, dashboard runs on Render. The console
+# queues commands here (Render); a VPS-side worker (command_worker.py) polls
+# /api/agent-control/poll every few seconds, executes via `hermes cron`, then
+# reports agent state + command results back. The browser reads that state.
+# ---------------------------------------------------------------------------
+
+# In-memory stores (Render side)
+_command_queue: list[dict] = []      # pending commands for the VPS worker
+_command_log: list[dict] = []        # executed command history (most recent first)
+_agent_state: dict = {               # last-known state pushed by the VPS worker
+    "jobs": [],
+    "system_status": "unknown",      # running | paused | unknown
+    "updated_at": 0,
+    "worker_online": False,
+}
+_ALLOWED_COMMANDS = {"start_all", "stop_all", "pause_job", "resume_job", "run_job"}
+
+
+@app.get("/api/agent-control/state")
+async def agent_control_state(user: dict = Depends(require_user)):
+    """Browser reads current agent/system state."""
+    # worker considered online if it checked in within the last 90s
+    online = (time.time() - _agent_state.get("updated_at", 0)) < 90
+    state = dict(_agent_state)
+    state["worker_online"] = online
+    return JSONResponse({
+        "state": state,
+        "pending_commands": len(_command_queue),
+        "log": _command_log[:30],
+    })
+
+
+@app.post("/api/agent-control/command")
+async def agent_control_command(request: Request, user: dict = Depends(require_user)):
+    """Browser queues a command for the VPS worker to execute."""
+    body = await request.json()
+    action = (body.get("action") or "").strip()
+    if action not in _ALLOWED_COMMANDS:
+        raise HTTPException(400, f"Unknown action. Allowed: {sorted(_ALLOWED_COMMANDS)}")
+    cmd = {
+        "id": secrets.token_hex(8),
+        "action": action,
+        "job_id": body.get("job_id"),
+        "issued_by": user.get("email") or user.get("name") or "user",
+        "issued_at": int(time.time() * 1000),
+        "status": "queued",
+    }
+    _command_queue.append(cmd)
+    logger.info("Command queued: %s %s by %s", action, cmd.get("job_id") or "", cmd["issued_by"])
+    return JSONResponse({"ok": True, "command": cmd})
+
+
+@app.post("/api/agent-control/poll")
+async def agent_control_poll(request: Request, _=Depends(require_sync_token)):
+    """VPS worker: fetch queued commands + push current agent state.
+
+    Body: {"jobs": [...], "system_status": "...", "results": [{id,status,output}]}
+    Returns: {"commands": [...]} — the queued commands to execute this tick.
+    """
+    body = await request.json()
+
+    # 1. Update agent state snapshot
+    if "jobs" in body:
+        _agent_state["jobs"] = body["jobs"]
+    if "system_status" in body:
+        _agent_state["system_status"] = body["system_status"]
+    _agent_state["updated_at"] = time.time()
+
+    # 2. Record any results the worker reports for previously-issued commands
+    for res in body.get("results", []):
+        cid = res.get("id")
+        for c in _command_queue:
+            if c["id"] == cid:
+                c["status"] = res.get("status", "done")
+                c["output"] = (res.get("output") or "")[:500]
+                c["completed_at"] = int(time.time() * 1000)
+                _command_log.insert(0, c)
+        # remove completed from the queue
+    done_ids = {r.get("id") for r in body.get("results", [])}
+    remaining = [c for c in _command_queue if c["id"] not in done_ids]
+    _command_queue.clear()
+    _command_queue.extend(remaining)
+    # trim log
+    del _command_log[100:]
+
+    # 3. Hand back the still-queued commands for this tick
+    return JSONResponse({"commands": list(_command_queue)})
 
 
 # ---------------------------------------------------------------------------

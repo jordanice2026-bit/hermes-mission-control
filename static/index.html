@@ -467,6 +467,85 @@ nav{display:flex;gap:2px;flex:1}
 .dd-comm{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px}
 .dd-comm-subj{font-size:13px;font-weight:500}
 .dd-comm-meta{font-size:11px;color:var(--text3);margin-top:2px}
+/* ── LISTINGS ── */
+.listings-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;padding:20px;overflow-y:auto;align-content:start}
+.listing-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.listing-card:hover{border-color:var(--accent2);transform:translateY(-2px);box-shadow:0 8px 28px var(--accent-glow)}
+.listing-card.promoted{border-left:3px solid var(--done)}
+.listing-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
+.listing-address{font-size:15px;font-weight:600;line-height:1.3}
+.listing-owner{font-size:12px;color:var(--text3);margin-top:2px}
+.listing-status-badge{font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:10px;font-weight:600;white-space:nowrap;flex-shrink:0}
+.ls-pre-listing{background:rgba(123,141,176,.15);color:var(--text2)}
+.ls-active{background:rgba(0,230,118,.14);color:var(--done)}
+.ls-pending{background:rgba(255,171,0,.16);color:#ffab00}
+.ls-under-contract{background:rgba(255,123,0,.16);color:#ff9d3d}
+.ls-sold{background:rgba(41,121,255,.16);color:var(--accent2)}
+.ls-withdrawn,.ls-expired{background:rgba(255,23,68,.12);color:#ff5983}
+.listing-price{font-size:18px;font-weight:700;color:var(--accent2);margin:6px 0}
+.listing-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.listing-chip{font-size:10px;padding:3px 8px;border-radius:6px;background:var(--surface3);color:var(--text2);white-space:nowrap}
+.listing-docs{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.doc-indicator{flex:1;display:flex;align-items:center;gap:6px;font-size:11px;padding:6px 8px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border)}
+.doc-indicator .doc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.doc-dot.none{background:var(--text3)}
+.doc-dot.uploaded{background:#ffab00}
+.doc-dot.executed{background:var(--done);box-shadow:0 0 6px rgba(0,230,118,.4)}
+.promote-ready-banner{margin-top:10px;padding:8px 10px;border-radius:var(--radius-sm);background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.3);color:var(--done);font-size:11px;font-weight:600;text-align:center}
+.ld-doc-slot{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+.ld-doc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.ld-doc-name{font-size:13px;font-weight:600}
+.ld-doc-file{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);margin-bottom:10px;padding:8px 10px;background:var(--surface);border-radius:var(--radius-sm)}
+.ld-upload-row{display:flex;gap:8px;align-items:center}
+.ld-exec-row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px}
+.ld-checklist-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.ld-checklist-item:last-child{border-bottom:none}
+.ld-check{width:18px;height:18px;flex-shrink:0;cursor:pointer;accent-color:var(--done)}
+.ld-check-label{flex:1;font-size:13px}
+.ld-check-label.done{text-decoration:line-through;color:var(--text3)}
+.ld-check-date{font-size:11px;color:var(--text3)}
+.ld-promote-box{background:linear-gradient(135deg,rgba(0,230,118,.08),transparent);border:1px solid rgba(0,230,118,.3);border-radius:var(--radius);padding:16px;margin-top:16px;text-align:center}
+.ld-promote-title{font-size:14px;font-weight:600;color:var(--done);margin-bottom:6px}
+.ld-promote-desc{font-size:12px;color:var(--text2);margin-bottom:12px}
+.ld-promoted-badge{background:rgba(41,121,255,.1);border:1px solid rgba(41,121,255,.3);border-radius:var(--radius);padding:14px;margin-top:16px;text-align:center;color:var(--accent2);font-size:13px;font-weight:600}
+/* ── COMMAND CONSOLE ── */
+.command-wrap{padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:16px;max-width:900px}
+.cmd-master{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;display:flex;align-items:center;gap:20px}
+.cmd-master-status{flex:1}
+.cmd-status-pill{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;padding:6px 14px;border-radius:20px}
+.cmd-status-pill .dot{width:10px;height:10px;border-radius:50%}
+.cmd-running{background:rgba(0,230,118,.12);color:var(--done)}
+.cmd-running .dot{background:var(--done);box-shadow:0 0 8px var(--done);animation:pulse-neon 2s ease-in-out infinite}
+.cmd-paused{background:rgba(255,171,0,.14);color:#ffab00}
+.cmd-paused .dot{background:#ffab00}
+.cmd-partial{background:rgba(41,121,255,.12);color:var(--accent2)}
+.cmd-partial .dot{background:var(--accent2)}
+.cmd-unknown{background:var(--surface3);color:var(--text3)}
+.cmd-unknown .dot{background:var(--text3)}
+.cmd-master-desc{font-size:12px;color:var(--text3);margin-top:6px}
+.cmd-master-actions{display:flex;gap:10px}
+.cmd-btn-big{padding:12px 22px;font-size:14px;font-weight:600;border-radius:var(--radius)}
+.worker-warn{background:rgba(255,171,0,.08);border:1px solid rgba(255,171,0,.3);color:#ffab00;border-radius:var(--radius);padding:12px 16px;font-size:12px}
+.cmd-section-title{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:4px}
+.agent-list{display:flex;flex-direction:column;gap:8px}
+.agent-row{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px}
+.agent-row.disabled{opacity:.6}
+.agent-status-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.agent-status-dot.on{background:var(--done);box-shadow:0 0 6px rgba(0,230,118,.4)}
+.agent-status-dot.off{background:var(--text3)}
+.agent-info{flex:1;min-width:0}
+.agent-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.agent-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.agent-actions{display:flex;gap:6px;flex-shrink:0}
+.cmd-log{display:flex;flex-direction:column;gap:6px}
+.cmd-log-item{display:flex;align-items:center;gap:10px;font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px}
+.cmd-log-action{font-weight:600;color:var(--text)}
+.cmd-log-status{font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:2px 6px;border-radius:4px;font-weight:600}
+.cmd-log-status.done{background:rgba(0,230,118,.12);color:var(--done)}
+.cmd-log-status.error{background:rgba(255,23,68,.12);color:#ff5983}
+.cmd-log-status.queued{background:rgba(255,171,0,.14);color:#ffab00}
+.cmd-log-meta{color:var(--text3);margin-left:auto;font-size:11px}
+/* ── Light mode overrides for hardcoded values ── */
 :root.light .pl-modal-overlay{background:rgba(8,13,42,.45)}
 :root.light .deal-modal-overlay{background:rgba(8,13,42,.45)}
 :root.light .pl-modal-card{box-shadow:0 8px 40px rgba(8,13,42,.18)}
@@ -509,6 +588,7 @@ nav{display:flex;gap:2px;flex:1}
   <nav>
     <button class="nav-item active" data-view="board">Board</button>
     <button class="nav-item" data-view="alerts">⚠️ Alerts <span class="nav-badge" id="alert-nav-badge" style="display:none"></span></button>
+    <button class="nav-item" data-view="listings">📋 Listings</button>
     <button class="nav-item" data-view="deals">Deal Pipeline</button>
     <button class="nav-item" data-view="tc">TC Inbox</button>
     <button class="nav-item" data-view="calendar">Calendar</button>
@@ -518,6 +598,7 @@ nav{display:flex;gap:2px;flex:1}
     <button class="nav-item" data-view="departments">Depts</button>
     <button class="nav-item" data-view="templates">Templates</button>
     <button class="nav-item" data-view="exports">Exports</button>
+    <button class="nav-item" data-view="command">⚡ Command</button>
     <button class="nav-item" data-view="settings">⚙️</button>
   </nav>
   <div class="topbar-right">
@@ -763,6 +844,19 @@ nav{display:flex;gap:2px;flex:1}
     </div>
   </div>
 
+  <!-- LISTINGS VIEW -->
+  <div class="view" id="view-listings">
+    <div class="action-bar">
+      <button class="btn btn-green" onclick="openListingModal()">+ New Listing</button>
+      <button class="btn" onclick="loadListings()">🔄 Refresh</button>
+      <div class="spacer"></div>
+      <span class="record-count" id="listings-count"></span>
+    </div>
+    <div class="listings-board" id="listings-board">
+      <div class="loading"><div class="spinner"></div> Loading…</div>
+    </div>
+  </div>
+
   <!-- CALENDAR VIEW -->
   <div class="view" id="view-calendar">
     <div class="action-bar">
@@ -819,6 +913,19 @@ nav{display:flex;gap:2px;flex:1}
     </div>
   </div>
 
+  <!-- COMMAND CONSOLE VIEW -->
+  <div class="view" id="view-command">
+    <div class="action-bar">
+      <h2 class="view-title">⚡ Command Console</h2>
+      <button class="btn" onclick="loadCommandConsole()">🔄 Refresh</button>
+      <div class="spacer"></div>
+      <span class="record-count" id="command-worker-status"></span>
+    </div>
+    <div class="command-wrap" id="command-wrap">
+      <div class="loading"><div class="spinner"></div> Loading…</div>
+    </div>
+  </div>
+
 </div>
 <div id="toast-container"></div>
 
@@ -830,6 +937,111 @@ nav{display:flex;gap:2px;flex:1}
       <button class="pl-modal-close" onclick="closeDealDetails()">✕</button>
     </div>
     <div class="deal-modal-body" id="dd-body">
+      <div class="loading"><div class="spinner"></div> Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- LISTING FORM MODAL (create/edit) -->
+<div class="pl-modal-overlay" id="listing-modal">
+  <div class="pl-modal-card" style="max-width:640px">
+    <div class="pl-modal-header">
+      <div class="pl-modal-title" id="listing-modal-title">New Listing</div>
+      <button class="pl-modal-close" onclick="closeListingModal()">✕</button>
+    </div>
+    <div class="pl-modal-body">
+      <input type="hidden" id="listing-id">
+      <div class="form-group">
+        <label class="form-label">Property Address *</label>
+        <input class="form-input" id="listing-address" placeholder="123 Main St, Indianapolis, IN 46201">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Owner * <span style="color:var(--text3);font-weight:400">(required — every listing needs an owner)</span></label>
+        <select class="form-input" id="listing-owner"><option value="">Loading owners…</option></select>
+      </div>
+      <div class="deal-row-2">
+        <div class="form-group">
+          <label class="form-label">Listing Status</label>
+          <select class="form-input" id="listing-status">
+            <option value="Pre-Listing">Pre-Listing</option>
+            <option value="Active">Active</option>
+            <option value="Pending">Pending</option>
+            <option value="Under Contract">Under Contract</option>
+            <option value="Sold">Sold</option>
+            <option value="Withdrawn">Withdrawn</option>
+            <option value="Expired">Expired</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Property Type</label>
+          <select class="form-input" id="listing-proptype">
+            <option value="">—</option>
+            <option value="Single Family (1 unit)">Single Family (1 unit)</option>
+            <option value="Duplex (2 unit)">Duplex (2 unit)</option>
+            <option value="Triplex (3 unit)">Triplex (3 unit)</option>
+            <option value="Fourplex (4 unit)">Fourplex (4 unit)</option>
+          </select>
+        </div>
+      </div>
+      <div class="deal-row-3">
+        <div class="form-group">
+          <label class="form-label">List Price ($)</label>
+          <input class="form-input" id="listing-price" type="number" min="0" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Commission %</label>
+          <input class="form-input" id="listing-commission" type="number" step="0.01" placeholder="6">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Listing Type</label>
+          <select class="form-input" id="listing-type">
+            <option value="">—</option>
+            <option value="Exclusive Right to Sell">Exclusive Right to Sell</option>
+            <option value="Exclusive Agency">Exclusive Agency</option>
+            <option value="Open">Open</option>
+          </select>
+        </div>
+      </div>
+      <div class="deal-row-2">
+        <div class="form-group">
+          <label class="form-label">Listing Start Date</label>
+          <input class="form-input" id="listing-start" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Listing Expiration</label>
+          <input class="form-input" id="listing-expiration" type="date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Seller Name(s)</label>
+        <input class="form-input" id="listing-sellers" placeholder="John & Jane Doe">
+      </div>
+      <div class="deal-row-2">
+        <div class="form-group">
+          <label class="form-label">MLS Number</label>
+          <input class="form-input" id="listing-mls" placeholder="MLS#">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-textarea" id="listing-notes" rows="3" style="min-height:64px"></textarea>
+      </div>
+    </div>
+    <div class="pl-modal-footer">
+      <button class="btn" onclick="closeListingModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveListing()">Save Listing</button>
+    </div>
+  </div>
+</div>
+
+<!-- LISTING DETAILS MODAL (docs, checklist, promote) -->
+<div class="deal-modal-overlay" id="ld-modal">
+  <div class="deal-modal-card">
+    <div class="deal-modal-header">
+      <div class="deal-modal-title" id="ld-title">Listing</div>
+      <button class="pl-modal-close" onclick="closeListingDetails()">✕</button>
+    </div>
+    <div class="deal-modal-body" id="ld-body">
       <div class="loading"><div class="spinner"></div> Loading…</div>
     </div>
   </div>
@@ -1185,7 +1397,8 @@ function switchView(view){
     'agent-board':'view-agent-board','owners':'view-owners','pipeline':'view-pipeline',
     'exports':'view-exports','deals':'view-deals','tc':'view-tc',
     'alerts':'view-alerts','calendar':'view-calendar','analytics':'view-analytics',
-    'templates':'view-templates','settings':'view-settings'
+    'templates':'view-templates','settings':'view-settings','listings':'view-listings',
+    'command':'view-command'
   };
   const vid=mapping[view]||('view-'+view);
   const el=document.getElementById(vid);
@@ -1200,6 +1413,8 @@ function switchView(view){
   if(view==='analytics')loadAnalytics();
   if(view==='templates')loadTemplates();
   if(view==='settings')loadSettings();
+  if(view==='listings')loadListings();
+  if(view==='command')loadCommandConsole();
 }
 document.querySelectorAll('.nav-item').forEach(btn=>{
   btn.addEventListener('click',()=>switchView(btn.dataset.view));
@@ -2606,6 +2821,379 @@ function gotoSearchResult(view,type,id){
   document.getElementById('global-search').value='';
   if(type==='deal'){switchView('deals');setTimeout(()=>openDealDetails(id),200);}
   else{switchView(view);}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LISTING MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════════════
+let listings=[];
+let listingOwners=[];
+
+async function loadListings(){
+  const board=document.getElementById('listings-board');
+  board.innerHTML='<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try{
+    const r=await api('/api/listings');
+    if(!r.ok)throw new Error((await r.json().catch(()=>({}))).detail||r.statusText);
+    listings=(await r.json()).listings||[];
+    renderListings();
+  }catch(e){
+    board.innerHTML=`<div class="alert-empty">Failed to load listings: ${esc(e.message)}</div>`;
+  }
+}
+function statusClass(s){return 'ls-'+(s||'pre-listing').toLowerCase().replace(/[^a-z]+/g,'-');}
+function renderListings(){
+  const board=document.getElementById('listings-board');
+  document.getElementById('listings-count').textContent=listings.length+' listing'+(listings.length===1?'':'s');
+  if(!listings.length){board.innerHTML='<div class="alert-empty">No listings yet. Click "+ New Listing" to add one.</div>';return;}
+  board.innerHTML='';
+  listings.forEach(l=>{
+    const card=document.createElement('div');
+    card.className='listing-card'+(l.promoted_to_deal?' promoted':'');
+    const laDot=l.listing_agreement_executed?'executed':(l.has_listing_agreement?'uploaded':'none');
+    const paDot=l.purchase_agreement_executed?'executed':(l.has_purchase_agreement?'uploaded':'none');
+    const readyToPromote=l.listing_agreement_executed&&l.purchase_agreement_executed&&!l.promoted_to_deal;
+    let meta='';
+    if(l.property_type)meta+=`<span class="listing-chip">${esc(l.property_type)}</span>`;
+    if(l.commission_pct)meta+=`<span class="listing-chip">${(l.commission_pct*100).toFixed(1)}% comm</span>`;
+    if(l.listing_expiration)meta+=`<span class="listing-chip">exp ${fmtDate(l.listing_expiration)}</span>`;
+    card.innerHTML=`
+      <div class="listing-card-top">
+        <div><div class="listing-address">${esc(l.address||'Untitled')}</div>
+          <div class="listing-owner">👤 ${esc(l.owner_name||'No owner')}</div></div>
+        <span class="listing-status-badge ${statusClass(l.status)}">${esc(l.status||'Pre-Listing')}</span>
+      </div>
+      ${l.list_price?`<div class="listing-price">${fmtMoney(l.list_price)}</div>`:''}
+      <div class="listing-meta">${meta}</div>
+      <div class="listing-docs">
+        <div class="doc-indicator"><span class="doc-dot ${laDot}"></span>Listing Agmt${l.listing_agreement_executed?' ✓':''}</div>
+        <div class="doc-indicator"><span class="doc-dot ${paDot}"></span>Purchase Agmt${l.purchase_agreement_executed?' ✓':''}</div>
+      </div>
+      ${readyToPromote?'<div class="promote-ready-banner">✅ Ready to promote to Deal Pipeline</div>':''}
+      ${l.promoted_to_deal?'<div class="promote-ready-banner" style="background:rgba(41,121,255,.1);border-color:rgba(41,121,255,.3);color:var(--accent2)">→ In Deal Pipeline</div>':''}
+    `;
+    card.onclick=()=>openListingDetails(l.id);
+    board.appendChild(card);
+  });
+}
+
+// ── CREATE/EDIT FORM ──
+async function ensureOwners(){
+  if(listingOwners.length)return;
+  try{
+    const r=await api('/api/listings-owners');
+    listingOwners=(await r.json()).owners||[];
+  }catch(e){listingOwners=[];}
+}
+async function openListingModal(editId){
+  await ensureOwners();
+  const sel=document.getElementById('listing-owner');
+  sel.innerHTML='<option value="">Select an owner…</option>'+
+    listingOwners.map(o=>`<option value="${o.id}">${esc(o.name)}</option>`).join('');
+  ['listing-address','listing-price','listing-commission','listing-start','listing-expiration','listing-sellers','listing-mls','listing-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('listing-id').value='';
+  document.getElementById('listing-status').value='Pre-Listing';
+  document.getElementById('listing-proptype').value='';
+  document.getElementById('listing-type').value='';
+  document.getElementById('listing-modal-title').textContent='New Listing';
+  if(editId){
+    const l=listings.find(x=>x.id===editId);
+    if(l){
+      document.getElementById('listing-id').value=l.id;
+      document.getElementById('listing-address').value=l.address||'';
+      document.getElementById('listing-owner').value=(l.owner_ids||[])[0]||'';
+      document.getElementById('listing-status').value=l.status||'Pre-Listing';
+      document.getElementById('listing-proptype').value=l.property_type||'';
+      document.getElementById('listing-price').value=l.list_price||'';
+      document.getElementById('listing-commission').value=l.commission_pct?(l.commission_pct*100):'';
+      document.getElementById('listing-type').value=l.listing_type||'';
+      document.getElementById('listing-start').value=(l.listing_start_date||'').split('T')[0];
+      document.getElementById('listing-expiration').value=(l.listing_expiration||'').split('T')[0];
+      document.getElementById('listing-sellers').value=l.seller_names||'';
+      document.getElementById('listing-mls').value=l.mls_number||'';
+      document.getElementById('listing-notes').value=l.notes||'';
+      document.getElementById('listing-modal-title').textContent='Edit Listing';
+    }
+  }
+  document.getElementById('listing-modal').classList.add('open');
+}
+function closeListingModal(){document.getElementById('listing-modal').classList.remove('open');}
+async function saveListing(){
+  const id=document.getElementById('listing-id').value;
+  const address=document.getElementById('listing-address').value.trim();
+  const owner_id=document.getElementById('listing-owner').value;
+  if(!address){showToast('Property address required','error');return;}
+  if(!owner_id){showToast('An owner is required for every listing','error');return;}
+  const body={
+    address, owner_id,
+    status:document.getElementById('listing-status').value,
+    property_type:document.getElementById('listing-proptype').value||null,
+    list_price:parseFloat(document.getElementById('listing-price').value)||null,
+    commission_pct:parseFloat(document.getElementById('listing-commission').value)||null,
+    listing_type:document.getElementById('listing-type').value||null,
+    listing_start_date:document.getElementById('listing-start').value||null,
+    listing_expiration:document.getElementById('listing-expiration').value||null,
+    seller_names:document.getElementById('listing-sellers').value.trim()||null,
+    mls_number:document.getElementById('listing-mls').value.trim()||null,
+    notes:document.getElementById('listing-notes').value.trim()||null
+  };
+  try{
+    let r;
+    if(id){r=await api('/api/listings/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
+    else{r=await api('/api/listings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
+    if(!r.ok)throw new Error((await r.json().catch(()=>({}))).detail||r.statusText);
+    showToast('Listing saved','success');
+    closeListingModal();loadListings();
+  }catch(e){showToast('Save failed: '+e.message,'error');}
+}
+
+// ── DETAILS MODAL (docs, checklist, promote) ──
+let currentListing=null;
+async function openListingDetails(id){
+  document.getElementById('ld-modal').classList.add('open');
+  document.getElementById('ld-body').innerHTML='<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try{
+    const r=await api('/api/listings/'+id);
+    currentListing=await r.json();
+    renderListingDetails(currentListing);
+  }catch(e){document.getElementById('ld-body').innerHTML=`<div class="alert-empty">Failed: ${esc(e.message)}</div>`;}
+}
+function closeListingDetails(){document.getElementById('ld-modal').classList.remove('open');currentListing=null;}
+function renderListingDetails(l){
+  document.getElementById('ld-title').textContent=l.address||'Listing';
+  function f(label,val){return `<div class="dd-field"><div class="dd-field-label">${esc(label)}</div><div class="dd-field-value">${esc(val||'—')}</div></div>`;}
+  function docSlot(type,label,files,executed){
+    const has=files&&files.length;
+    let fileHtml=has?files.map(fo=>{
+      const link=fo.url?`<a href="${esc(fo.url)}" target="_blank" style="color:var(--accent2)">${esc(fo.name||'View')} ↗</a>`:esc(fo.name||'Uploaded');
+      return `<div class="ld-doc-file">📄 ${link}</div>`;
+    }).join(''):'<div style="font-size:12px;color:var(--text3);margin-bottom:8px">No document uploaded yet</div>';
+    return `<div class="ld-doc-slot">
+      <div class="ld-doc-head"><div class="ld-doc-name">${esc(label)}</div>
+        ${has?`<span class="listing-chip" style="background:rgba(0,230,118,.12);color:var(--done)">Uploaded</span>`:''}</div>
+      ${fileHtml}
+      <div class="ld-upload-row">
+        <input type="file" id="ld-file-${type}" accept="application/pdf" style="font-size:11px;flex:1">
+        <button class="btn btn-sm btn-primary" onclick="uploadDoc('${l.id}','${type}')">⬆ Upload</button>
+      </div>
+      <div class="ld-exec-row">
+        <label class="toggle"><input type="checkbox" id="ld-exec-${type}" ${executed?'checked':''} onchange="toggleExecuted('${l.id}','${type}',this.checked)"><span class="toggle-slider"></span></label>
+        <span>Fully executed with signatures</span>
+      </div>
+    </div>`;
+  }
+  // Checklist
+  let checklistHtml='';
+  if(l.checklist&&l.checklist.length){
+    checklistHtml=`<div class="dd-section"><div class="dd-section-title">Transaction Checklist</div>`+
+      l.checklist.map((c,i)=>`
+        <div class="ld-checklist-item">
+          <input type="checkbox" class="ld-check" ${c.done?'checked':''} onchange="toggleChecklist('${l.id}',${i},this.checked)">
+          <span class="ld-check-label ${c.done?'done':''}">${esc(c.item)}</span>
+          ${c.date?`<span class="ld-check-date">${fmtDate(c.date)}</span>`:''}
+        </div>`).join('')+`</div>`;
+  }
+  // Promote box
+  const ready=l.listing_agreement_executed&&l.purchase_agreement_executed&&!l.promoted_to_deal;
+  let promoteHtml='';
+  if(l.promoted_to_deal){
+    promoteHtml=`<div class="ld-promoted-badge">✅ This listing has been promoted to the Deal Pipeline.<br>
+      <button class="btn btn-sm" style="margin-top:8px" onclick="closeListingDetails();switchView('deals')">View in Deal Pipeline →</button></div>`;
+  }else if(ready){
+    promoteHtml=`<div class="ld-promote-box">
+      <div class="ld-promote-title">🚀 Ready to Promote</div>
+      <div class="ld-promote-desc">Both agreements are uploaded and marked fully executed. Promote this listing to the Deal Pipeline to begin transaction monitoring.</div>
+      <button class="btn btn-primary" onclick="promoteListing('${l.id}')">Promote to Deal Pipeline</button></div>`;
+  }else{
+    const need=[];
+    if(!l.has_listing_agreement)need.push('upload listing agreement');
+    else if(!l.listing_agreement_executed)need.push('mark listing agreement executed');
+    if(!l.has_purchase_agreement)need.push('upload purchase agreement');
+    else if(!l.purchase_agreement_executed)need.push('mark purchase agreement executed');
+    promoteHtml=`<div class="ld-promote-box" style="background:var(--surface2);border-color:var(--border)">
+      <div class="ld-promote-desc" style="margin:0">To auto-promote to the Deal Pipeline: ${esc(need.join(' · '))}.</div></div>`;
+  }
+  document.getElementById('ld-body').innerHTML=`
+    <div class="dd-section"><div class="dd-section-title">Overview</div>
+      <div class="dd-grid">
+        ${f('Owner',l.owner_name)}${f('Status',l.status)}
+        ${f('List Price',fmtMoney(l.list_price))}${f('Commission',l.commission_pct?(l.commission_pct*100).toFixed(2)+'%':'—')}
+        ${f('Listing Type',l.listing_type)}${f('Property Type',l.property_type)}
+        ${f('Start',fmtDate(l.listing_start_date))}${f('Expiration',fmtDate(l.listing_expiration))}
+        ${f('Seller(s)',l.seller_names)}${f('MLS #',l.mls_number)}
+      </div>
+      <button class="btn btn-sm" style="margin-top:10px" onclick="closeListingDetails();openListingModal('${l.id}')">✏️ Edit Terms</button>
+    </div>
+    <div class="dd-section"><div class="dd-section-title">Documents</div>
+      ${docSlot('listing','Listing Agreement',l.listing_agreement,l.listing_agreement_executed)}
+      ${docSlot('purchase','Purchase Agreement',l.purchase_agreement,l.purchase_agreement_executed)}
+    </div>
+    ${checklistHtml}
+    ${promoteHtml}`;
+}
+async function uploadDoc(listingId,type){
+  const input=document.getElementById('ld-file-'+type);
+  if(!input.files||!input.files[0]){showToast('Choose a PDF first','error');return;}
+  const fd=new FormData();
+  fd.append('doc_type',type);
+  fd.append('file',input.files[0]);
+  showToast('Uploading & parsing…');
+  try{
+    const r=await api('/api/listings/'+listingId+'/upload',{method:'POST',body:fd});
+    if(!r.ok)throw new Error((await r.json().catch(()=>({}))).detail||r.statusText);
+    const d=await r.json();
+    showToast('Uploaded'+(d.parsed&&!d.parsed.error?' & parsed terms':''),'success');
+    currentListing=d.listing;
+    renderListingDetails(currentListing);
+  }catch(e){showToast('Upload failed: '+e.message,'error');}
+}
+async function toggleExecuted(listingId,type,checked){
+  const field=type==='listing'?'listing_agreement_executed':'purchase_agreement_executed';
+  try{
+    const r=await api('/api/listings/'+listingId,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({[field]:checked})});
+    if(!r.ok)throw new Error(r.statusText);
+    const d=await r.json();
+    if(d.promoted){
+      showToast('🚀 Auto-promoted to Deal Pipeline!','success');
+    }else{
+      showToast('Updated','success');
+    }
+    currentListing=d.listing;
+    renderListingDetails(currentListing);
+  }catch(e){showToast('Update failed: '+e.message,'error');}
+}
+async function toggleChecklist(listingId,idx,checked){
+  if(!currentListing)return;
+  currentListing.checklist[idx].done=checked;
+  try{
+    await api('/api/listings/'+listingId+'/checklist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({checklist:currentListing.checklist})});
+    renderListingDetails(currentListing);
+  }catch(e){showToast('Checklist update failed','error');}
+}
+async function promoteListing(listingId){
+  try{
+    const r=await api('/api/listings/'+listingId+'/promote',{method:'POST'});
+    if(!r.ok)throw new Error((await r.json().catch(()=>({}))).detail||r.statusText);
+    showToast('🚀 Promoted to Deal Pipeline!','success');
+    const rr=await api('/api/listings/'+listingId);
+    currentListing=await rr.json();
+    renderListingDetails(currentListing);
+    loadListings();
+  }catch(e){showToast('Promote failed: '+e.message,'error');}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COMMAND CONSOLE
+// ═══════════════════════════════════════════════════════════════════════════
+let commandPollTimer=null;
+async function loadCommandConsole(){
+  const wrap=document.getElementById('command-wrap');
+  wrap.innerHTML='<div class="loading"><div class="spinner"></div> Loading…</div>';
+  await refreshCommandConsole();
+  // auto-refresh while on this view
+  if(commandPollTimer)clearInterval(commandPollTimer);
+  commandPollTimer=setInterval(()=>{
+    if(currentView==='command')refreshCommandConsole();
+    else{clearInterval(commandPollTimer);commandPollTimer=null;}
+  },5000);
+}
+async function refreshCommandConsole(){
+  try{
+    const r=await api('/api/agent-control/state');
+    if(!r.ok)throw new Error((await r.json().catch(()=>({}))).detail||r.statusText);
+    renderCommandConsole(await r.json());
+  }catch(e){
+    document.getElementById('command-wrap').innerHTML=`<div class="alert-empty">Failed: ${esc(e.message)}</div>`;
+  }
+}
+function renderCommandConsole(d){
+  const wrap=document.getElementById('command-wrap');
+  const st=d.state||{};
+  const jobs=st.jobs||[];
+  const online=st.worker_online;
+  const status=st.system_status||'unknown';
+  const statusMap={running:['cmd-running','● System Running'],paused:['cmd-paused','⏸ System Paused'],partial:['cmd-partial','◐ Partially Running'],unknown:['cmd-unknown','? Unknown']};
+  const [scls,slabel]=statusMap[status]||statusMap.unknown;
+  document.getElementById('command-worker-status').textContent=online?'Worker online':'Worker offline';
+
+  const enabledCount=jobs.filter(j=>j.enabled).length;
+  let html='';
+
+  if(!online){
+    html+=`<div class="worker-warn">⚠️ The agent control worker on the VPS is offline (last check-in over 90s ago). Commands will queue and execute once it reconnects. The worker runs as a cron job every minute.</div>`;
+  }
+
+  // Master control
+  html+=`<div class="cmd-master">
+    <div class="cmd-master-status">
+      <span class="cmd-status-pill ${scls}"><span class="dot"></span>${slabel}</span>
+      <div class="cmd-master-desc">${enabledCount} of ${jobs.length} agents active${st.updated_at?' · updated '+timeAgo(st.updated_at*1000):''}</div>
+    </div>
+    <div class="cmd-master-actions">
+      <button class="btn btn-green cmd-btn-big" onclick="sendCommand('start_all')">▶ Start System</button>
+      <button class="btn btn-danger cmd-btn-big" onclick="confirmStopAll()">■ Stop System</button>
+    </div>
+  </div>`;
+
+  // Agent list
+  html+=`<div><div class="cmd-section-title">Agents (${jobs.length})</div><div class="agent-list">`;
+  if(!jobs.length){
+    html+='<div class="alert-empty" style="padding:24px">No agents found. Waiting for worker to report…</div>';
+  }else{
+    jobs.forEach(j=>{
+      const on=j.enabled;
+      const last=j.last_run_at?('ran '+timeAgo(j.last_run_at)):'never run';
+      const laststatus=j.last_status?(' · '+j.last_status):'';
+      html+=`<div class="agent-row ${on?'':'disabled'}">
+        <span class="agent-status-dot ${on?'on':'off'}"></span>
+        <div class="agent-info">
+          <div class="agent-name">${esc(j.name)}</div>
+          <div class="agent-meta">${esc(j.schedule||'')} · ${esc(last)}${esc(laststatus)}</div>
+        </div>
+        <div class="agent-actions">
+          ${on
+            ? `<button class="btn btn-sm" onclick="sendCommand('pause_job','${j.id}')">⏸ Pause</button>`
+            : `<button class="btn btn-sm btn-green" onclick="sendCommand('resume_job','${j.id}')">▶ Resume</button>`}
+          <button class="btn btn-sm" onclick="sendCommand('run_job','${j.id}')">⚡ Run Now</button>
+        </div>
+      </div>`;
+    });
+  }
+  html+=`</div></div>`;
+
+  // Command log
+  const log=d.log||[];
+  if(log.length){
+    html+=`<div><div class="cmd-section-title">Recent Commands</div><div class="cmd-log">`;
+    log.forEach(c=>{
+      const when=c.completed_at||c.issued_at;
+      html+=`<div class="cmd-log-item">
+        <span class="cmd-log-action">${esc(c.action)}${c.job_id?' ('+esc(String(c.job_id).slice(0,8))+')':''}</span>
+        <span class="cmd-log-status ${esc(c.status)}">${esc(c.status)}</span>
+        ${c.output?`<span style="color:var(--text3)">${esc(String(c.output).slice(0,60))}</span>`:''}
+        <span class="cmd-log-meta">${esc(c.issued_by||'')} · ${when?timeAgo(when):''}</span>
+      </div>`;
+    });
+    html+=`</div></div>`;
+  }
+
+  wrap.innerHTML=html;
+}
+async function sendCommand(action,jobId){
+  try{
+    const body={action};if(jobId)body.job_id=jobId;
+    const r=await api('/api/agent-control/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok)throw new Error((await r.json().catch(()=>({}))).detail||r.statusText);
+    const labels={start_all:'Start system',stop_all:'Stop system',pause_job:'Pause agent',resume_job:'Resume agent',run_job:'Run agent'};
+    showToast((labels[action]||action)+' — queued','success');
+    setTimeout(refreshCommandConsole,800);
+    setTimeout(refreshCommandConsole,3000);
+  }catch(e){showToast('Command failed: '+e.message,'error');}
+}
+function confirmStopAll(){
+  if(confirm('Stop the entire system? This pauses ALL agents until you start them again.')){
+    sendCommand('stop_all');
+  }
 }
 
 // ── THEME TOGGLE ─────────────────────────────────────────────────────────────
