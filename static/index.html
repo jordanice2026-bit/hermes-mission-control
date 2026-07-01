@@ -5521,6 +5521,35 @@ function startOrbLoop(){
     // varies. Revert: set LOW_BASE=1 (or delete the pca[] writes below) to
     // go back to flat, undimmed particles.
     const LOW_BASE=0.55;
+    // 2026-07-01 (round 5): three-tier brightness + a stronger center-cluster
+    // funnel force, gated to idle/listening (coreGlow) only, matching "no
+    // sound detected". Revert: delete this whole comment block's constants
+    // (CORE_RADIUS..STRING_THRESHOLD), the _tierFloor() function, the
+    // funnel-force lines in the physics loop below, and swap floor/_tierFloor(...)
+    // calls in the particle + line color passes back to plain LOW_BASE.
+    //   - CORE_RADIUS/CORE_CAPTURE_RADIUS/CORE_FUNNEL_STRENGTH: pulls
+    //     meaningfully more particles into a tight center zone over time
+    //     (targeting a visibly larger, denser core — roughly 3x the ambient
+    //     population — vs. no funnel at all).
+    //   - CORE_LOW: brightness floor for particles inside CORE_RADIUS — high,
+    //     so the center cluster reads consistently brightest.
+    //   - STRING_LOW: brightness floor for particles that are part of a
+    //     flow-vein or density cluster ("strings"/clusters) elsewhere on the
+    //     sphere — brighter than baseline, dimmer than the center cluster.
+    //   - Everything else keeps using LOW_BASE exactly as before ("others
+    //     stay how they are now").
+    const CORE_RADIUS=6;             // "in the center cluster" cutoff, used for brightness tiering
+    const CORE_CAPTURE_RADIUS=17;    // wider radius that feels the extra pull toward center
+    const CORE_FUNNEL_STRENGTH=0.006;// extra inward force strength, active only when coreGlow>0.01
+    const STRING_LOW=0.75;           // brighter than LOW_BASE(0.55), dimmer than CORE_LOW(0.94)
+    const CORE_LOW=0.94;
+    const STRING_THRESHOLD=0.35;     // glow value above which a particle counts as part of a string/cluster
+    function _tierFloor(x,y,z,glow){
+      const dist=Math.sqrt(x*x+y*y+z*z)||0.01;
+      if(dist<CORE_RADIUS)return CORE_LOW;
+      if(glow>STRING_THRESHOLD)return STRING_LOW;
+      return LOW_BASE;
+    }
     // ── Particle physics — soft containment, original behaviour ──
     for(let i=0;i<_ORB_N;i++){
       const i3=i*3;
@@ -5535,6 +5564,14 @@ function startOrbLoop(){
       const dist=Math.sqrt(x*x+y*y+z*z)||0.01;
       const pull=Math.max(0,dist-currentRadius)*0.002+0.0003;
       vel[i3]-=(x/dist)*pull;vel[i3+1]-=(y/dist)*pull;vel[i3+2]-=(z/dist)*pull;
+      if(coreGlow>0.01&&dist<CORE_CAPTURE_RADIUS){
+        // extra funnel force toward the sphere's center — only active
+        // idle/listening — so noticeably more particles gather into a
+        // bright, dense center cluster over time (not just the ambient
+        // containment pull above).
+        const funnel=CORE_FUNNEL_STRENGTH*coreGlow*(dist/CORE_CAPTURE_RADIUS);
+        vel[i3]-=(x/dist)*funnel;vel[i3+1]-=(y/dist)*funnel;vel[i3+2]-=(z/dist)*funnel;
+      }
       if(bass>0.05){vel[i3]+=(x/dist)*bass*0.02;vel[i3+1]+=(y/dist)*bass*0.02;vel[i3+2]+=(z/dist)*bass*0.02;}
       if(orbState==='speaking'&&mid>0.1){const pulse=Math.sin(t*8+px);vel[i3]+=(x/dist)*mid*0.012*pulse;vel[i3+1]+=(y/dist)*mid*0.012*pulse;}
       vel[i3]*=0.992;vel[i3+1]*=0.992;vel[i3+2]*=0.992;
@@ -5573,7 +5610,8 @@ function startOrbLoop(){
         const flow=_orbFlowN(x,y,z,t);
         const dens=_densityT(x,y,z);
         const glow=Math.max(flow,dens);   // flowing waves OR real clusters can light up — whichever is brighter here
-        const bri=LOW_BASE+glow*(1-LOW_BASE);
+        const floor=_tierFloor(x,y,z,glow);   // center cluster > strings/clusters > baseline
+        const bri=floor+glow*(1-floor);
         const m=1+coreGlow*(bri-1);   // always <=1 — dimming only, color never shifts
         pca[i3]=m;pca[i3+1]=m;pca[i3+2]=m;
       } else {
@@ -5611,7 +5649,8 @@ function startOrbLoop(){
             if(coreGlow>0.01){
               const f1n=Math.max(_orbFlowN(x1,y1,z1,t),_densityT(x1,y1,z1));
               const f2n=Math.max(_orbFlowN(a[j3],a[j3+1],a[j3+2],t),_densityT(a[j3],a[j3+1],a[j3+2]));
-              const b1=LOW_BASE+f1n*(1-LOW_BASE),b2=LOW_BASE+f2n*(1-LOW_BASE);
+              const floor1=_tierFloor(x1,y1,z1,f1n),floor2=_tierFloor(a[j3],a[j3+1],a[j3+2],f2n);
+              const b1=floor1+f1n*(1-floor1),b2=floor2+f2n*(1-floor2);
               const f1=1+coreGlow*(b1-1),f2=1+coreGlow*(b2-1);   // always <=1
               lca[idx]=f1;lca[idx+1]=f1;lca[idx+2]=f1;
               lca[idx+3]=f2;lca[idx+4]=f2;lca[idx+5]=f2;
