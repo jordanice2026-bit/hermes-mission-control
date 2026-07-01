@@ -1718,6 +1718,12 @@ nav{display:flex;gap:2px;flex:1}
           <input type="range" data-tune-key="lineBrightness" min="0.1" max="2.5" step="0.05" oninput="jarvisTuneInput('lineBrightness',this)"></div>
         <div class="jt-row"><label>Cluster brightness <span class="jt-val" id="jt-val-clusterBrightness">1.00</span></label>
           <input type="range" data-tune-key="clusterBrightness" min="0" max="3" step="0.05" oninput="jarvisTuneInput('clusterBrightness',this)"></div>
+        <div class="jt-row"><label>Particle size <span class="jt-val" id="jt-val-particleSize">1.00</span></label>
+          <input type="range" data-tune-key="particleSize" min="0.2" max="3" step="0.05" oninput="jarvisTuneInput('particleSize',this)"></div>
+        <div class="jt-row"><label>Resolution (particles &amp; lines) <span class="jt-val" id="jt-val-renderResolution">1.00</span></label>
+          <input type="range" data-tune-key="renderResolution" min="0.3" max="1.5" step="0.05" oninput="jarvisTuneInput('renderResolution',this)"></div>
+        <div class="jt-row"><label>Dimming <span class="jt-val" id="jt-val-dimming">0.45</span></label>
+          <input type="range" data-tune-key="dimming" min="0" max="0.95" step="0.02" oninput="jarvisTuneInput('dimming',this)"></div>
         <div class="jt-row"><label>Particles per cluster <span class="jt-val" id="jt-val-clusterSize">0.00</span></label>
           <input type="range" data-tune-key="clusterSize" min="0" max="3" step="0.05" oninput="jarvisTuneInput('clusterSize',this)"></div>
         <div class="jt-row"><label>3D depth shading <span class="jt-val" id="jt-val-depthShading">0.00</span></label>
@@ -5400,6 +5406,9 @@ const JARVIS_TUNE_DEFAULTS={
   particleBrightness:1.0, // multiplier on particle opacity
   lineBrightness:1.0,     // multiplier on line opacity
   clusterBrightness:1.0,  // multiplier on how much brighter clusters/flow-veins get vs baseline
+  particleSize:1.0,       // NEW: multiplier on rendered particle dot size (1.0 = original)
+  renderResolution:1.0,   // NEW: multiplier on renderer pixel ratio — controls sharpness/resolution of both particles and connecting lines (1.0 = original, capped device pixel ratio)
+  dimming:0.45,           // NEW: how dark the dimmest (non-glowing) particles/lines read, 0 = no dimming (everything full brightness), ~0.9 = very dark floor. 0.45 = original default floor.
   clusterSize:0,          // NEW: local cohesion force pulling nearby particles into denser clusters (more particles per cluster). 0 = original spread. Does NOT touch gravityPull.
   depthShading:0,         // NEW: depth-based brightness falloff — particles nearer the camera read brighter, far ones dimmer, for a stronger 3D read. 0 = no effect (flat brightness, original).
   waveCount:1,            // NEW: number of overlapping traveling wave-bands in the flow field; >1 also nudges particles inside a bright wave to drift together (coherent group motion), independent of gravityPull. 1 = original single wave.
@@ -5422,13 +5431,19 @@ function _jarvisTuneSave(){
 // Applies a single slider change. Most params are read live from JARVIS_TUNE
 // each frame so they just take effect immediately; particleCount changes the
 // buffer size, so that one needs a full orb re-init (same pattern toggleTheme()
-// already uses elsewhere in this file).
+// already uses elsewhere in this file). renderResolution updates the live
+// renderer's pixel ratio directly (cheaper than a full re-init, and avoids
+// resetting particle positions/animation while dragging the slider).
 function jarvisTuneSet(key,value){
   JARVIS_TUNE[key]=value;
   _jarvisTuneSave();
   if(key==='particleCount'){
     _ORB_N=Math.round(value);
     if(jarvisThree){ jarvisThree=null; initOrb(); if(jarvisRAF) startOrbLoop(); }
+  } else if(key==='renderResolution'&&jarvisThree&&jarvisThree.renderer){
+    const pr=Math.min(window.devicePixelRatio||1,3)*JARVIS_TUNE.renderResolution;
+    jarvisThree.renderer.setPixelRatio(pr);
+    jarvisOrbResize();
   }
 }
 function jarvisTuneReset(){
@@ -5565,7 +5580,12 @@ function initOrb(){
   const isLight=document.documentElement.classList.contains('light');
   const canvas=document.getElementById('jarvis-voice-canvas');
   const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
-  const pr=Math.min(window.devicePixelRatio||1,3);
+  // JARVIS_TUNE.renderResolution: NEW — multiplier on the renderer's pixel
+  // ratio, controlling how sharp/high-res both particles and connecting
+  // lines render (1.0 = original capped device pixel ratio, up to 3x).
+  // Lower values render fewer pixels (softer/blurrier, cheaper); higher
+  // values render more (crisper, more expensive).
+  const pr=Math.min(window.devicePixelRatio||1,3)*JARVIS_TUNE.renderResolution;
   renderer.setPixelRatio(pr);
   renderer.setSize(window.innerWidth,window.innerHeight);
   renderer.setClearColor(isLight?0xeef2fb:0x000000,1);
@@ -5795,7 +5815,10 @@ function startOrbLoop(){
     // guaranteed identical to the original everywhere — only value/brightness
     // varies. Revert: set LOW_BASE=1 (or delete the pca[] writes below) to
     // go back to flat, undimmed particles.
-    const LOW_BASE=0.55;
+    // JARVIS_TUNE.dimming: NEW — user-adjustable dimmed floor. 0 = no
+    // dimming at all (LOW_BASE=1, everything reads full brightness), higher
+    // values push the floor darker. 0.45 = original hardcoded default.
+    const LOW_BASE=1-JARVIS_TUNE.dimming;
     // JARVIS_TUNE.speedMult / gravityPull: multipliers on ambient drift speed
     // and containment pull-to-center force (1.0 = original in both cases).
     const _tuneSpeed=JARVIS_TUNE.speedMult, _tuneGravity=JARVIS_TUNE.gravityPull;
@@ -6030,7 +6053,10 @@ function startOrbLoop(){
     // JARVIS_TUNE.particleBrightness / lineBrightness: multipliers on final
     // opacity (1.0 = original in both cases).
     T.mat.opacity=(currentBright+bass*0.08)*JARVIS_TUNE.particleBrightness;
-    T.mat.size=currentSize*0.55+bass*0.04;
+    // JARVIS_TUNE.particleSize: NEW — multiplier on the rendered particle dot
+    // size, independent of the per-state size (idle/listening/thinking/
+    // speaking) already baked into currentSize. 1.0 = original.
+    T.mat.size=(currentSize*0.55+bass*0.04)*JARVIS_TUNE.particleSize;
     // JARVIS_TUNE.particleHue / lineHue: base hue (0-360°) for particles vs
     // lines. Original design used a single blue hue (~205°) for both, with a
     // temperature shift during thinking/speaking — that per-state shift is
