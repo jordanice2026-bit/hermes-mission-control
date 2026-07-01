@@ -18,6 +18,13 @@
   --done:#00ff88;--cancelled:#141414;
   --radius-sm:2px;--radius:3px;--radius-lg:4px;
   --font:'Rajdhani',sans-serif;--font-mono:'Share Tech Mono',monospace;
+  /* glass/chrome panel backgrounds — theme-aware translucent black in dark mode */
+  --glass-99:rgba(0,0,0,.99);--glass-97:rgba(0,0,0,.97);--glass-95:rgba(0,0,0,.95);
+  --glass-92:rgba(0,0,0,.92);--glass-90:rgba(0,0,0,.9);--glass-88:rgba(0,0,0,.88);
+  --glass-85:rgba(0,0,0,.85);--glass-55:rgba(0,0,0,.55);
+  --shadow-strong:rgba(0,0,0,.92);--shadow-medium:rgba(0,0,0,.85);
+  --modal-scrim:rgba(0,0,0,.85);
+  --jarvis-voice-bg:#050508;
 }
 :root.light{
   --bg:#f0f4ff;--surface:#ffffff;--surface2:#f5f8ff;--surface3:#eaefff;
@@ -27,6 +34,13 @@
   --neon:#0066ff;--neon-glow:rgba(0,102,255,.12);
   --green:#00a854;--green-glow:rgba(0,168,84,.15);
   --radius-sm:2px;--radius:3px;--radius-lg:4px;
+  /* glass/chrome panel backgrounds — translucent white in light mode */
+  --glass-99:rgba(255,255,255,.99);--glass-97:rgba(255,255,255,.97);--glass-95:rgba(255,255,255,.95);
+  --glass-92:rgba(255,255,255,.92);--glass-90:rgba(255,255,255,.9);--glass-88:rgba(255,255,255,.88);
+  --glass-85:rgba(255,255,255,.85);--glass-55:rgba(255,255,255,.65);
+  --shadow-strong:rgba(30,41,90,.18);--shadow-medium:rgba(30,41,90,.12);
+  --modal-scrim:rgba(10,16,40,.45);
+  --jarvis-voice-bg:#eef2fb;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 
@@ -50,7 +64,7 @@ button{font-family:var(--font);cursor:pointer;letter-spacing:.06em}
 #topbar{
   display:flex;align-items:center;gap:16px;
   padding:0 20px;height:52px;
-  background:rgba(0,0,0,.97);
+  background:var(--glass-97);
   border-bottom:1px solid var(--border-neon);
   flex-shrink:0;z-index:100;
   backdrop-filter:blur(20px);
@@ -132,11 +146,11 @@ nav{display:flex;gap:2px;flex:1}
 /* ── KPI BAR ── */
 #kpi-bar{
   display:flex;gap:10px;padding:8px 20px;
-  background:rgba(0,0,0,.85);
+  background:var(--glass-85);
   border-bottom:1px solid var(--border);flex-shrink:0;
 }
 .kpi-card{
-  background:rgba(0,0,0,.9);
+  background:var(--glass-90);
   border:1px solid var(--border);
   clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
   padding:8px 16px 8px 12px;min-width:110px;position:relative;overflow:hidden;
@@ -169,7 +183,7 @@ nav{display:flex;gap:2px;flex:1}
   display:flex;align-items:center;gap:10px;
   padding:10px 20px;
   border-bottom:1px solid var(--border);flex-shrink:0;
-  background:rgba(0,0,0,.92);
+  background:var(--glass-92);
 }
 .action-bar .spacer{flex:1}
 .search-input{
@@ -325,7 +339,7 @@ nav{display:flex;gap:2px;flex:1}
 /* ── BREADCRUMB ── */
 .breadcrumb{
   display:flex;align-items:center;gap:8px;padding:10px 20px;
-  background:rgba(0,0,0,.85);border-bottom:1px solid var(--border);
+  background:var(--glass-85);border-bottom:1px solid var(--border);
   font-size:12px;flex-shrink:0;letter-spacing:.04em;
 }
 .breadcrumb-link{color:var(--accent2);cursor:pointer;text-transform:uppercase;font-size:11px;font-weight:600;letter-spacing:.08em}
@@ -362,7 +376,7 @@ nav{display:flex;gap:2px;flex:1}
 .owners-container{flex:1;overflow:auto;padding:16px}
 .owners-table{width:100%;border-collapse:collapse}
 .owners-table th{
-  background:rgba(0,0,0,.97);
+  background:var(--glass-97);
   border-bottom:1px solid var(--border-neon);
   padding:9px 12px;text-align:left;
   font-size:9px;text-transform:uppercase;letter-spacing:.14em;
@@ -426,7 +440,7 @@ nav{display:flex;gap:2px;flex:1}
 .pl-col-count{background:rgba(0,212,255,.12);border-radius:2px;padding:1px 7px;font-size:10px;font-family:var(--font-mono)}
 
 /* ── MODALS ── */
-.pl-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.pl-modal-overlay{display:none;position:fixed;inset:0;background:var(--modal-scrim);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 .pl-modal-overlay.open{display:flex}
 .pl-modal-card{
   background:var(--surface);
@@ -434,7 +448,7 @@ nav{display:flex;gap:2px;flex:1}
   border-radius:var(--radius);
   width:90%;max-width:640px;max-height:90vh;
   display:flex;flex-direction:column;
-  box-shadow:0 0 40px rgba(0,212,255,.15),0 20px 60px rgba(0,0,0,.92);
+  box-shadow:0 0 40px rgba(0,212,255,.15),0 20px 60px var(--shadow-strong);
   clip-path:polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,0 100%);
 }
 .pl-modal-header{
@@ -483,10 +497,10 @@ nav{display:flex;gap:2px;flex:1}
 /* ── TOAST ── */
 #toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
 .toast{
-  background:rgba(0,0,0,.97);border:1px solid var(--border-neon);
+  background:var(--glass-97);border:1px solid var(--border-neon);
   border-radius:var(--radius);padding:10px 16px;
   font-size:12px;color:var(--text);
-  box-shadow:0 0 20px rgba(0,212,255,.15),0 4px 24px rgba(0,0,0,.92);
+  box-shadow:0 0 20px rgba(0,212,255,.15),0 4px 24px var(--shadow-strong);
   max-width:320px;animation:slideIn .2s ease;backdrop-filter:blur(12px);
   font-family:var(--font);letter-spacing:.02em;
   clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);
@@ -553,13 +567,13 @@ nav{display:flex;gap:2px;flex:1}
 .countdown-warn{color:var(--orange);font-weight:700;font-family:var(--font-mono)}
 .countdown-ok{color:var(--green);font-weight:700;font-family:var(--font-mono)}
 .deal-deadline-chip{display:inline-block;font-size:10px;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.15);border-radius:2px;padding:2px 6px;color:var(--accent2);font-family:var(--font-mono)}
-.deal-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1000;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px;backdrop-filter:blur(4px)}
+.deal-modal-overlay{display:none;position:fixed;inset:0;background:var(--modal-scrim);z-index:1000;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px;backdrop-filter:blur(4px)}
 .deal-modal-overlay.open{display:flex}
 .deal-modal-card{
   background:var(--surface);border:1px solid var(--border-neon);
   border-radius:var(--radius);width:100%;max-width:760px;
   display:flex;flex-direction:column;
-  box-shadow:0 0 40px rgba(0,212,255,.12),0 20px 60px rgba(0,0,0,.92);
+  box-shadow:0 0 40px rgba(0,212,255,.12),0 20px 60px var(--shadow-strong);
   margin:auto;
   clip-path:polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,0 100%);
 }
@@ -595,7 +609,7 @@ nav{display:flex;gap:2px;flex:1}
 .tc-section-b{flex:0 0 40%;border-top:2px solid var(--border-neon)}
 .tc-section-header{
   display:flex;align-items:center;gap:8px;padding:10px 16px;
-  background:rgba(0,0,0,.92);border-bottom:1px solid var(--border);
+  background:var(--glass-92);border-bottom:1px solid var(--border);
   font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;flex-shrink:0;
 }
 .tc-section-scroll{overflow-y:auto;flex:1;padding:12px 16px}
@@ -651,8 +665,8 @@ nav{display:flex;gap:2px;flex:1}
 .search-dropdown{
   position:absolute;top:38px;right:0;width:380px;
   max-height:440px;overflow-y:auto;
-  background:rgba(0,0,0,.99);border:1px solid var(--border-neon);
-  border-radius:var(--radius);box-shadow:0 0 30px rgba(0,212,255,.12),0 8px 32px rgba(0,0,0,.85);
+  background:var(--glass-99);border:1px solid var(--border-neon);
+  border-radius:var(--radius);box-shadow:0 0 30px rgba(0,212,255,.12),0 8px 32px var(--shadow-medium);
   z-index:200;display:none;backdrop-filter:blur(12px);
 }
 .search-dropdown.open{display:block}
@@ -1062,7 +1076,7 @@ nav{display:flex;gap:2px;flex:1}
 .jarvis-attach-remove{background:none;border:none;color:var(--text3);cursor:pointer;padding:0 2px;font-size:13px;line-height:1;flex-shrink:0;transition:color .15s}
 .jarvis-attach-remove:hover{color:var(--red)}
 .jarvis-attach-btn{
-  background:rgba(0,0,0,.92);border:1px solid var(--border-neon);
+  background:var(--glass-92);border:1px solid var(--border-neon);
   border-radius:var(--radius-sm);padding:0 12px;font-size:15px;cursor:pointer;
   transition:all .15s;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
@@ -1071,7 +1085,7 @@ nav{display:flex;gap:2px;flex:1}
 .jarvis-attach-btn:hover{border-color:var(--neon);box-shadow:0 0 12px rgba(0,212,255,.2)}
 .jarvis-input{
   flex:1;resize:none;
-  background:rgba(0,0,0,.9);
+  background:var(--glass-90);
   border:1px solid var(--border-neon);border-radius:var(--radius-sm);
   padding:0 15px;color:var(--text);font-size:13px;font-family:var(--font);
   max-height:44px;scrollbar-width:none;-ms-overflow-style:none;
@@ -1089,7 +1103,7 @@ nav{display:flex;gap:2px;flex:1}
   flex-shrink:0;
 }
 .jarvis-mic{
-  background:rgba(0,0,0,.92);border:1px solid var(--border-neon);
+  background:var(--glass-92);border:1px solid var(--border-neon);
   border-radius:var(--radius-sm);padding:0 14px;font-size:16px;cursor:pointer;
   transition:all .15s;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
@@ -1100,7 +1114,7 @@ nav{display:flex;gap:2px;flex:1}
 .jarvis-send:disabled{opacity:.4;cursor:default;box-shadow:none}
 
 /* ── IMMERSIVE VOICE OVERLAY — Jarvis style ── */
-.jarvis-voice-overlay{position:fixed;inset:0;z-index:1000;background:#050508;display:none;align-items:center;justify-content:center}
+.jarvis-voice-overlay{position:fixed;inset:0;z-index:1000;background:var(--jarvis-voice-bg,#050508);display:none;align-items:center;justify-content:center}
 .jarvis-voice-overlay.open{display:flex}
 #jarvis-voice-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
 /* Status text — bottom center, lowercase, faded */
@@ -1127,7 +1141,7 @@ nav{display:flex;gap:2px;flex:1}
 #jarvis-voice-controls button{
   width:44px;height:44px;
   border:1px solid rgba(14,165,233,0.25);border-radius:50%;
-  background:rgba(0,0,0,0.55);color:rgba(14,165,233,0.6);
+  background:var(--glass-55);color:rgba(14,165,233,0.6);
   cursor:pointer;display:flex;align-items:center;justify-content:center;
   transition:all 0.2s;backdrop-filter:blur(8px);pointer-events:auto;
 }
@@ -1146,7 +1160,7 @@ nav{display:flex;gap:2px;flex:1}
 /* Menu dropdown */
 #jarvis-voice-menu{
   position:absolute;top:58px;right:16px;
-  background:rgba(0,0,0,0.95);border:1px solid rgba(14,165,233,0.15);
+  background:var(--glass-95);border:1px solid rgba(14,165,233,0.15);
   border-radius:8px;padding:4px;z-index:1010;backdrop-filter:blur(12px);display:none;
 }
 #jarvis-voice-menu button{
@@ -1162,7 +1176,7 @@ nav{display:flex;gap:2px;flex:1}
 .jarvis-voice-ui{display:none}
 
 /* ── HISTORY PANEL ── */
-.jarvis-history{flex-direction:column;gap:0;background:rgba(0,0,0,.95);border:1px solid var(--border-neon);border-radius:var(--radius);margin:0 4px 10px;max-height:260px;overflow-y:auto}
+.jarvis-history{flex-direction:column;gap:0;background:var(--glass-95);border:1px solid var(--border-neon);border-radius:var(--radius);margin:0 4px 10px;max-height:260px;overflow-y:auto}
 .jarvis-history-head{font-size:9px;font-weight:700;color:var(--neon);padding:10px 14px 6px;letter-spacing:.16em;text-transform:uppercase;font-family:var(--font-mono)}
 .jarvis-history-list{display:flex;flex-direction:column}
 .jarvis-hist-item{display:flex;align-items:center;gap:8px;padding:9px 10px 9px 14px;border-top:1px solid var(--border);transition:background .12s}
@@ -4497,10 +4511,11 @@ function startMiniOrb(){
   canvas.width=canvas.height=S*pr;
   canvas.style.width=canvas.style.height=S+'px';
 
+  const isLight=document.documentElement.classList.contains('light');
   const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
   renderer.setPixelRatio(pr);
   renderer.setSize(S,S);
-  renderer.setClearColor(0x000000,1);
+  renderer.setClearColor(isLight?0xf0f4ff:0x000000,1);
 
   const scene=new THREE.Scene();
   const camera=new THREE.PerspectiveCamera(45,1,1,1000);
@@ -4534,9 +4549,11 @@ function startMiniOrb(){
     phase[i]=Math.random()*1000;
   }
   geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const orbColor=isLight?0x0055dd:0x8fd6ff;
+  const orbBlend=isLight?THREE.NormalBlending:THREE.AdditiveBlending;
   const mat=new THREE.PointsMaterial({map:miniTex,size:0.36,transparent:true,opacity:0.9,
-    sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false,alphaTest:0.01,
-    color:0x8fd6ff});
+    sizeAttenuation:true,blending:orbBlend,depthWrite:false,alphaTest:0.01,
+    color:orbColor});
   scene.add(new THREE.Points(geo,mat));
 
   // connection lines
@@ -4545,8 +4562,8 @@ function startMiniOrb(){
   const lGeo=new THREE.BufferGeometry();
   lGeo.setAttribute('position',new THREE.BufferAttribute(lPos,3));
   lGeo.setDrawRange(0,0);
-  const lMat=new THREE.LineBasicMaterial({color:0x8fd6ff,transparent:true,opacity:0,
-    blending:THREE.AdditiveBlending,depthWrite:false});
+  const lMat=new THREE.LineBasicMaterial({color:orbColor,transparent:true,opacity:0,
+    blending:orbBlend,depthWrite:false});
   scene.add(new THREE.LineSegments(lGeo,lMat));
 
   const clock=new THREE.Clock();
@@ -4633,7 +4650,7 @@ function jarvisAttachMenu(ev){
   menu.id = 'jarvis-attach-menu';
   Object.assign(menu.style,{
     position:'absolute',zIndex:'999',
-    background:'#111',border:'1px solid rgba(0,212,255,.3)',borderRadius:'3px',
+    background:'var(--surface3)',border:'1px solid rgba(0,212,255,.3)',borderRadius:'3px',
     padding:'4px 0',fontFamily:"'Rajdhani',sans-serif",fontSize:'12px',letterSpacing:'.06em'
   });
   const btn = ev.currentTarget;
@@ -4643,9 +4660,9 @@ function jarvisAttachMenu(ev){
   const mkItem = (label, fn) => {
     const d = document.createElement('div');
     d.textContent = label;
-    Object.assign(d.style,{padding:'7px 16px',cursor:'pointer',color:'#e8e8e8',textTransform:'uppercase',letterSpacing:'.1em'});
-    d.onmouseover = ()=>{ d.style.background='rgba(0,212,255,.12)'; d.style.color='#00d4ff'; };
-    d.onmouseout  = ()=>{ d.style.background=''; d.style.color='#e8e8e8'; };
+    Object.assign(d.style,{padding:'7px 16px',cursor:'pointer',color:'var(--text)',textTransform:'uppercase',letterSpacing:'.1em'});
+    d.onmouseover = ()=>{ d.style.background='rgba(0,212,255,.12)'; d.style.color='var(--neon)'; };
+    d.onmouseout  = ()=>{ d.style.background=''; d.style.color='var(--text)'; };
     d.onclick = ()=>{ menu.remove(); fn(); };
     return d;
   };
@@ -5262,12 +5279,13 @@ const _ORB_MAX_LINES=8000;  // max line segments
 const _ORB_MAX_ELECTRONS=200; // max simultaneous electrons
 function initOrb(){
   if(jarvisThree||!window.THREE)return;
+  const isLight=document.documentElement.classList.contains('light');
   const canvas=document.getElementById('jarvis-voice-canvas');
   const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
   const pr=Math.min(window.devicePixelRatio||1,3);
   renderer.setPixelRatio(pr);
   renderer.setSize(window.innerWidth,window.innerHeight);
-  renderer.setClearColor(0x000000,1);
+  renderer.setClearColor(isLight?0xeef2fb:0x000000,1);
   renderer.clear();
 
   const scene=new THREE.Scene();
@@ -5308,8 +5326,11 @@ function initOrb(){
   _g.addColorStop(1,'rgba(255,255,255,0)');
   _x.fillStyle=_g; _x.beginPath(); _x.arc(32,32,32,0,Math.PI*2); _x.fill();
   const orbTex=new THREE.CanvasTexture(_c);
+  const orbBlend=isLight?THREE.NormalBlending:THREE.AdditiveBlending;
+  const orbPointColor=isLight?0x0055dd:0xffffff;
+  const orbLineColor=isLight?0x0055dd:0x4ca8e8;
   const mat=new THREE.PointsMaterial({map:orbTex,size:0.22,transparent:true,opacity:0.6,
-    sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false,alphaTest:0.01});
+    sizeAttenuation:true,blending:orbBlend,depthWrite:false,alphaTest:0.01,color:orbPointColor});
   const points=new THREE.Points(geo,mat);
   scene.add(points);
 
@@ -5319,8 +5340,8 @@ function initOrb(){
   const lineGeo=new THREE.BufferGeometry();
   lineGeo.setAttribute('position',new THREE.BufferAttribute(linePos,3));
   lineGeo.setDrawRange(0,0);
-  const lineMat=new THREE.LineBasicMaterial({color:0x4ca8e8,transparent:true,opacity:0.0,
-    blending:THREE.AdditiveBlending,depthWrite:false});
+  const lineMat=new THREE.LineBasicMaterial({color:orbLineColor,transparent:true,opacity:0.0,
+    blending:orbBlend,depthWrite:false});
   const lines=new THREE.LineSegments(lineGeo,lineMat);
   scene.add(lines);
 
@@ -5330,8 +5351,8 @@ function initOrb(){
   const electronPos=new Float32Array(_ORB_MAX_ELECTRONS*3);
   electronGeo.setAttribute('position',new THREE.BufferAttribute(electronPos,3));
   electronGeo.setDrawRange(0,0);
-  const electronMat=new THREE.PointsMaterial({map:orbTex,color:0xffffff,size:0.35,transparent:true,opacity:1.0,
-    sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false,alphaTest:0.01});
+  const electronMat=new THREE.PointsMaterial({map:orbTex,color:orbPointColor,size:0.35,transparent:true,opacity:1.0,
+    sizeAttenuation:true,blending:orbBlend,depthWrite:false,alphaTest:0.01});
   const electrons=new THREE.Points(electronGeo,electronMat);
   scene.add(electrons);
 
@@ -5776,6 +5797,9 @@ function toggleTheme(){
   const isLight=document.documentElement.classList.toggle('light');
   localStorage.setItem('mc-theme', isLight ? 'light' : 'dark');
   document.getElementById('theme-toggle').textContent = isLight ? '🌙' : '☀️';
+  // re-init any live Three.js orbs so their clear color/particle tint match the new theme
+  if(document.getElementById('jarvis-mini-canvas')) startMiniOrb();
+  if(jarvisThree){ jarvisThree=null; initOrb(); if(jarvisRAF) startOrbLoop(); }
 }
 function initTheme(){
   const saved=localStorage.getItem('mc-theme');
