@@ -615,6 +615,7 @@ _agent_state: dict = {               # last-known state pushed by the VPS worker
     "team_lessons": [],              # shared cross-agent lessons (org brain)
 }
 _manager_chat: list[dict] = []       # manager chat transcript (newest last)
+_ea_chat: list[dict] = []            # executive assistant (ARIA) chat transcript
 _ALLOWED_COMMANDS = {"start_all", "stop_all", "pause_job", "resume_job", "run_job"}
 
 
@@ -685,6 +686,80 @@ async def manager_chat_post(request: Request, user: dict = Depends(require_user)
     return JSONResponse({"ok": True, "message": msg})
 
 
+# ---------------------------------------------------------------------------
+# Executive Assistant (ARIA / "Jarvis") chat — full-authority agent.
+# Browser POSTs a message; the VPS worker launches ea_runner.py (a full agentic
+# Hermes session on the default profile) which posts the reply back via
+# /api/ea/chat/reply. Browser polls GET /api/ea/chat.
+# ---------------------------------------------------------------------------
+@app.get("/api/ea/chat")
+async def ea_chat_get(request: Request, user: dict = Depends(require_user)):
+    return JSONResponse({"messages": _ea_chat[-100:],
+                         "worker_online": (time.time() - _agent_state.get("updated_at", 0)) < 90})
+
+
+@app.post("/api/ea/chat")
+async def ea_chat_post(request: Request, user: dict = Depends(require_user)):
+    body = await request.json()
+    text = (body.get("text") or "").strip()
+    if not text:
+        raise HTTPException(400, "empty message")
+    if len(text) > 8000:
+        text = text[:8000]
+    msg = {
+        "id": secrets.token_hex(8),
+        "role": "user",
+        "text": text,
+        "status": "pending",          # pending -> processing -> done
+        "ts": int(time.time() * 1000),
+        "issued_by": user.get("email") or user.get("name") or "user",
+    }
+    _ea_chat.append(msg)
+    del _ea_chat[:-200]
+    return JSONResponse({"ok": True, "message": msg})
+
+
+@app.post("/api/ea/chat/new")
+async def ea_chat_new(request: Request, user: dict = Depends(require_user)):
+    """Clear the EA transcript + signal the runner to start a fresh session."""
+    _ea_chat.clear()
+    # queue a control marker the worker forwards to reset the session file
+    _ea_chat.append({
+        "id": secrets.token_hex(8),
+        "role": "user",
+        "text": "__NEW_SESSION__",
+        "status": "pending",
+        "ts": int(time.time() * 1000),
+        "issued_by": user.get("email") or "user",
+        "control": "new_session",
+    })
+    return JSONResponse({"ok": True})
+
+
+@app.post("/api/ea/chat/reply")
+async def ea_chat_reply(request: Request, _=Depends(require_sync_token)):
+    """VPS EA runner posts the assistant's reply + marks the user msg done."""
+    body = await request.json()
+    for upd in body.get("chat_updates", []):
+        mid = upd.get("id")
+        for m in _ea_chat:
+            if m["id"] == mid and upd.get("status"):
+                m["status"] = upd["status"]
+                break
+        reply = upd.get("reply")
+        if reply:
+            _ea_chat.append({
+                "id": secrets.token_hex(8),
+                "role": "assistant",
+                "text": reply[:12000],
+                "status": "done",
+                "ts": int(time.time() * 1000),
+                "reply_to": mid,
+            })
+    del _ea_chat[:-200]
+    return JSONResponse({"ok": True})
+
+
 @app.post("/api/agent-control/poll")
 async def agent_control_poll(request: Request, _=Depends(require_sync_token)):
     """VPS worker: fetch queued commands + push current agent state.
@@ -745,8 +820,13 @@ async def agent_control_poll(request: Request, _=Depends(require_sync_token)):
     # mark them processing so we don't hand them out twice
     for m in pending_chat:
         m["status"] = "processing"
+    # EA (ARIA) pending messages — handed to the worker to launch ea_runner
+    pending_ea = [m for m in _ea_chat if m["role"] == "user" and m.get("status") == "pending"]
+    for m in pending_ea:
+        m["status"] = "processing"
     return JSONResponse({"commands": list(_command_queue),
-                         "chat_messages": [{"id": m["id"], "text": m["text"]} for m in pending_chat]})
+                         "chat_messages": [{"id": m["id"], "text": m["text"]} for m in pending_chat],
+                         "ea_messages": [{"id": m["id"], "text": m["text"]} for m in pending_ea]})
 
 
 # ---------------------------------------------------------------------------

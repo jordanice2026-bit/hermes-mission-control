@@ -196,6 +196,38 @@ def handle_chat_messages(chat_messages):
     return updates
 
 
+def launch_ea_messages(ea_messages):
+    """Launch the EA runner (full agentic session) as a DETACHED bg process per
+    message. It can take minutes, so we don't block the worker tick; the runner
+    posts its reply back to /api/ea/chat/reply when done."""
+    if not ea_messages:
+        return 0
+    import subprocess as _sp
+    launched = 0
+    for m in ea_messages:
+        # control marker: reset the EA session (fresh Jarvis conversation)
+        if m.get('text') == '__NEW_SESSION__':
+            try:
+                if os.path.exists('/opt/data/ea_session.json'):
+                    os.remove('/opt/data/ea_session.json')
+                print('EA session reset (new conversation)')
+            except Exception as e:
+                print(f'EA session reset failed: {e}')
+            continue
+        try:
+            _sp.Popen(
+                ['python3', '/opt/data/ea_runner.py',
+                 '--message-id', m['id'], '--text', m.get('text', '')],
+                stdout=_sp.DEVNULL, stderr=_sp.DEVNULL,
+                start_new_session=True, cwd='/opt/data', env=dict(os.environ),
+            )
+            launched += 1
+            print(f"EA runner launched for {m['id']}: {m.get('text','')[:50]}")
+        except Exception as e:
+            print(f"EA launch failed for {m['id']}: {e}")
+    return launched
+
+
 def main():
     jobs, err = load_jobs()
     if err:
@@ -217,12 +249,16 @@ def main():
     data = poll(jobs, status, [])
     commands = data.get('commands', [])
     chat_messages = data.get('chat_messages', [])
+    ea_messages = data.get('ea_messages', [])
 
     # Handle Manager chat messages (classify + dispatch tasks)
     chat_updates = handle_chat_messages(chat_messages)
 
-    if not commands and not chat_updates:
-        print(f'OK: {len(jobs)} jobs, status={status}, no commands/chat')
+    # Launch the EA (ARIA) runner for any pending EA messages (detached; replies async)
+    ea_launched = launch_ea_messages(ea_messages)
+
+    if not commands and not chat_updates and not ea_launched:
+        print(f'OK: {len(jobs)} jobs, status={status}, no commands/chat/ea')
         return
 
     # Execute queued commands
@@ -236,7 +272,8 @@ def main():
     jobs, _ = load_jobs()
     status = system_status(jobs)
     poll(jobs, status, results, chat_updates)
-    print(f'OK: executed {len(results)} command(s), {len(chat_updates)} chat reply(ies), status now {status}')
+    print(f'OK: executed {len(results)} command(s), {len(chat_updates)} chat reply(ies), '
+          f'{ea_launched} EA launch(es), status now {status}')
 
 
 if __name__ == '__main__':
