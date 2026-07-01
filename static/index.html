@@ -1017,7 +1017,7 @@ nav{display:flex;gap:2px;flex:1}
 .aria-log{flex:1;overflow-y:auto;padding:10px 4px 16px;display:flex;flex-direction:column;gap:14px;scrollbar-width:none;-ms-overflow-style:none}
 .aria-log::-webkit-scrollbar{width:0;height:0;display:none}
 .aria-welcome{text-align:center;margin:auto;max-width:520px;padding:16px 10px}
-.aria-welcome-canvas{display:block;margin:0 auto 18px;border-radius:50%}
+.aria-welcome-canvas{display:block;margin:0 auto 18px;}
 .aria-welcome-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px;letter-spacing:.06em}
 .aria-welcome-text{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:18px}
 .aria-suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
@@ -1582,7 +1582,7 @@ nav{display:flex;gap:2px;flex:1}
       </div>
       <div class="aria-log" id="aria-log">
         <div class="aria-welcome">
-          <canvas class="aria-welcome-canvas" id="aria-mini-canvas" width="220" height="220"></canvas>
+          <canvas class="aria-welcome-canvas" id="aria-mini-canvas"></canvas>
           <div class="aria-welcome-title">Good to see you, Jordan.</div>
           <div class="aria-welcome-text">I'm ARIA — I can see and control everything you've built: the agents, the databases, the listings, the deals, the dashboard itself. Ask me anything, or hand me a job and I'll take care of it.</div>
           <div class="aria-suggestions">
@@ -4491,7 +4491,8 @@ function startMiniOrb(){
   if(!canvas)return;
   if(!window.THREE){ setTimeout(startMiniOrb,200); return; }
 
-  const S=220;
+  // half the voice orb = half the smaller viewport dimension
+  const S=Math.round(Math.min(window.innerWidth,window.innerHeight)*0.5);
   const pr=Math.min(window.devicePixelRatio||1,2);
   canvas.width=canvas.height=S*pr;
   canvas.style.width=canvas.style.height=S+'px';
@@ -4808,7 +4809,7 @@ async function newAriaSession(){
   }catch(e){}
   ariaMessages=[];ariaLastRendered=0;
   if(ariaPollTimer){clearInterval(ariaPollTimer);ariaPollTimer=setInterval(loadAriaChat,4000);}
-  document.getElementById('aria-log').innerHTML='<div class="aria-welcome"><canvas class="aria-welcome-canvas" id="aria-mini-canvas" width="220" height="220"></canvas><div class="aria-welcome-title">Fresh start.</div><div class="aria-welcome-text">New conversation. What can I do for you, Jordan?</div></div>';
+  document.getElementById('aria-log').innerHTML='<div class="aria-welcome"><canvas class="aria-welcome-canvas" id="aria-mini-canvas"></canvas><div class="aria-welcome-title">Fresh start.</div><div class="aria-welcome-text">New conversation. What can I do for you, Jordan?</div></div>';
   const st=document.getElementById('aria-status');if(st){st.textContent='✦ online';st.className='aria-status online';}
   const orb=document.getElementById('aria-orb');if(orb)orb.classList.remove('thinking');
   showToast('New ARIA conversation started','success');
