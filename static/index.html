@@ -1157,6 +1157,34 @@ nav{display:flex;gap:2px;flex:1}
 .aria-voice-transcript{display:none}
 .aria-voice-hint{display:none}
 .aria-voice-ui{display:none}
+/* bottom fallback button bar */
+#aria-voice-bottom{
+  position:fixed;bottom:72px;left:50%;transform:translateX(-50%);
+  display:flex;gap:10px;z-index:20;
+}
+#aria-voice-bottom button{
+  width:40px;height:40px;
+  border:1px solid rgba(14,165,233,0.2);border-radius:8px;
+  background:rgba(0,0,0,0.6);color:rgba(14,165,233,0.5);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all 0.2s;backdrop-filter:blur(8px);
+}
+#aria-voice-bottom button:hover{
+  background:rgba(14,165,233,0.12);color:rgba(14,165,233,0.8);
+  border-color:rgba(14,165,233,0.4);
+}
+#aria-voice-text-row{
+  position:fixed;bottom:120px;left:50%;transform:translateX(-50%);
+  width:400px;max-width:90vw;z-index:20;
+}
+#aria-voice-text-input{
+  width:100%;padding:10px 16px;
+  background:rgba(0,0,0,0.7);border:1px solid rgba(14,165,233,0.25);
+  border-radius:8px;color:#e8e8e8;font-size:13px;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  letter-spacing:.02em;outline:none;backdrop-filter:blur(12px);
+}
+#aria-voice-text-input:focus{border-color:rgba(14,165,233,0.5);}
 
 /* ── HISTORY PANEL ── */
 .aria-history{flex-direction:column;gap:0;background:rgba(0,0,0,.95);border:1px solid var(--border-neon);border-radius:var(--radius);margin:0 4px 10px;max-height:260px;overflow-y:auto}
@@ -1620,6 +1648,28 @@ nav{display:flex;gap:2px;flex:1}
             <circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>
           </svg>
         </button>
+      </div>
+      <!-- bottom controls: always visible fallback buttons -->
+      <div id="aria-voice-bottom">
+        <button id="aria-voice-send-btn" onclick="ariaVoiceTextSend()" title="Type a message">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+        <button id="aria-voice-new-btn" onclick="newAriaSession()" title="New conversation">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+        </button>
+        <button id="aria-voice-close-btn" onclick="closeAriaVoice()" title="Close voice mode">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <!-- hidden text input for non-voice fallback -->
+      <div id="aria-voice-text-row" style="display:none">
+        <input id="aria-voice-text-input" type="text" placeholder="Type a message..." onkeydown="if(event.key==='Enter')ariaVoiceTextSend()">
       </div>
       <!-- dropdown menu -->
       <div id="aria-voice-menu">
@@ -4896,6 +4946,31 @@ function ariaVoiceMenuClose(){
   const m=document.getElementById('aria-voice-menu');
   if(m)m.style.display='none';
 }
+function ariaVoiceTextSend(){
+  // toggle text input row visibility when send btn clicked without text
+  const row=document.getElementById('aria-voice-text-row');
+  const inp=document.getElementById('aria-voice-text-input');
+  if(!row||!inp)return;
+  const text=(inp.value||'').trim();
+  if(!text){
+    // show/hide the input row
+    const visible=row.style.display!=='none';
+    row.style.display=visible?'none':'block';
+    if(!visible) setTimeout(()=>inp.focus(),50);
+    return;
+  }
+  // send the typed text
+  inp.value='';
+  row.style.display='none';
+  ariaMessages.push({id:'tmp-'+Date.now(),role:'user',text,status:'pending',ts:Date.now()});
+  renderAria(true);
+  setVoiceState('thinking');
+  api('/api/ea/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({text})})
+    .then(r=>{ if(!r.ok)throw new Error(r.statusText); return loadAriaChat(); })
+    .then(()=>startAriaPolling())
+    .catch(e=>ariaVoiceShowError('Send failed: '+e.message));
+}
 function ariaVoiceShowError(msg){
   const el=document.getElementById('aria-voice-error');
   if(!el)return;
@@ -5172,8 +5247,18 @@ function initOrb(){
     phase[i]=Math.random()*1000;
   }
   geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
-  const mat=new THREE.PointsMaterial({color:0x4ca8e8,size:0.4,transparent:true,opacity:0.6,
-    sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false});
+  // circular sprite — draw a crisp anti-aliased circle on a canvas
+  // and use it as the point texture so particles are circles not squares
+  const _c=document.createElement('canvas');_c.width=_c.height=64;
+  const _x=_c.getContext('2d');
+  const _g=_x.createRadialGradient(32,32,0,32,32,32);
+  _g.addColorStop(0,'rgba(255,255,255,1)');
+  _g.addColorStop(0.4,'rgba(255,255,255,0.9)');
+  _g.addColorStop(1,'rgba(255,255,255,0)');
+  _x.fillStyle=_g; _x.beginPath(); _x.arc(32,32,32,0,Math.PI*2); _x.fill();
+  const orbTex=new THREE.CanvasTexture(_c);
+  const mat=new THREE.PointsMaterial({map:orbTex,size:0.22,transparent:true,opacity:0.6,
+    sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false,alphaTest:0.01});
   const points=new THREE.Points(geo,mat);
   scene.add(points);
 
@@ -5194,8 +5279,8 @@ function initOrb(){
   const electronPos=new Float32Array(_ORB_MAX_ELECTRONS*3);
   electronGeo.setAttribute('position',new THREE.BufferAttribute(electronPos,3));
   electronGeo.setDrawRange(0,0);
-  const electronMat=new THREE.PointsMaterial({color:0xffffff,size:0.8,transparent:true,opacity:1.0,
-    sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false});
+  const electronMat=new THREE.PointsMaterial({map:orbTex,color:0xffffff,size:0.35,transparent:true,opacity:1.0,
+    sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false,alphaTest:0.01});
   const electrons=new THREE.Points(electronGeo,electronMat);
   scene.add(electrons);
 
@@ -5399,7 +5484,7 @@ function startOrbLoop(){
 
     // Material
     T.mat.opacity=currentBright+bass*0.08;
-    T.mat.size=currentSize+bass*0.05;
+    T.mat.size=currentSize*0.55+bass*0.04;
     if(orbState==='thinking'){T.mat.color.lerp(new THREE.Color(0x6ec4ff),0.015);T.lineMat.color.lerp(new THREE.Color(0x6ec4ff),0.015);}
     else if(orbState==='speaking'){T.mat.color.lerp(new THREE.Color(0x5ab8f0),0.015);T.lineMat.color.lerp(new THREE.Color(0x5ab8f0),0.015);}
     else{T.mat.color.lerp(new THREE.Color(0x4ca8e8),0.015);T.lineMat.color.lerp(new THREE.Color(0x4ca8e8),0.015);}
