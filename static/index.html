@@ -662,6 +662,7 @@ nav{display:flex;gap:2px;flex:1}
 /* ── IMMERSIVE VOICE OVERLAY (Perplexity-style) ── */
 .aria-voice-overlay{position:fixed;inset:0;z-index:1000;background:#0a0a0a;display:none;align-items:center;justify-content:center}
 .aria-voice-overlay.open{display:flex}
+.aria-voice-overlay::after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at center,transparent 42%,rgba(0,0,0,0.35) 78%,rgba(0,0,0,0.72) 100%)}
 #aria-voice-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .aria-voice-ui{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;pointer-events:none;width:100%;height:100%;padding:0 20px}
 .aria-voice-state{position:absolute;top:26px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:rgba(180,200,220,.55);transition:color .4s}
@@ -4370,7 +4371,7 @@ function _ariaSphereShell(N,R,glow,opts){
   geo.setAttribute('color',new THREE.BufferAttribute(col,3));
   const mat=new THREE.PointsMaterial({map:glow,size:opts.size,sizeAttenuation:true,vertexColors:true,
     transparent:true,opacity:opts.opacity,depthWrite:false,alphaTest:0.5,blending:THREE.NormalBlending,fog:true});
-  return {base,phase,pos,geo,mat,points:new THREE.Points(geo,mat)};
+  return {base,phase,pos,geo,mat,points:new THREE.Points(geo,mat),basecol:col.slice(0),col};
 }
 function _ariaDust(N,glow){
   const pos=new Float32Array(N*3);
@@ -4417,20 +4418,51 @@ function initOrb(){
   const dust=_ariaDust(640,glow);
   const gDust=new THREE.Group();gDust.add(dust);scene.add(gDust);
 
+  // #5 reactive core — a faint central glow that pulses (brightens) with voice.
+  // Additive so bloom picks it up as a focal "heartbeat".
+  const coreMat=new THREE.SpriteMaterial({map:glow,color:0x9fe0ff,transparent:true,
+    opacity:0.0,depthWrite:false,depthTest:false,blending:THREE.AdditiveBlending});
+  const core=new THREE.Sprite(coreMat);
+  core.scale.set(0.6,0.6,0.6);
+  group.add(core);
+
   const shells=[
     {shell:mainShell,grp:gMain,rot:{x:0.02,y:0.10,z:0.01},animate:true},
     {shell:innerShell,grp:gInner,rot:{x:-0.05,y:-0.14,z:0.02},animate:false},
     {shell:haloShell,grp:gHalo,rot:{x:0.03,y:0.06,z:-0.03},animate:false},
   ];
 
-  // ── Post-processing DISABLED for crisp, sharp particles ──
-  // Bloom (glow) and Afterimage (trails) both softened/blurred the dots against
-  // the dark background, so we render directly for maximum sharpness.
-  let composer=null, bloomPass=null, afterPass=null;
+  // #6 density variation — per-particle max radius so a few dots drift slightly
+  // beyond the sphere for a softer, less rigid boundary.
+  const Nmain=mainShell.base.length;
+  const rmax=new Float32Array(Nmain);
+  for(let i=0;i<Nmain;i++){ const f=Math.random(); rmax[i]=1.35*(f>0.9?1.0+ (f-0.9)*2.4 : 1.0); }
 
-  ariaThree={renderer,scene,camera,group,shells,gDust,glow,composer,bloomPass,afterPass,
+  // #1 selective bloom + #3 speech trails — re-enabled, tuned so ONLY the bright
+  // particle cores bloom faintly (crisp dots stay sharp), and trails appear only
+  // when energised. Defensive: falls back to direct render if modules missing.
+  let composer=null, bloomPass=null, afterPass=null;
+  try{
+    if(THREE.EffectComposer && THREE.RenderPass && THREE.UnrealBloomPass){
+      composer=new THREE.EffectComposer(renderer);
+      composer.addPass(new THREE.RenderPass(scene,camera));
+      if(THREE.AfterimagePass){
+        afterPass=new THREE.AfterimagePass();
+        afterPass.uniforms['damp'].value=0.0;    // no trail at rest → crisp
+        composer.addPass(afterPass);
+      }
+      // strength, radius, HIGH threshold → only bright cores glow, dots stay crisp
+      bloomPass=new THREE.UnrealBloomPass(new THREE.Vector2(w,h),0.35,0.4,0.82);
+      composer.addPass(bloomPass);
+      composer.setPixelRatio(ariaPixelRatio());
+      composer.setSize(w,h);
+    }
+  }catch(e){ composer=null; console.warn('[ARIA] bloom composer unavailable, using direct render',e); }
+
+  ariaThree={renderer,scene,camera,group,shells,gDust,glow,composer,bloomPass,afterPass,core,coreMat,rmax,
+             mainBaseCol:mainShell.basecol,mainCol:mainShell.col,
              base:mainShell.base,phase:mainShell.phase,pPos:mainShell.pos,
-             pGeo:mainShell.geo,pMat:mainShell.mat,t:0};
+             pGeo:mainShell.geo,pMat:mainShell.mat,t:0,camZ:6,dolly:1.18};
   window.addEventListener('resize',ariaOrbResize);
   ariaFitCamera();
 }
@@ -4444,7 +4476,8 @@ function ariaFitCamera(){
   const vHalf=(cam.fov*Math.PI/180)/2;           // vertical half-FOV
   const hHalf=Math.atan(Math.tan(vHalf)*cam.aspect); // horizontal half-FOV
   const half=Math.min(vHalf,hHalf);
-  cam.position.z = R/Math.sin(half);
+  ariaThree.camZ = R/Math.sin(half);             // fitted distance (base for dolly)
+  cam.position.z = ariaThree.camZ*(ariaThree.dolly||1);
   cam.updateProjectionMatrix();
 }
 function ariaOrbResize(){
@@ -4494,7 +4527,14 @@ function startOrbLoop(){
     T.group.position.y = T.posY;
     const s0 = T.scale;
     T.group.scale.set(s0,s0,s0);
-    // tint multiplies the baked gradient: near-white idle → teal when active
+
+    // #4 color life: slow hue drift while idle; distinct listening vs speaking.
+    // listening = cool cyan-white, thinking = ice blue, speaking = warm-teal white.
+    const hueBase = ariaSpeaking ? 0.47 : (active ? 0.58 : 0.55);
+    const hue = hueBase + Math.sin(T.t*0.06)*0.02;          // gentle drift
+    const sat = ariaSpeaking ? 0.35 : 0.22;
+    const tintCol=new THREE.Color().setHSL(hue, sat, active?0.86:0.9);
+    T.colR=damp(T.colR,tintCol.r,0.5,dt); T.colG=damp(T.colG,tintCol.g,0.5,dt); T.colB=damp(T.colB,tintCol.b,0.5,dt);
     const tint=new THREE.Color(T.colR,T.colG,T.colB);
     T.shells.forEach(s=>{ s.shell.mat.color.copy(tint); });
     T.gDust.children[0].material.opacity = 0.35 + smooth*0.4;
@@ -4511,36 +4551,60 @@ function startOrbLoop(){
     T.gDust.rotation.x += 0.01*dt;
     const amp = 1 + smooth*0.42;
 
-    // ── Perplexity-style volumetric swirl ──
-    // Each particle integrates a curl-ish (divergence-free) velocity field and
-    // wanders THROUGH the sphere's interior — softly contained inside radius R.
-    // Swirl speed scales sharply with audio → particles rush when you talk.
+    // #6 eased cinematic dolly: pull slightly closer while active, ease back at rest
+    const tgtDolly = active ? 1.0 : 1.18;
+    T.dolly = damp(T.dolly, tgtDolly, 0.6, dt);
+    T.camera.position.z = T.camZ*T.dolly;
+
+    // ── Perplexity-style volumetric swirl (+ #2 depth brightness, #3 trails) ──
     const ph=T.phase, tt=T.t;
     const R=1.35, rmin=R*0.28;                 // main-shell radius / inner bound
     const speed=(0.05 + smooth*0.95);          // world-units/sec; talking = fast
     function sn(a){return Math.sin(a);}
+    // true world-space Z (accounts for shell + group rotation/scale) for depth fade
+    const mainPts=T.shells[0].points; mainPts.updateWorldMatrix(true,false);
+    const me=mainPts.matrixWorld.elements;
+    const m2=me[2],m6=me[6],m10=me[10],m14=me[14];
+    const camZ=T.camera.position.z;
+    const near=-R-0.4, far=R+0.4, span=far-near; // world-Z range of the orb
+    const bc=T.mainBaseCol, cc=T.mainCol;
     for(let i=0;i<T.base.length;i++){
       let px=T.pPos[i*3], py=T.pPos[i*3+1], pz=T.pPos[i*3+2];
       const p=ph[i];
-      // velocity = approximate curl of a smooth noise field (no clumping)
       const vx = sn(py*1.7 + tt*0.7 + p) - sn(pz*1.5 - tt*0.6);
       const vy = sn(pz*1.8 - tt*0.6 + p) - sn(px*1.6 + tt*0.7);
       const vz = sn(px*1.7 + tt*0.7 + p) - sn(py*1.5 - tt*0.6);
       px += vx*speed*dt; py += vy*speed*dt; pz += vz*speed*dt;
-      // soft containment: keep the swirl inside the sphere volume
+      // #6 soft containment with per-particle max radius (some drift outside)
+      const rM=T.rmax[i]||R;
       let r=Math.sqrt(px*px+py*py+pz*pz)||1e-4;
-      if(r>R){ const k=R/r; px*=k;py*=k;pz*=k; }
+      if(r>rM){ const k=rM/r; px*=k;py*=k;pz*=k; }
       else if(r<rmin){ const k=rmin/r; px*=k;py*=k;pz*=k; }
       T.pPos[i*3]=px; T.pPos[i*3+1]=py; T.pPos[i*3+2]=pz;
+      // #2 depth-based brightness: front (toward camera) bright, back dim →
+      // the cloud reads as a lit 3D volume. Uses real world-Z so it tracks rotation.
+      const wz = m2*px + m6*py + m10*pz + m14;
+      const front = Math.min(1,Math.max(0,(wz-near)/span)); // 1 = nearest camera
+      const b = 0.42 + 0.58*front;
+      cc[i*3]=bc[i*3]*b; cc[i*3+1]=bc[i*3+1]*b; cc[i*3+2]=bc[i*3+2]*b;
     }
     T.pGeo.attributes.position.needsUpdate=true;
+    T.pGeo.attributes.color.needsUpdate=true;
     // crisp dots — small, subtle swell with audio
     T.pMat.size=0.030+smooth*0.014;
 
-    // audio-reactive bloom: orb surges radiant when ARIA speaks / you talk
-    if(T.bloomPass){ T.bloomPass.strength = 1.05 + smooth*1.15; }
-    // trails: subtle at rest, longer when energised
-    if(T.afterPass){ T.afterPass.uniforms['damp'].value = 0.70 + smooth*0.16; }
+    // #5 reactive core: faint central glow that brightens (pulses) with voice
+    if(T.coreMat){
+      T.coreMat.color.copy(tint);
+      T.coreMat.opacity = damp(T.coreMat.opacity, 0.10 + smooth*0.55, 0.12, dt);
+      const cs = (0.5 + smooth*0.7)*s0;
+      T.core.scale.set(cs,cs,cs);
+    }
+
+    // #1 selective bloom: only bright cores glow, subtle surge with voice
+    if(T.bloomPass){ T.bloomPass.strength = 0.30 + smooth*0.55; }
+    // #3 speech trails: none at rest, short velocity streaks when energised
+    if(T.afterPass){ T.afterPass.uniforms['damp'].value = Math.min(0.62, smooth*1.4); }
 
     if(T.composer){ T.composer.render(); }
     else { T.renderer.render(T.scene,T.camera); }
