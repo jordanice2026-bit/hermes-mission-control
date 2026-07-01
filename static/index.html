@@ -3162,12 +3162,12 @@ function gotoSearchResult(view,type,id){
 let listings=[];
 let listingOwners=[];
 let listingProperties=[];
-async function ensureProperties(){
-  if(listingProperties.length)return;
+async function ensureProperties(force){
+  if(listingProperties.length && !force)return;
   try{
     const r=await api('/api/properties');
     listingProperties=(await r.json()).properties||[];
-  }catch(e){listingProperties=[];}
+  }catch(e){if(!listingProperties.length)listingProperties=[];}
 }
 
 async function loadListings(){
@@ -3219,16 +3219,16 @@ function renderListings(){
 }
 
 // ── CREATE/EDIT FORM ──
-async function ensureOwners(){
-  if(listingOwners.length)return;
+async function ensureOwners(force){
+  if(listingOwners.length && !force)return;
   try{
     const r=await api('/api/listings-owners');
     listingOwners=(await r.json()).owners||[];
-  }catch(e){listingOwners=[];}
+  }catch(e){if(!listingOwners.length)listingOwners=[];}
 }
 async function openListingModal(editId){
-  await ensureOwners();
-  await ensureProperties();
+  await ensureOwners(true);       // always refresh owners too
+  await ensureProperties(true);   // always refresh so newly-added properties show
   const sel=document.getElementById('listing-owner');
   sel.innerHTML='<option value="">Select an owner…</option>'+
     listingOwners.map(o=>`<option value="${o.id}">${esc(o.name)}</option>`).join('');
