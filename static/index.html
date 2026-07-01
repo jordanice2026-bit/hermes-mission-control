@@ -4329,8 +4329,13 @@ function ariaAudioLevel(){
 }
 
 // ── The 3D orb: holographic particle system (Three.js) ──
+// Single source of truth for render resolution. On a 5K/Retina display
+// devicePixelRatio is typically 2; we allow up to 3 so the orb renders at full
+// native res (and lightly supersamples) for maximum crispness, capped to keep
+// the GPU happy. Lower the cap here if any device struggles.
+function ariaPixelRatio(){ return Math.min(window.devicePixelRatio||1, 3); }
 function _ariaGlowTexture(){
-  const s=256,c=document.createElement('canvas');c.width=c.height=s;
+  const s=512,c=document.createElement('canvas');c.width=c.height=s;
   const x=c.getContext('2d');
   const g=x.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
   // smooth multi-stop falloff → soft round glow with no hard edge / banding
@@ -4345,7 +4350,7 @@ function _ariaGlowTexture(){
   tex.minFilter=THREE.LinearMipmapLinearFilter;
   tex.magFilter=THREE.LinearFilter;
   tex.generateMipmaps=true;
-  tex.anisotropy=8;
+  tex.anisotropy=16;
   tex.needsUpdate=true;
   return tex;
 }
@@ -4384,8 +4389,12 @@ function _ariaDust(N,glow){
 function initOrb(){
   if(ariaThree||!window.THREE)return;
   const canvas=document.getElementById('aria-voice-canvas');
-  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance'});
+  // 5K / hi-DPI: render at full native resolution + light supersample for extra
+  // crispness, capped to protect the GPU. This is the single source of truth for
+  // pixel ratio — renderer, composer and bloom all read ariaPixelRatio().
+  renderer.setPixelRatio(ariaPixelRatio());
+  renderer.outputEncoding=THREE.sRGBEncoding;
   const w=window.innerWidth,h=window.innerHeight;
   renderer.setSize(w,h);
   const scene=new THREE.Scene();
@@ -4401,13 +4410,13 @@ function initOrb(){
   // three concentric shells at different radii + rotation speeds → parallax depth
   const gMain=new THREE.Group(),gInner=new THREE.Group(),gHalo=new THREE.Group();
   group.add(gMain);group.add(gInner);group.add(gHalo);
-  const mainShell=_ariaSphereShell(1500,1.35,glow,{lo:0x4d9cff,hi:0xd6faff,size:0.075,opacity:1.0});
-  const innerShell=_ariaSphereShell(520,0.85,glow,{lo:0x2f7bff,hi:0xaaf0ff,size:0.08,opacity:0.92});
-  const haloShell=_ariaSphereShell(420,1.78,glow,{lo:0x4f8cff,hi:0xc8f4ff,size:0.06,opacity:0.6});
+  const mainShell=_ariaSphereShell(3000,1.35,glow,{lo:0x4d9cff,hi:0xd6faff,size:0.075,opacity:1.0});
+  const innerShell=_ariaSphereShell(1000,0.85,glow,{lo:0x2f7bff,hi:0xaaf0ff,size:0.08,opacity:0.92});
+  const haloShell=_ariaSphereShell(820,1.78,glow,{lo:0x4f8cff,hi:0xc8f4ff,size:0.06,opacity:0.6});
   gMain.add(mainShell.points);gInner.add(innerShell.points);gHalo.add(haloShell.points);
 
   // ambient floating dust in the surrounding space (depth of field)
-  const dust=_ariaDust(320,glow);
+  const dust=_ariaDust(640,glow);
   const gDust=new THREE.Group();gDust.add(dust);scene.add(gDust);
 
   const shells=[
@@ -4431,7 +4440,7 @@ function initOrb(){
       bloomPass=new THREE.UnrealBloomPass(new THREE.Vector2(w,h),0.9,0.65,0.2);
       // strength, radius, threshold — the radiant plasma glow
       composer.addPass(bloomPass);
-      composer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+      composer.setPixelRatio(ariaPixelRatio());
       composer.setSize(w,h);
     }
   }catch(e){ composer=null; console.warn('[ARIA] bloom composer unavailable, using direct render',e); }
@@ -4458,10 +4467,12 @@ function ariaFitCamera(){
 function ariaOrbResize(){
   if(!ariaThree)return;
   const w=window.innerWidth,h=window.innerHeight;
+  const pr=ariaPixelRatio();
   ariaThree.camera.aspect=w/h;
   ariaFitCamera();
+  ariaThree.renderer.setPixelRatio(pr);
   ariaThree.renderer.setSize(w,h);
-  if(ariaThree.composer)ariaThree.composer.setSize(w,h);
+  if(ariaThree.composer){ariaThree.composer.setPixelRatio(pr);ariaThree.composer.setSize(w,h);}
   if(ariaThree.bloomPass)ariaThree.bloomPass.setSize(w,h);
 }
 function startOrbLoop(){
