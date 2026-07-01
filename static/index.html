@@ -633,7 +633,8 @@ nav{display:flex;gap:2px;flex:1}
 .aria-sub{font-size:11px;color:var(--text3);margin-top:1px}
 .aria-status{font-size:11px;color:var(--text3);white-space:nowrap}
 .aria-status.online{color:#00e0ff}
-.aria-log{flex:1;overflow-y:auto;padding:10px 4px 16px;display:flex;flex-direction:column;gap:14px}
+.aria-log{flex:1;overflow-y:auto;padding:10px 4px 16px;display:flex;flex-direction:column;gap:14px;scrollbar-width:none;-ms-overflow-style:none}
+.aria-log::-webkit-scrollbar{width:0;height:0;display:none}
 .aria-welcome{text-align:center;margin:auto;max-width:520px;padding:30px 10px}
 .aria-welcome-orb{font-size:40px;color:#00e0ff;text-shadow:0 0 20px rgba(0,224,255,.6);margin-bottom:10px}
 .aria-welcome-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px}
@@ -676,10 +677,13 @@ nav{display:flex;gap:2px;flex:1}
 .aria-history{flex-direction:column;gap:0;background:var(--surface2);border:1px solid rgba(0,180,255,.25);border-radius:12px;margin:0 4px 10px;max-height:260px;overflow-y:auto}
 .aria-history-head{font-size:11px;font-weight:700;color:#00e0ff;padding:10px 14px 6px;letter-spacing:.06em;text-transform:uppercase}
 .aria-history-list{display:flex;flex-direction:column}
-.aria-hist-item{padding:9px 14px;border-top:1px solid var(--border);cursor:pointer;transition:background .12s}
+.aria-hist-item{display:flex;align-items:center;gap:8px;padding:9px 10px 9px 14px;border-top:1px solid var(--border);transition:background .12s}
 .aria-hist-item:hover{background:rgba(0,180,255,.08)}
+.aria-hist-open{flex:1;min-width:0;cursor:pointer}
 .aria-hist-title{font-size:13px;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .aria-hist-meta{font-size:10px;color:var(--text3);margin-top:2px}
+.aria-hist-del{flex-shrink:0;background:none;border:none;color:var(--text3);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:6px;opacity:.5;transition:all .12s}
+.aria-hist-del:hover{opacity:1;background:rgba(255,80,80,.15);color:#ff8080}
 .aria-hist-empty{padding:14px;font-size:12px;color:var(--text3);text-align:center}
 .aria-archive-banner{background:rgba(0,180,255,.1);border:1px solid rgba(0,180,255,.3);border-radius:10px;padding:8px 13px;font-size:12px;color:var(--text2);margin-bottom:6px}
 .aria-archive-banner a{color:#00e0ff}
@@ -4002,6 +4006,7 @@ async function loadAriaChat(){
 function renderAria(force, workerOnline){
   const log=document.getElementById('aria-log');
   if(!log)return;
+  if(window._ariaWelcomeHTML===undefined){const w=log.querySelector('.aria-welcome');window._ariaWelcomeHTML=w?w.outerHTML:'';}
   const st=document.getElementById('aria-status');
   const orb=document.getElementById('aria-orb');
   const pending=ariaMessages.some(m=>m.role==='user'&&(m.status==='pending'||m.status==='processing'));
@@ -4011,7 +4016,11 @@ function renderAria(force, workerOnline){
     else{st.textContent='◌ offline';st.className='aria-status';}
   }
   if(orb)orb.classList.toggle('thinking',pending);
-  if(!ariaMessages.length){return;/* keep welcome */}
+  if(!ariaMessages.length){
+    // empty live chat → restore welcome (also clears any stale archive view)
+    if(!log.querySelector('.aria-welcome')&&window._ariaWelcomeHTML){log.innerHTML=window._ariaWelcomeHTML;ariaLastRendered=0;}
+    return;
+  }
   if(!force && ariaMessages.length===ariaLastRendered && !pending)return;
   ariaLastRendered=ariaMessages.length;
   let html=ariaMessages.map(m=>{
@@ -4056,7 +4065,7 @@ async function loadAriaSessions(){
     const d=await r.json();
     const items=d.sessions||[];
     if(!items.length){box.innerHTML='<div class="aria-hist-empty">No past conversations yet.</div>';return;}
-    box.innerHTML=items.map(s=>`<div class="aria-hist-item" onclick="openAriaSession('${s.id}')"><div class="aria-hist-title">${esc(s.title)}</div><div class="aria-hist-meta">${s.count} msgs · ${timeAgo(s.ended_at)}</div></div>`).join('');
+    box.innerHTML=items.map(s=>`<div class="aria-hist-item"><div class="aria-hist-open" onclick="openAriaSession('${s.id}')"><div class="aria-hist-title">${esc(s.title)}</div><div class="aria-hist-meta">${s.count} msgs · ${timeAgo(s.ended_at)}</div></div><button class="aria-hist-del" title="Delete conversation" onclick="deleteAriaSession(event,'${s.id}')">🗑</button></div>`).join('');
   }catch(e){box.innerHTML='<div class="aria-hist-empty">Could not load history.</div>';}
 }
 function toggleAriaHistory(){
@@ -4087,9 +4096,20 @@ async function openAriaSession(id){
   }catch(e){showToast('Could not open conversation','error');}
 }
 function backToLiveAria(ev){
-  if(ev)ev.preventDefault();
-  ariaViewingArchive=false;ariaLastRendered=0;
+  if(ev){ev.preventDefault();ev.stopPropagation();}
+  ariaViewingArchive=false;ariaLastRendered=-1;
+  const log=document.getElementById('aria-log');
+  if(log)log.innerHTML='<div class="aria-hist-empty" style="padding:40px">Loading current chat…</div>';
   loadAria();
+}
+async function deleteAriaSession(ev,id){
+  if(ev){ev.preventDefault();ev.stopPropagation();}
+  if(!confirm('Delete this conversation permanently?'))return;
+  try{
+    const r=await api('/api/ea/sessions/'+id,{method:'DELETE'});
+    if(!r.ok)throw new Error();
+    loadAriaSessions();
+  }catch(e){showToast('Could not delete conversation','error');}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

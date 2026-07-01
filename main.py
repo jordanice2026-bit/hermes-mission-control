@@ -769,6 +769,17 @@ async def ea_session_get(session_id: str, request: Request, user: dict = Depends
     raise HTTPException(404, "session not found")
 
 
+@app.delete("/api/ea/sessions/{session_id}")
+async def ea_session_delete(session_id: str, request: Request, user: dict = Depends(require_user)):
+    """Delete one archived ARIA conversation."""
+    global _ea_sessions
+    before = len(_ea_sessions)
+    _ea_sessions = [s for s in _ea_sessions if s["id"] != session_id]
+    if len(_ea_sessions) == before:
+        raise HTTPException(404, "session not found")
+    return JSONResponse({"ok": True, "deleted": session_id, "remaining": len(_ea_sessions)})
+
+
 @app.post("/api/ea/chat/reply")
 async def ea_chat_reply(request: Request, _=Depends(require_sync_token)):
     """VPS EA runner posts the assistant's reply + marks the user msg done."""
