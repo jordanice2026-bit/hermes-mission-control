@@ -657,23 +657,22 @@ nav{display:flex;gap:2px;flex:1}
 .aria-send:disabled{opacity:.5;cursor:default;box-shadow:none}
 .aria-mic{background:var(--surface2);border:1px solid rgba(0,180,255,.3);border-radius:14px;padding:0 14px;font-size:16px;cursor:pointer;transition:all .15s;flex-shrink:0}
 .aria-mic:hover{border-color:#00b4ff;box-shadow:0 0 14px rgba(0,180,255,.35)}
-/* ── IMMERSIVE VOICE OVERLAY ── */
-.aria-voice-overlay{position:fixed;inset:0;z-index:1000;background:radial-gradient(ellipse at center,#05101f 0%,#01060d 70%,#000 100%);display:none;align-items:center;justify-content:center}
+/* ── IMMERSIVE VOICE OVERLAY (Perplexity-style) ── */
+.aria-voice-overlay{position:fixed;inset:0;z-index:1000;background:#0a0a0a;display:none;align-items:center;justify-content:center}
 .aria-voice-overlay.open{display:flex}
 #aria-voice-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.aria-voice-ui{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:18px;pointer-events:none;width:100%;max-width:640px;padding:0 20px}
-.aria-voice-state{font-size:15px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:#7fe9ff;text-shadow:0 0 16px rgba(0,200,255,.6);margin-top:44vh;transition:color .3s}
-.aria-voice-state.listening{color:#7fe9ff}
-.aria-voice-state.thinking{color:#ffd27f}
-.aria-voice-state.speaking{color:#8affc4}
-.aria-voice-transcript{font-size:18px;color:#dff6ff;text-align:center;line-height:1.5;min-height:28px;max-width:560px;text-shadow:0 0 10px rgba(0,140,255,.3)}
-.aria-voice-controls{display:flex;gap:18px;pointer-events:auto;margin-top:6px}
-.aria-voice-btn{width:56px;height:56px;border-radius:50%;border:1px solid rgba(0,180,255,.4);background:rgba(0,40,80,.5);color:#bfefff;font-size:20px;cursor:pointer;transition:all .18s;backdrop-filter:blur(6px)}
-.aria-voice-btn:hover{background:rgba(0,120,220,.5);box-shadow:0 0 22px rgba(0,180,255,.6);transform:scale(1.06)}
+.aria-voice-ui{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;pointer-events:none;width:100%;height:100%;padding:0 20px}
+.aria-voice-state{position:absolute;top:26px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:rgba(180,200,220,.55);transition:color .4s}
+.aria-voice-state.listening{color:rgba(180,200,220,.55)}
+.aria-voice-state.thinking{color:rgba(150,220,255,.75)}
+.aria-voice-state.speaking{color:rgba(120,240,210,.8)}
+.aria-voice-transcript{font-size:20px;color:#e8f4f8;text-align:center;line-height:1.55;max-width:620px;font-weight:400;text-shadow:0 0 20px rgba(0,120,160,.25);transition:opacity .3s;padding:0 10px}
+.aria-voice-controls{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);display:flex;gap:22px;pointer-events:auto}
+.aria-voice-btn{width:52px;height:52px;border-radius:50%;border:1px solid rgba(150,170,190,.25);background:rgba(30,36,44,.6);color:#cfe4ef;font-size:19px;cursor:pointer;transition:all .18s;backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center}
+.aria-voice-btn:hover{background:rgba(50,60,72,.7);transform:scale(1.06)}
 .aria-voice-btn.muted{opacity:.45;border-style:dashed}
-.aria-voice-end{border-color:rgba(255,90,90,.5);color:#ffb3b3}
-.aria-voice-end:hover{background:rgba(200,40,40,.4);box-shadow:0 0 22px rgba(255,80,80,.5)}
-.aria-voice-hint{font-size:12px;color:rgba(160,200,230,.6);text-align:center;pointer-events:none;max-width:420px}
+.aria-voice-end:hover{background:rgba(120,50,50,.5)}
+.aria-voice-hint{display:none}
 .aria-history{flex-direction:column;gap:0;background:var(--surface2);border:1px solid rgba(0,180,255,.25);border-radius:12px;margin:0 4px 10px;max-height:260px;overflow-y:auto}
 .aria-history-head{font-size:11px;font-weight:700;color:#00e0ff;padding:10px 14px 6px;letter-spacing:.06em;text-transform:uppercase}
 .aria-history-list{display:flex;flex-direction:column}
@@ -4236,7 +4235,7 @@ function ariaSpeak(text, onDone){
   // stop listening while speaking so we don't hear ourselves
   ariaSpeaking=true;
   try{ if(ariaRec)ariaRec.abort(); }catch(e){}
-  if(ariaVoiceOn)setVoiceState('speaking');
+  if(ariaVoiceOn){ setVoiceState('speaking'); setVoiceTranscript(text); }
   const u=new SpeechSynthesisUtterance(text.slice(0,600));
   const v=pickAriaTtsVoice(); if(v)u.voice=v;
   u.rate=1.05; u.pitch=1.0;
@@ -4244,8 +4243,9 @@ function ariaSpeak(text, onDone){
     ariaSpeaking=false;
     if(onDone)onDone();
     if(ariaVoiceOn){
-      // return to listening (unless still working on a task)
-      setVoiceState(ariaMessages.some(m=>m.role==='user'&&(m.status==='pending'||m.status==='processing'))?'thinking':'listening');
+      const stillWorking=ariaMessages.some(m=>m.role==='user'&&(m.status==='pending'||m.status==='processing'));
+      setVoiceState(stillWorking?'thinking':'listening');
+      if(!stillWorking)setVoiceTranscript('');   // clear so listening view is clean
       if(!ariaMicMuted)setTimeout(startAriaListening,200);
     }
   };
@@ -4362,34 +4362,53 @@ function startOrbLoop(){
   if(!ariaThree)return;
   const T=ariaThree;
   let smooth=0;
+  // animated transition state (lerped toward targets each frame)
+  T.posY=0; T.scale=1; T.colR=0.80; T.colG=0.86; T.colB=0.92;
+  function lerp(a,b,t){return a+(b-a)*t;}
   function frame(){
     if(!ariaVoiceOn){return;}
     T.t+=0.01;
     const lvl=ariaAudioLevel();
     // when ARIA is speaking, drive motion with a synthetic pulse; else use mic
-    const drive = ariaSpeaking ? (0.35+0.35*Math.abs(Math.sin(T.t*6))) : lvl;
+    const drive = ariaSpeaking ? (0.30+0.30*Math.abs(Math.sin(T.t*5.5))) : lvl;
     smooth += (drive-smooth)*0.15;
-    const amp = 1 + smooth*0.6;
 
-    // state-based color
-    let col = ariaVoiceState==='thinking'?0xffc24d : ariaVoiceState==='speaking'?0x4dffa3 : 0x66e0ff;
-    T.pMat.color.setHex(col);
-    T.lMat.color.setHex(ariaVoiceState==='thinking'?0xff9a2e:ariaVoiceState==='speaking'?0x2ee88a:0x1e90ff);
-    T.lMat.opacity = 0.18 + smooth*0.4;
+    // ── Perplexity two-state layout ──
+    // LISTENING (idle): large sphere, CENTER, white/gray particles.
+    // THINKING/SPEAKING: smaller orb, drops to BOTTOM, teal/cyan particles.
+    const active = (ariaVoiceState==='thinking'||ariaVoiceState==='speaking');
+    const tgtPosY  = active ? -2.15 : 0.0;      // world-units downward
+    const tgtScale = active ? 0.52  : 1.0;
+    // colors (0..1): idle=cool white-gray, active=teal/cyan
+    const tgtR = active ? 0.36 : 0.80;
+    const tgtG = active ? 0.92 : 0.86;
+    const tgtB = active ? 0.86 : 0.92;
+    T.posY  = lerp(T.posY,  tgtPosY,  0.08);
+    T.scale = lerp(T.scale, tgtScale, 0.08);
+    T.colR  = lerp(T.colR,  tgtR, 0.07);
+    T.colG  = lerp(T.colG,  tgtG, 0.07);
+    T.colB  = lerp(T.colB,  tgtB, 0.07);
 
-    // breathe + rotate
-    T.group.rotation.y += 0.0025 + smooth*0.02;
-    T.group.rotation.x = Math.sin(T.t*0.3)*0.15;
+    T.group.position.y = T.posY;
+    const s0 = T.scale;
+    T.group.scale.set(s0,s0,s0);
+    T.pMat.color.setRGB(T.colR,T.colG,T.colB);
+    T.lMat.color.setRGB(T.colR*0.7,T.colG*0.8,T.colB*0.9);
+    T.lMat.opacity = 0.10 + smooth*0.35;
 
-    // displace particles along their normal by noise + audio
+    // gentle continuous rotation + audio-driven breathing
+    T.group.rotation.y += 0.0022 + smooth*0.018;
+    T.group.rotation.x = Math.sin(T.t*0.3)*0.12;
+    const amp = 1 + smooth*0.55;
+
+    // displace particles radially by noise + audio (the "reacting to sound" ripple)
     for(let i=0;i<T.base.length;i++){
       const v=T.base[i];
-      const n=Math.sin(T.t*1.6 + i*0.35)*0.05 + smooth*0.28;
+      const n=Math.sin(T.t*1.6 + i*0.35)*0.045 + smooth*0.30;
       const s=amp+n;
       T.pPos[i*3]=v.x*s; T.pPos[i*3+1]=v.y*s; T.pPos[i*3+2]=v.z*s;
     }
     T.pGeo.attributes.position.needsUpdate=true;
-    // update lines to follow displaced points
     for(let k=0;k<T.linePairs.length;k+=2){
       const a=T.linePairs[k],b=T.linePairs[k+1];
       const o=(k/2)*6;
@@ -4397,7 +4416,7 @@ function startOrbLoop(){
       T.lPos[o+3]=T.pPos[b*3];T.lPos[o+4]=T.pPos[b*3+1];T.lPos[o+5]=T.pPos[b*3+2];
     }
     T.lGeo.attributes.position.needsUpdate=true;
-    T.pMat.size=0.04+smooth*0.05;
+    T.pMat.size=0.038+smooth*0.045;
 
     T.renderer.render(T.scene,T.camera);
     ariaRAF=requestAnimationFrame(frame);
