@@ -4335,17 +4335,15 @@ function ariaAudioLevel(){
 // the GPU happy. Lower the cap here if any device struggles.
 function ariaPixelRatio(){ return Math.min(window.devicePixelRatio||1, 3); }
 function _ariaGlowTexture(){
-  const s=512,c=document.createElement('canvas');c.width=c.height=s;
+  // Crisp solid dot — sharp round edge, no soft glow halo (avoids the blurred
+  // look against the dark background). Anti-aliased only at the very rim.
+  const s=256,c=document.createElement('canvas');c.width=c.height=s;
   const x=c.getContext('2d');
-  const g=x.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
-  // smooth multi-stop falloff → soft round glow with no hard edge / banding
-  g.addColorStop(0.00,'rgba(255,255,255,1)');
-  g.addColorStop(0.12,'rgba(255,255,255,0.95)');
-  g.addColorStop(0.30,'rgba(255,255,255,0.55)');
-  g.addColorStop(0.55,'rgba(255,255,255,0.18)');
-  g.addColorStop(0.80,'rgba(255,255,255,0.04)');
-  g.addColorStop(1.00,'rgba(255,255,255,0)');
-  x.fillStyle=g;x.fillRect(0,0,s,s);
+  x.clearRect(0,0,s,s);
+  x.fillStyle='rgba(255,255,255,1)';
+  x.beginPath();
+  x.arc(s/2,s/2,s*0.40,0,Math.PI*2);
+  x.fill();
   const tex=new THREE.CanvasTexture(c);
   tex.minFilter=THREE.LinearMipmapLinearFilter;
   tex.magFilter=THREE.LinearFilter;
@@ -4371,7 +4369,7 @@ function _ariaSphereShell(N,R,glow,opts){
   geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
   geo.setAttribute('color',new THREE.BufferAttribute(col,3));
   const mat=new THREE.PointsMaterial({map:glow,size:opts.size,sizeAttenuation:true,vertexColors:true,
-    transparent:true,opacity:opts.opacity,depthWrite:false,blending:THREE.AdditiveBlending,fog:true});
+    transparent:true,opacity:opts.opacity,depthWrite:false,alphaTest:0.5,blending:THREE.NormalBlending,fog:true});
   return {base,phase,pos,geo,mat,points:new THREE.Points(geo,mat)};
 }
 function _ariaDust(N,glow){
@@ -4383,7 +4381,7 @@ function _ariaDust(N,glow){
   const geo=new THREE.BufferGeometry();
   geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
   const mat=new THREE.PointsMaterial({map:glow,color:0x2ea8ff,size:0.02,sizeAttenuation:true,
-    transparent:true,opacity:0.5,depthWrite:false,blending:THREE.AdditiveBlending,fog:true});
+    transparent:true,opacity:0.5,depthWrite:false,alphaTest:0.5,blending:THREE.NormalBlending,fog:true});
   return new THREE.Points(geo,mat);
 }
 function initOrb(){
@@ -4410,9 +4408,9 @@ function initOrb(){
   // three concentric shells at different radii + rotation speeds → parallax depth
   const gMain=new THREE.Group(),gInner=new THREE.Group(),gHalo=new THREE.Group();
   group.add(gMain);group.add(gInner);group.add(gHalo);
-  const mainShell=_ariaSphereShell(3000,1.35,glow,{lo:0x4d9cff,hi:0xd6faff,size:0.075,opacity:1.0});
-  const innerShell=_ariaSphereShell(1000,0.85,glow,{lo:0x2f7bff,hi:0xaaf0ff,size:0.08,opacity:0.92});
-  const haloShell=_ariaSphereShell(820,1.78,glow,{lo:0x4f8cff,hi:0xc8f4ff,size:0.06,opacity:0.6});
+  const mainShell=_ariaSphereShell(3000,1.35,glow,{lo:0x4d9cff,hi:0xd6faff,size:0.032,opacity:1.0});
+  const innerShell=_ariaSphereShell(1000,0.85,glow,{lo:0x2f7bff,hi:0xaaf0ff,size:0.034,opacity:0.92});
+  const haloShell=_ariaSphereShell(820,1.78,glow,{lo:0x4f8cff,hi:0xc8f4ff,size:0.026,opacity:0.6});
   gMain.add(mainShell.points);gInner.add(innerShell.points);gHalo.add(haloShell.points);
 
   // ambient floating dust in the surrounding space (depth of field)
@@ -4425,25 +4423,10 @@ function initOrb(){
     {shell:haloShell,grp:gHalo,rot:{x:0.03,y:0.06,z:-0.03},animate:false},
   ];
 
-  // ── Post-processing: UnrealBloom (screen-space glow) + Afterimage (motion trails) ──
-  // Built defensively: if any module failed to load, we fall back to direct render.
+  // ── Post-processing DISABLED for crisp, sharp particles ──
+  // Bloom (glow) and Afterimage (trails) both softened/blurred the dots against
+  // the dark background, so we render directly for maximum sharpness.
   let composer=null, bloomPass=null, afterPass=null;
-  try{
-    if(THREE.EffectComposer && THREE.RenderPass && THREE.UnrealBloomPass){
-      composer=new THREE.EffectComposer(renderer);
-      composer.addPass(new THREE.RenderPass(scene,camera));
-      if(THREE.AfterimagePass){
-        afterPass=new THREE.AfterimagePass();
-        afterPass.uniforms['damp'].value=0.72;   // trail persistence
-        composer.addPass(afterPass);
-      }
-      bloomPass=new THREE.UnrealBloomPass(new THREE.Vector2(w,h),0.9,0.65,0.2);
-      // strength, radius, threshold — the radiant plasma glow
-      composer.addPass(bloomPass);
-      composer.setPixelRatio(ariaPixelRatio());
-      composer.setSize(w,h);
-    }
-  }catch(e){ composer=null; console.warn('[ARIA] bloom composer unavailable, using direct render',e); }
 
   ariaThree={renderer,scene,camera,group,shells,gDust,glow,composer,bloomPass,afterPass,
              base:mainShell.base,phase:mainShell.phase,pPos:mainShell.pos,
@@ -4546,8 +4529,8 @@ function startOrbLoop(){
       T.pPos[i*3+2] = v.z*breath + fz*flow;
     }
     T.pGeo.attributes.position.needsUpdate=true;
-    // glow sprites swell slightly with audio
-    T.pMat.size=0.072+smooth*0.035;
+    // crisp dots — small, subtle swell with audio
+    T.pMat.size=0.030+smooth*0.014;
 
     // audio-reactive bloom: orb surges radiant when ARIA speaks / you talk
     if(T.bloomPass){ T.bloomPass.strength = 1.05 + smooth*1.15; }
