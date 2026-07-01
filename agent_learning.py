@@ -195,6 +195,71 @@ def prune_lessons(agent: str, keep: int = 40):
 
 
 # ---------------------------------------------------------------------------
+# TEAM_LESSONS — shared cross-agent memory (the "org brain")
+#
+# A single shared file every agent reads before each run, IN ADDITION to its
+# own LESSONS.md. Only the Manager promotes lessons here (with Jordan's
+# approval), so it stays high-signal: only cross-cutting lessons that benefit
+# multiple agents land here. Kept small so it never bloats any agent's context.
+# ---------------------------------------------------------------------------
+TEAM_LESSONS_PATH = '/opt/data/mission-control/TEAM_LESSONS.md'
+TEAM_LESSONS_KEEP = 30
+
+
+def read_team_lessons(max_chars: int = 1500) -> str:
+    """Return shared cross-agent lessons (lean; capped)."""
+    if not os.path.isfile(TEAM_LESSONS_PATH):
+        return ''
+    txt = open(TEAM_LESSONS_PATH).read().strip()
+    if len(txt) > max_chars:
+        txt = txt[-max_chars:]
+        txt = txt[txt.find('\n') + 1:]
+        txt = '…(older team lessons trimmed)\n' + txt
+    return txt
+
+
+def promote_team_lesson(lesson: str, source_agent: str = '', category: str = '') -> bool:
+    """Append a lesson to the shared TEAM_LESSONS (manager-only, post-approval)."""
+    header_needed = not os.path.isfile(TEAM_LESSONS_PATH)
+    ts = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    tag = f"[{category}] " if category else ''
+    src = f" (from {source_agent})" if source_agent else ''
+    entry = f"- [{ts}] {tag}{lesson.strip()}{src}"
+    try:
+        os.makedirs(os.path.dirname(TEAM_LESSONS_PATH), exist_ok=True)
+        # dedup: skip if the same lesson core already present
+        core = lesson.strip().lower()[:60]
+        if os.path.isfile(TEAM_LESSONS_PATH):
+            existing = open(TEAM_LESSONS_PATH).read().lower()
+            if core in existing:
+                return True  # already known, idempotent
+        with open(TEAM_LESSONS_PATH, 'a') as f:
+            if header_needed:
+                f.write("# TEAM LESSONS — shared across all agents\n"
+                        "Cross-cutting lessons promoted by the Manager (with approval). "
+                        "Every agent reads these before each run.\n\n")
+            f.write(entry + '\n')
+        _prune_team_lessons()
+        return True
+    except Exception as e:
+        sys.stderr.write(f'promote_team_lesson failed: {e}\n')
+        return False
+
+
+def _prune_team_lessons(keep: int = TEAM_LESSONS_KEEP):
+    if not os.path.isfile(TEAM_LESSONS_PATH):
+        return
+    lines = open(TEAM_LESSONS_PATH).read().splitlines()
+    header = [l for l in lines if not l.startswith('- [')]
+    lessons = [l for l in lines if l.startswith('- [')]
+    if len(lessons) <= keep:
+        return
+    lessons = lessons[-keep:]
+    with open(TEAM_LESSONS_PATH, 'w') as f:
+        f.write('\n'.join(header[:3] + [''] + lessons) + '\n')
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 def main():

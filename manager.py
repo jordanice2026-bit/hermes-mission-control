@@ -212,3 +212,19 @@ async def recent_runs(request: Request, limit: int = 40):
         'sorts': [{'property': 'Run At', 'direction': 'descending'}]})
     runs = [_parse_run(p) for p in pages][:limit]
     return JSONResponse({'runs': runs})
+
+
+@router.get('/api/manager/team-lessons')
+async def team_lessons(request: Request):
+    """Return the shared cross-agent lessons (the org brain).
+
+    The TEAM_LESSONS file lives on the VPS; the command_worker pushes its
+    contents to Render via /api/agent-control/poll, stored in main._agent_state.
+    """
+    _require_auth(request)
+    try:
+        import main
+        lessons = main._agent_state.get('team_lessons', []) or []
+    except Exception:
+        lessons = []
+    return JSONResponse({'lessons': lessons, 'count': len(lessons)})

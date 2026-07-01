@@ -101,7 +101,11 @@ def existing_pending_proposals():
         data = _post(f'{NOTION_BASE}/data_sources/{PROPOSALS_DS_ID}/query', body)
         for p in data.get('results', []):
             pr = p['properties']
-            seen.add((_rt(pr.get('Agent')), _sel(pr.get('Change Type'))))
+            ctype = _sel(pr.get('Change Type'))
+            if ctype == 'promote_lesson':
+                seen.add(('promote_lesson', (_rt(pr.get('Proposed Value')) or '')[:60].lower()))
+            else:
+                seen.add((_rt(pr.get('Agent')), ctype))
     except Exception:
         pass
     return seen
@@ -165,6 +169,57 @@ def analyze(runs):
                     })
                     break
 
+    # Rule 4 (CROSS-AGENT): a similar lesson logged by 2+ DIFFERENT agents
+    # -> propose promoting it to shared TEAM_LESSONS so every agent benefits.
+    # Uses keyword-overlap (Jaccard) clustering to catch near-duplicates that
+    # aren't worded identically across agents.
+    STOP = {'about', 'after', 'again', 'their', 'there', 'which', 'while', 'these',
+            'those', 'needs', 'need', 'from', 'with', 'that', 'this', 'have', 'when'}
+
+    def keywords(text):
+        return frozenset(w for w in text.lower().split() if len(w) > 4 and w not in STOP)
+
+    # collect (agent, keyword-set, readable) for every lesson
+    lesson_kw = []
+    for agent in by_agent.keys():
+        txt = AL.read_lessons(agent, max_chars=4000)
+        for l in txt.splitlines():
+            if not l.startswith('- ['):
+                continue
+            core = l.split(']', 1)[-1].strip()
+            kw = keywords(core)
+            if len(kw) >= 3:
+                lesson_kw.append((agent, kw, core))
+
+    # greedy cluster: for each lesson, find others (from different agents) with
+    # >=60% keyword overlap
+    used = set()
+    for i, (ag_i, kw_i, core_i) in enumerate(lesson_kw):
+        if i in used:
+            continue
+        cluster_agents = {ag_i}
+        cluster_example = core_i
+        for j, (ag_j, kw_j, core_j) in enumerate(lesson_kw):
+            if j <= i or j in used:
+                continue
+            inter = len(kw_i & kw_j)
+            union = len(kw_i | kw_j)
+            if union and inter / union >= 0.55:
+                cluster_agents.add(ag_j)
+                used.add(j)
+        if len(cluster_agents) >= 2:
+            used.add(i)
+            proposals.append({
+                'agent': ', '.join(sorted(cluster_agents))[:80], 'department': 'Management',
+                'change_type': 'promote_lesson',
+                'title': f'Promote shared lesson — hit by {len(cluster_agents)} agents',
+                'rationale': f'{len(cluster_agents)} different agents ({", ".join(sorted(cluster_agents))}) logged a '
+                             f'similar lesson: "{cluster_example[:160]}". Recommend promoting it to the shared '
+                             f'TEAM_LESSONS so every agent reads it before each run (compounds learning across the org).',
+                'current': 'per-agent only', 'proposed': f'shared: {cluster_example[:120]}',
+                'target': AL.TEAM_LESSONS_PATH,
+            })
+
     return proposals
 
 
@@ -174,7 +229,12 @@ def write_proposals(proposals):
     batch = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M')
     written = 0
     for p in proposals:
-        key = (p['agent'], p['change_type'])
+        # For promote_lesson the agent field is a variable comma-list, so key on
+        # the proposed lesson content instead to dedup reliably.
+        if p['change_type'] == 'promote_lesson':
+            key = ('promote_lesson', (p.get('proposed', '') or '')[:60].lower())
+        else:
+            key = (p['agent'], p['change_type'])
         if key in seen:
             continue
 

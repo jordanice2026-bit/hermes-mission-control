@@ -606,6 +606,7 @@ _agent_state: dict = {               # last-known state pushed by the VPS worker
     "system_status": "unknown",      # running | paused | unknown
     "updated_at": 0,
     "worker_online": False,
+    "team_lessons": [],              # shared cross-agent lessons (org brain)
 }
 _ALLOWED_COMMANDS = {"start_all", "stop_all", "pause_job", "resume_job", "run_job"}
 
@@ -658,6 +659,8 @@ async def agent_control_poll(request: Request, _=Depends(require_sync_token)):
         _agent_state["jobs"] = body["jobs"]
     if "system_status" in body:
         _agent_state["system_status"] = body["system_status"]
+    if "team_lessons" in body:
+        _agent_state["team_lessons"] = body["team_lessons"]
     _agent_state["updated_at"] = time.time()
 
     # 2. Record any results the worker reports for previously-issued commands

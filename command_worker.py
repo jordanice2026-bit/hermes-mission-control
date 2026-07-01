@@ -26,6 +26,10 @@ import urllib.request
 import urllib.error
 from pathlib import Path
 
+import sys as _sys
+_sys.path.insert(0, '/opt/data')
+_sys.path.insert(0, '/opt/data/mission-control')
+
 HERMES_BIN = '/opt/hermes/.venv/bin/hermes'
 DASHBOARD_URL = os.environ.get('MISSION_CONTROL_URL', '').rstrip('/')
 SYNC_TOKEN = os.environ.get('MISSION_CONTROL_TOKEN', '')
@@ -138,7 +142,19 @@ def poll(jobs, status, results):
     if not DASHBOARD_URL or not SYNC_TOKEN:
         print('ERROR: MISSION_CONTROL_URL / MISSION_CONTROL_TOKEN not set')
         return []
-    payload = json.dumps({'jobs': jobs, 'system_status': status, 'results': results}).encode()
+    # include shared team lessons so the dashboard can display the org brain
+    team_lessons = []
+    try:
+        import agent_learning as _AL
+        txt = _AL.read_team_lessons(max_chars=4000)
+        for line in txt.splitlines():
+            line = line.strip()
+            if line.startswith('- ['):
+                team_lessons.append(line[2:].strip())
+    except Exception:
+        pass
+    payload = json.dumps({'jobs': jobs, 'system_status': status, 'results': results,
+                          'team_lessons': team_lessons}).encode()
     req = urllib.request.Request(
         f'{DASHBOARD_URL}/api/agent-control/poll',
         data=payload,
@@ -161,6 +177,17 @@ def main():
     if err:
         print(err)
     status = system_status(jobs)
+
+    # Apply any approved manager proposals (structural changes Jordan OK'd)
+    try:
+        import proposal_applier
+        n = proposal_applier.apply_all_approved()
+        if n:
+            print(f'applied {n} approved proposal(s)')
+            jobs, _ = load_jobs()   # state may have changed
+            status = system_status(jobs)
+    except Exception as e:
+        print(f'proposal applier skipped: {e}')
 
     # First poll: push state, get queued commands (report no results yet)
     commands = poll(jobs, status, [])

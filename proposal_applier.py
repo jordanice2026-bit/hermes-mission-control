@@ -130,6 +130,16 @@ def apply_new_skill(agent, title, rationale):
     return True, f'scaffolded skill mgr-{slug} for {agent}'
 
 
+def apply_promote_lesson(source_agents, proposed):
+    """Promote a cross-agent lesson into the shared TEAM_LESSONS file."""
+    lesson = proposed
+    # strip a leading "shared: " prefix if present
+    if lesson.lower().startswith('shared:'):
+        lesson = lesson.split(':', 1)[1].strip()
+    ok = AL.promote_team_lesson(lesson, source_agent=source_agents)
+    return ok, (f'promoted to TEAM_LESSONS: {lesson[:60]}' if ok else 'promote failed')
+
+
 def set_applied(pid, ok, note):
     props = {
         'Status': {'select': {'name': 'applied' if ok else 'approved'}},
@@ -167,6 +177,8 @@ def apply_all_approved():
             ok, note = apply_prompt_tweak(agent, rationale, proposed)
         elif ctype == 'new_skill':
             ok, note = apply_new_skill(agent, title, rationale)
+        elif ctype == 'promote_lesson':
+            ok, note = apply_promote_lesson(agent, proposed)
         elif ctype == 'schedule_change':
             ok, note = True, 'schedule change recorded (apply manually)'
 

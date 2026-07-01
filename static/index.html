@@ -579,6 +579,7 @@ nav{display:flex;gap:2px;flex:1}
 .mgr-prop-type.pause_agent{background:rgba(255,171,0,.14);color:#ffab00}
 .mgr-prop-type.resume_agent{background:rgba(0,230,118,.12);color:var(--done)}
 .mgr-prop-type.new_skill{background:rgba(157,120,255,.14);color:#b794ff}
+.mgr-prop-type.promote_lesson{background:rgba(0,212,255,.14);color:var(--neon)}
 .mgr-prop-title{font-size:14px;font-weight:600;flex:1}
 .mgr-prop-rationale{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:10px}
 .mgr-prop-change{display:flex;gap:10px;font-size:11px;margin-bottom:12px;flex-wrap:wrap}
@@ -3282,12 +3283,14 @@ async function loadManager(){
     const briefing=await bRes.json();
     const proposals=(await pRes.json().catch(()=>({}))).proposals||[];
     const runs=(await rRes.json().catch(()=>({}))).runs||[];
-    renderManager(briefing,proposals,runs);
+    let teamLessons=[];
+    try{teamLessons=((await (await api('/api/manager/team-lessons')).json())||{}).lessons||[];}catch(e){}
+    renderManager(briefing,proposals,runs,teamLessons);
   }catch(e){
     wrap.innerHTML=`<div class="mgr-empty">Failed to load Manager Console: ${esc(e.message)}</div>`;
   }
 }
-function renderManager(b,proposals,runs){
+function renderManager(b,proposals,runs,teamLessons){
   const wrap=document.getElementById('manager-wrap');
   document.getElementById('manager-summary').textContent=`${b.total_runs} runs / 7d · ${b.pending_proposals} pending`;
   let html='';
@@ -3339,6 +3342,20 @@ function renderManager(b,proposals,runs){
     </div>`;
   });
   html+=`</div></div>`;
+
+  // Team Lessons — the shared "org brain"
+  const tl=teamLessons||[];
+  html+=`<div><div class="mgr-section-title">🧠 Shared Team Lessons <span style="color:var(--text3);font-weight:400">(cross-agent memory — every agent reads these)</span></div>`;
+  if(!tl.length){
+    html+=`<div class="mgr-empty">No shared lessons yet. When 2+ agents hit the same issue, the Manager proposes promoting it here — once you approve, every agent learns from it.</div>`;
+  }else{
+    html+=`<div class="mgr-runs">`;
+    tl.forEach(l=>{
+      html+=`<div class="mgr-run-item"><span class="mgr-run-dot success" style="background:var(--neon)"></span><span class="mgr-run-summary" style="white-space:normal">${esc(l)}</span></div>`;
+    });
+    html+=`</div>`;
+  }
+  html+=`</div>`;
 
   // Recent activity
   html+=`<div><div class="mgr-section-title">📊 Recent Agent Runs</div>`;

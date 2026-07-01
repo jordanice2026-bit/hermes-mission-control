@@ -63,10 +63,17 @@ def main():
 
     # 1. Inject lessons into the child's environment (agents can read AGENT_LESSONS)
     lessons = AL.read_lessons(agent)
+    team = AL.read_team_lessons()
     env = os.environ.copy()
+    combined = ''
+    if team:
+        combined += 'SHARED TEAM LESSONS (apply to all agents):\n' + team + '\n\n'
     if lessons:
-        env['AGENT_LESSONS'] = lessons
-        print(f"[learning] injected {len(lessons)} chars of lessons for {agent}")
+        combined += f'YOUR LESSONS ({agent}):\n' + lessons
+    if combined:
+        env['AGENT_LESSONS'] = combined
+        print(f"[learning] injected {len(combined)} chars of lessons "
+              f"({'team+own' if team and lessons else 'team' if team else 'own'}) for {agent}")
 
     # 2. Run the agent
     t0 = time.time()
