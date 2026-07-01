@@ -1642,6 +1642,16 @@ const DEPT_DEFS=[
   {id:'transaction-coordination',name:'Transaction Coordination',icon:'📋',color:'#ca8a04',desc:'Monitors deals, deadlines & inbound party communication.'},
   {id:'management',name:'Management',icon:'🧭',color:'#dc2626',desc:'Oversees the org, market research & reports to you.'},
 ];
+// Canonical roster (mirrors main.py DEPARTMENTS) — used as a fallback so the
+// department detail view always shows its agents even before the API responds.
+const DEPT_ROSTER={
+  'Sourcing':['property-sourcer','owner-researcher','buyer-sourcer'],
+  'Underwriting':['underwriter','deal-screener'],
+  'Matchmaking':['matchmaker','investor-profiler'],
+  'Outreach':['prospector','lead-agent','marketing-agent','client-agent'],
+  'Transaction Coordination':['inbox-monitor'],
+  'Management':['manager','research-agent'],
+};
 async function loadDepartments(){
   const grid=document.getElementById('dept-grid');
   grid.innerHTML='<div class="loading"><div class="spinner"></div> Loading…</div>';
@@ -1656,12 +1666,17 @@ async function loadDepartments(){
     renderDepartments(Array.isArray(depts)?depts:[]);
   }catch(e){console.error('loadDepartments:',e);renderDepartments([]);}
 }
+let deptApiData={};   // dept name -> {agents:[{name,stats,is_active}], stats}
 function renderDepartments(apiDepts){
   const grid=document.getElementById('dept-grid');
   grid.innerHTML='';
   // Always use our local DEPT_DEFS for icons/colors; merge in live task counts if API returned them
   const deptCountMap={};
-  (apiDepts||[]).forEach(d=>{deptCountMap[d.name]={total:d.stats?.total||0,done:d.stats?.done||0,agents:d.agents||[]};});
+  deptApiData={};
+  (apiDepts||[]).forEach(d=>{
+    deptCountMap[d.name]={total:d.stats?.total||0,done:d.stats?.done||0,agents:d.agents||[]};
+    deptApiData[d.name]=d;
+  });
   DEPT_DEFS.forEach(def=>{
     const live=deptCountMap[def.name]||{total:0,done:0,agents:[]};
     const total=live.total;
@@ -1687,7 +1702,31 @@ function openDeptDetail(dept){
 function renderDeptAgents(){
   const grid=document.getElementById('dept-agent-grid');
   grid.innerHTML='';
-  const agents=allAgents.filter(a=>a.department_id===currentDept.id||a.dept_id===currentDept.id||a.department===currentDept.name);
+  // Primary source: the /api/departments payload (has the full configured roster
+  // with per-agent stats). Fall back to the DEPT_DEFS static roster if the API
+  // hasn't loaded yet, and finally to allAgents filtered by department.
+  let agents=[];
+  const apiDept=deptApiData[currentDept.name];
+  if(apiDept&&apiDept.agents&&apiDept.agents.length){
+    agents=apiDept.agents.map(a=>({
+      name:a.name,
+      total_tasks:(a.stats&&a.stats.total)||0,
+      completed_tasks:(a.stats&&a.stats.done)||0,
+      active_tasks:(a.stats&&a.stats.in_progress)||0,
+      is_active:a.is_active
+    }));
+  }
+  if(!agents.length){
+    // fallback: static roster from DEPT_DEFS-aligned config (names only)
+    const roster=(DEPT_ROSTER[currentDept.name]||[]);
+    const byName={};
+    (allAgents||[]).forEach(a=>{byName[a.name]=a;});
+    agents=roster.map(n=>{
+      const a=byName[n]||{};
+      const s=a.stats||{};
+      return {name:n,total_tasks:s.total||0,completed_tasks:s.done||0,active_tasks:s.in_progress||0,is_active:a.is_active};
+    });
+  }
   if(!agents.length){grid.innerHTML='<div class="empty-state"><div class="empty-state-icon">👤</div><div>No agents in this department.</div></div>';return;}
   const colors=['#2563eb','#7c3aed','#059669','#0891b2','#dc2626','#d97706'];
   agents.forEach((a,i)=>{
