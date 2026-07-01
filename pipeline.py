@@ -119,6 +119,7 @@ def _parse_owner(page: dict) -> dict:
         "verification":      _sel(p.get("Verification Status")),
         "primary_phone":     _phone(p.get("Primary Phone")),
         "secondary_phone":   _phone(p.get("Secondary Phone")),
+        "email":             _email(p.get("Primary Email")),
         "mailing_address":   _rt(p.get("Mailing Address")),
         "mailing_city":      _rt(p.get("Mailing City")),
         "mailing_state":     _rt(p.get("Mailing State")),
@@ -383,6 +384,7 @@ async def update_owner(request: Request, owner_id: str, body: OwnerUpdateBody):
     if body.verification is not None:    props["Verification Status"] = _sel_prop(body.verification)
     if body.primary_phone is not None:   props["Primary Phone"] = {"phone_number": body.primary_phone or None}
     if body.secondary_phone is not None: props["Secondary Phone"] = {"phone_number": body.secondary_phone or None}
+    if body.email is not None:           props["Primary Email"] = {"email": body.email or None}
     if body.mailing_address is not None: props["Mailing Address"] = _rt_prop(body.mailing_address)
     if body.mailing_city is not None:    props["Mailing City"] = _rt_prop(body.mailing_city)
     if body.mailing_state is not None:   props["Mailing State"] = _rt_prop(body.mailing_state)
@@ -400,6 +402,111 @@ async def update_owner(request: Request, owner_id: str, body: OwnerUpdateBody):
     except HTTPException: raise
     except Exception as e:
         logger.exception("update_owner: %s", e)
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+# ==============================================================================
+# POST /api/owners  — manually add a new owner (+ optional linked property)
+# ==============================================================================
+class PropertyCreateBody(BaseModel):
+    address: str = ""
+    property_type: Optional[str] = None
+    county: Optional[str] = None
+    beds: Optional[float] = None
+    baths: Optional[float] = None
+    sqft: Optional[float] = None
+    year_built: Optional[float] = None
+    est_value: Optional[float] = None
+    est_equity: Optional[float] = None
+    mls_status: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class OwnerCreateBody(BaseModel):
+    name: str
+    contact_type: Optional[str] = "Individual"
+    outreach_stage: Optional[str] = "New Lead"
+    verification: Optional[str] = None
+    primary_phone: Optional[str] = None
+    secondary_phone: Optional[str] = None
+    phone_type: Optional[str] = None
+    email: Optional[str] = None
+    secondary_email: Optional[str] = None
+    mailing_address: Optional[str] = None
+    mailing_city: Optional[str] = None
+    mailing_state: Optional[str] = None
+    mailing_zip: Optional[str] = None
+    county: Optional[str] = None
+    notes: Optional[str] = None
+    do_not_contact: Optional[bool] = None
+    property: Optional[PropertyCreateBody] = None   # optional property to create + link
+
+
+def _owner_props_from_body(b) -> dict:
+    props: dict = {"Owner Name": {"title": [{"type": "text", "text": {"content": b.name}}]},
+                   "Data Source": _sel_prop("Manual"),
+                   "Date Added": {"date": {"start": __import__('datetime').date.today().isoformat()}}}
+    if b.contact_type:    props["Contact Type"] = _sel_prop(b.contact_type)
+    if b.outreach_stage:  props["Outreach Stage"] = _sel_prop(b.outreach_stage)
+    if b.verification:    props["Verification Status"] = _sel_prop(b.verification)
+    if b.primary_phone:   props["Primary Phone"] = {"phone_number": b.primary_phone}
+    if b.secondary_phone: props["Secondary Phone"] = {"phone_number": b.secondary_phone}
+    if b.phone_type:      props["Phone Type"] = _sel_prop(b.phone_type)
+    if b.email:           props["Primary Email"] = {"email": b.email}
+    if b.secondary_email: props["Secondary Email"] = _rt_prop(b.secondary_email)
+    if b.mailing_address: props["Mailing Address"] = _rt_prop(b.mailing_address)
+    if b.mailing_city:    props["Mailing City"] = _rt_prop(b.mailing_city)
+    if b.mailing_state:   props["Mailing State"] = _rt_prop(b.mailing_state)
+    if b.mailing_zip:     props["Mailing Zip"] = _rt_prop(b.mailing_zip)
+    if b.county:          props["County"] = _sel_prop(b.county)
+    if b.notes:           props["Notes"] = _rt_prop(b.notes)
+    if b.do_not_contact is not None: props["Do Not Contact"] = {"checkbox": b.do_not_contact}
+    return props
+
+
+def _num_prop(v):
+    return {"number": v}
+
+
+@router.post("/api/owners", status_code=201)
+async def create_owner(request: Request, body: OwnerCreateBody):
+    _require_auth(request)
+    if not (body.name or "").strip():
+        return JSONResponse({"ok": False, "error": "owner name is required"}, status_code=400)
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            owner_page = await _create_page(client, OWNERS_DB_ID, _owner_props_from_body(body))
+            owner_id = owner_page["id"]
+
+            # Optionally create a linked property
+            prop_created = None
+            p = body.property
+            if p and (p.address or "").strip():
+                pprops: dict = {
+                    "Property Address": {"title": [{"type": "text", "text": {"content": p.address}}]},
+                    "Owner": {"relation": [{"id": owner_id}]},
+                    "Data Source": _sel_prop("Manual"),
+                    "Date Added": {"date": {"start": __import__('datetime').date.today().isoformat()}},
+                }
+                if p.property_type: pprops["Property Type"] = _sel_prop(p.property_type)
+                if p.county:        pprops["County"] = _sel_prop(p.county)
+                if p.beds is not None:       pprops["Bedrooms"] = _num_prop(p.beds)
+                if p.baths is not None:      pprops["Bathrooms"] = _num_prop(p.baths)
+                if p.sqft is not None:       pprops["Sq Ft"] = _num_prop(p.sqft)
+                if p.year_built is not None: pprops["Year Built"] = _num_prop(p.year_built)
+                if p.est_value is not None:  pprops["Est. Value"] = _num_prop(p.est_value)
+                if p.est_equity is not None: pprops["Est. Equity"] = _num_prop(p.est_equity)
+                if p.mls_status:    pprops["MLS Status"] = _sel_prop(p.mls_status)
+                if p.notes:         pprops["Notes"] = _rt_prop(p.notes)
+                prop_page = await _create_page(client, PROPS_DB_ID, pprops)
+                prop_created = prop_page["id"]
+
+            owner_full = await _get_page(client, owner_id)
+        return JSONResponse({"ok": True, "owner": _parse_owner(owner_full),
+                             "property_id": prop_created})
+    except HTTPException: raise
+    except Exception as e:
+        logger.exception("create_owner: %s", e)
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
 
 
