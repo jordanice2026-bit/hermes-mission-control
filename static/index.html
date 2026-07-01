@@ -1635,10 +1635,12 @@ async function setTaskStatus(taskId,status){
 
 // ── DEPARTMENTS ───────────────────────────────────────────────────────────
 const DEPT_DEFS=[
-  {id:'seller-outreach',name:'Seller Outreach',icon:'📬',color:'#2563eb',desc:'Identify and contact property owners about selling their assets.'},
-  {id:'listings',name:'Listings',icon:'🏘️',color:'#059669',desc:'Manage active property listings, photos, and market data.'},
-  {id:'follow-up',name:'Follow-Up',icon:'📞',color:'#7c3aed',desc:'Track leads and follow up with prospects through the sales funnel.'},
-  {id:'operations',name:'Operations',icon:'⚙️',color:'#0891b2',desc:'Internal operations, compliance, reporting, and team management.'},
+  {id:'sourcing',name:'Sourcing',icon:'🔍',color:'#2563eb',desc:'Finds on-market Indiana investment properties & owners.'},
+  {id:'underwriting',name:'Underwriting',icon:'📊',color:'#7c3aed',desc:'Runs financial models & screens deals.'},
+  {id:'matchmaking',name:'Matchmaking',icon:'🎯',color:'#db2777',desc:'Matches deals to buyers & drafts outreach.'},
+  {id:'outreach',name:'Outreach',icon:'📬',color:'#059669',desc:'Contacts owners & prospects via email and direct mail.'},
+  {id:'transaction-coordination',name:'Transaction Coordination',icon:'📋',color:'#ca8a04',desc:'Monitors deals, deadlines & inbound party communication.'},
+  {id:'management',name:'Management',icon:'🧭',color:'#dc2626',desc:'Oversees the org, market research & reports to you.'},
 ];
 async function loadDepartments(){
   const grid=document.getElementById('dept-grid');

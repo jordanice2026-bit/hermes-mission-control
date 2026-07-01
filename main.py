@@ -50,35 +50,41 @@ GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 # ---------------------------------------------------------------------------
 
 DEPARTMENTS: dict[str, dict] = {
-    "Seller Outreach": {
-        "icon": "📬",
+    "Sourcing": {
+        "icon": "🔍",
         "color": "#2563eb",
-        "description": "Contact verification, email drafts & direct mail",
-        "agents": ["data-ingestion", "contact-verifier", "email-drafter"],
+        "description": "Finds on-market Indiana investment properties & owners",
+        "agents": ["property-sourcer", "owner-researcher", "buyer-sourcer"],
     },
-    "Listings": {
-        "icon": "🏘️",
+    "Underwriting": {
+        "icon": "📊",
+        "color": "#7c3aed",
+        "description": "Runs financial models & screens deals",
+        "agents": ["underwriter", "deal-screener"],
+    },
+    "Matchmaking": {
+        "icon": "🎯",
+        "color": "#db2777",
+        "description": "Matches deals to buyers & drafts outreach",
+        "agents": ["matchmaker", "investor-profiler"],
+    },
+    "Outreach": {
+        "icon": "📬",
         "color": "#059669",
-        "description": "Listing coordination & market analysis for IN multi-family",
-        "agents": ["listing-agent", "market-researcher"],
+        "description": "Contacts owners & prospects via email and direct mail",
+        "agents": ["prospector", "lead-agent", "marketing-agent", "client-agent"],
     },
     "Transaction Coordination": {
         "icon": "📋",
         "color": "#ca8a04",
-        "description": "Deal pipeline, deadline tracking & party communication",
-        "agents": ["tc-intake", "pdf-parser", "deadline-monitor", "gmail-monitor", "tc-communicator"],
+        "description": "Monitors deals, deadlines & inbound party communication",
+        "agents": ["inbox-monitor"],
     },
-    "Follow-Up": {
-        "icon": "📞",
-        "color": "#7c3aed",
-        "description": "Mojo dialer coordination & call log sync",
-        "agents": ["call-coordinator", "mojo-sync"],
-    },
-    "Operations": {
-        "icon": "⚙️",
-        "color": "#0891b2",
-        "description": "System monitoring, exports & automation",
-        "agents": ["export-agent", "notion-writer"],
+    "Management": {
+        "icon": "🧭",
+        "color": "#dc2626",
+        "description": "Oversees the org, market research & reports to you",
+        "agents": ["manager", "research-agent"],
     },
 }
 
@@ -87,7 +93,7 @@ def _agent_department(agent_name: str) -> str:
     for dept, cfg in DEPARTMENTS.items():
         if agent_name in cfg["agents"]:
             return dept
-    return "Operations"
+    return "Management"
 
 
 # ---------------------------------------------------------------------------
