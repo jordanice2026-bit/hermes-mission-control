@@ -1576,7 +1576,7 @@ function makeTaskCard(t,ctx='board'){
   const card=document.createElement('div');
   card.className='task-card';
   card.dataset.id=t.id;
-  card.innerHTML=`<div class="task-id">#${esc(t.id)}</div><div class="task-title">${esc(t.title)}</div><div class="task-meta"><span class="agent-tag">${esc(t.agent||t.assigned_to||'Unassigned')}</span><span class="time-ago">${timeAgo(t.updated_at||t.created_at)}</span></div>`;
+  card.innerHTML=`<div class="task-id">#${esc(t.id)}</div><div class="task-title">${esc(t.title)}</div><div class="task-meta"><span class="agent-tag">${esc(t.assignee||t.agent||t.assigned_to||'Unassigned')}</span><span class="time-ago">${timeAgo(t.updated_at||t.created_at)}</span></div>`;
   card.onclick=()=>{if(ctx==='board')openSidebar(t);else openAgentSidebar(t);};
   return card;
 }
@@ -1747,9 +1747,10 @@ function openAgentBoard(agent){
 function renderAgentBoard(){
   if(!currentAgent)return;
   const cols={pending:[],inprogress:[],blocked:[],done:[],cancelled:[]};
+  const target=(currentAgent.name||'').toLowerCase();
   Object.values(board).forEach(t=>{
-    const agentMatch=(t.agent||t.assigned_to||'').toLowerCase()===currentAgent.name.toLowerCase();
-    if(!agentMatch)return;
+    const who=(t.assignee||t.agent||t.assigned_to||'').toLowerCase();
+    if(who!==target)return;
     const s=STATUS_MAP[t.status]||'pending';
     if(cols[s])cols[s].push(t);
   });
