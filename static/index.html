@@ -4293,8 +4293,9 @@ function ariaVoiceMicToggle(){
   ariaMicMuted=!ariaMicMuted;
   const b=document.getElementById('aria-voice-mic-toggle');
   if(b)b.classList.toggle('muted',ariaMicMuted);
-  if(ariaMicMuted){ try{if(ariaRec)ariaRec.abort();}catch(e){} setVoiceTranscript('(mic muted)'); }
-  else { setVoiceTranscript(''); if(!ariaSpeaking)startAriaListening(); }
+  // No status text — the orb just keeps animating. Only start/stop listening.
+  if(ariaMicMuted){ try{if(ariaRec)ariaRec.abort();}catch(e){} }
+  else { if(!ariaSpeaking)startAriaListening(); }
 }
 
 // Hook: when a NEW assistant reply lands while in voice mode, speak it
@@ -4391,9 +4392,9 @@ function initOrb(){
   // three concentric shells at different radii + rotation speeds → parallax depth
   const gMain=new THREE.Group(),gInner=new THREE.Group(),gHalo=new THREE.Group();
   group.add(gMain);group.add(gInner);group.add(gHalo);
-  const mainShell=_ariaSphereShell(1500,1.35,glow,{lo:0x1866ff,hi:0x9ff2ff,size:0.05,opacity:0.95});
-  const innerShell=_ariaSphereShell(520,0.85,glow,{lo:0x0b3cff,hi:0x66e6ff,size:0.055,opacity:0.7});
-  const haloShell=_ariaSphereShell(420,1.78,glow,{lo:0x1e5cff,hi:0x8fe8ff,size:0.04,opacity:0.34});
+  const mainShell=_ariaSphereShell(1500,1.35,glow,{lo:0x4d9cff,hi:0xd6faff,size:0.075,opacity:1.0});
+  const innerShell=_ariaSphereShell(520,0.85,glow,{lo:0x2f7bff,hi:0xaaf0ff,size:0.08,opacity:0.92});
+  const haloShell=_ariaSphereShell(420,1.78,glow,{lo:0x4f8cff,hi:0xc8f4ff,size:0.06,opacity:0.6});
   gMain.add(mainShell.points);gInner.add(innerShell.points);gHalo.add(haloShell.points);
 
   // ambient floating dust in the surrounding space (depth of field)
@@ -4479,7 +4480,7 @@ function startOrbLoop(){
     const active = (ariaVoiceState==='thinking'||ariaVoiceState==='speaking');
     const tgtPosY  = active ? -2.15 : 0.0;
     const tgtScale = active ? 0.52  : 1.0;
-    const tgtR = active ? 0.34 : 0.82, tgtG = active ? 0.93 : 0.88, tgtB = active ? 0.90 : 0.95;
+    const tgtR = active ? 0.55 : 1.0, tgtG = active ? 1.0 : 1.0, tgtB = active ? 0.98 : 1.0;
     // smooth, springy state transition (~0.4s time-constant)
     T.posY  = damp(T.posY,  tgtPosY,  0.40, dt);
     T.scale = damp(T.scale, tgtScale, 0.40, dt);
@@ -4526,10 +4527,10 @@ function startOrbLoop(){
     }
     T.pGeo.attributes.position.needsUpdate=true;
     // glow sprites swell slightly with audio
-    T.pMat.size=0.045+smooth*0.03;
+    T.pMat.size=0.072+smooth*0.035;
 
     // audio-reactive bloom: orb surges radiant when ARIA speaks / you talk
-    if(T.bloomPass){ T.bloomPass.strength = 0.75 + smooth*1.15; }
+    if(T.bloomPass){ T.bloomPass.strength = 1.05 + smooth*1.15; }
     // trails: subtle at rest, longer when energised
     if(T.afterPass){ T.afterPass.uniforms['damp'].value = 0.70 + smooth*0.16; }
 
