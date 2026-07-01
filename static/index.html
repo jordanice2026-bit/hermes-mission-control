@@ -1180,6 +1180,35 @@ nav{display:flex;gap:2px;flex:1}
   text-transform:uppercase;cursor:pointer;transition:all 0.15s;
 }
 #jarvis-tune-panel .jt-reset:hover{background:rgba(239,68,68,0.18)}
+/* JARVIS_TUNE presets: save/load/delete named slider configurations */
+#jarvis-tune-panel .jt-presets{margin-top:12px;padding-top:12px;border-top:1px solid rgba(14,165,233,0.15)}
+#jarvis-tune-panel .jt-presets h5{margin:0 0 8px;font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(14,165,233,0.7);font-weight:600}
+#jarvis-tune-panel .jt-preset-save{display:flex;gap:6px;margin-bottom:8px}
+#jarvis-tune-panel .jt-preset-save input[type=text]{
+  flex:1;min-width:0;padding:7px 8px;border:1px solid rgba(14,165,233,0.25);border-radius:6px;
+  background:var(--surface2,rgba(255,255,255,0.05));color:rgba(226,232,240,0.9);font-size:11px;
+}
+#jarvis-tune-panel .jt-preset-save button{
+  padding:7px 10px;border:1px solid rgba(14,165,233,0.4);border-radius:6px;
+  background:rgba(14,165,233,0.15);color:rgba(14,165,233,0.95);font-size:11px;letter-spacing:0.5px;
+  text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:all 0.15s;
+}
+#jarvis-tune-panel .jt-preset-save button:hover{background:rgba(14,165,233,0.28)}
+#jarvis-tune-panel .jt-preset-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+#jarvis-tune-panel .jt-preset-row .jt-preset-name{
+  flex:1;min-width:0;font-size:11px;color:rgba(226,232,240,0.9);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;cursor:pointer;padding:4px 0;
+}
+#jarvis-tune-panel .jt-preset-row .jt-preset-name:hover{color:rgba(14,165,233,0.95)}
+#jarvis-tune-panel .jt-preset-row button{
+  padding:7px 9px;border:1px solid rgba(148,163,184,0.3);border-radius:6px;
+  background:rgba(148,163,184,0.08);color:rgba(226,232,240,0.85);font-size:11px;cursor:pointer;transition:all 0.15s;
+}
+#jarvis-tune-panel .jt-preset-row button:hover{background:rgba(148,163,184,0.18)}
+#jarvis-tune-panel .jt-preset-row button.jt-preset-del{color:rgba(239,68,68,0.85);border-color:rgba(239,68,68,0.3)}
+#jarvis-tune-panel .jt-preset-row button.jt-preset-del:hover{background:rgba(239,68,68,0.15)}
+#jarvis-tune-panel .jt-preset-empty{font-size:10px;color:rgba(148,163,184,0.55);font-style:italic}
 /* end JARVIS_TUNE PANEL CSS */
 /* Error text */
 #jarvis-voice-error{
@@ -1702,6 +1731,14 @@ nav{display:flex;gap:2px;flex:1}
         <div class="jt-row"><label>Volume sensitivity <span class="jt-val" id="jt-val-volumeSensitivity">1.00</span></label>
           <input type="range" data-tune-key="volumeSensitivity" min="0" max="4" step="0.05" oninput="jarvisTuneInput('volumeSensitivity',this)"></div>
         <button class="jt-reset" onclick="jarvisTuneReset()">Reset to defaults</button>
+        <div class="jt-presets">
+          <h5>Saved Presets</h5>
+          <div class="jt-preset-save">
+            <input type="text" id="jt-preset-name" placeholder="Preset name…" maxlength="40" onkeydown="if(event.key==='Enter'){event.preventDefault();jarvisPresetSave();}">
+            <button onclick="jarvisPresetSave()">Save</button>
+          </div>
+          <div id="jt-preset-list"></div>
+        </div>
       </div>
       <!-- end JARVIS_TUNE PANEL HTML -->
       <!-- status: bottom center -->
@@ -5393,7 +5430,7 @@ function jarvisTunePanelToggle(){
   const p=document.getElementById('jarvis-tune-panel');
   if(!p)return;
   const open=p.classList.toggle('open');
-  if(open)jarvisTunePanelSync();
+  if(open){ jarvisTunePanelSync(); jarvisPresetRenderList(); }
 }
 function jarvisTunePanelSync(){
   const p=document.getElementById('jarvis-tune-panel');
@@ -5418,6 +5455,66 @@ function jarvisTuneInput(key,el){
   if(disp)disp.textContent=_jarvisTuneFormat(key,v);
   jarvisTuneSet(key,v);
 }
+
+// ── JARVIS_TUNE presets: named save/load/delete of slider configurations ──
+// Separate from the auto-save-to-this-browser behavior above (which always
+// remembers your LAST live position). Presets are named snapshots you save
+// on purpose, stored in the same browser's localStorage under
+// 'jarvisTunePresets' as {name: {...JARVIS_TUNE fields...}}. Safe to delete:
+// this whole block (down to "end JARVIS_TUNE presets"), the .jt-presets HTML
+// block (search "jt-presets" in the panel HTML), and its CSS (search
+// "JARVIS_TUNE presets" in the CSS).
+function _jarvisPresetsLoad(){
+  try{ return JSON.parse(localStorage.getItem('jarvisTunePresets')||'{}'); }catch(e){ return {}; }
+}
+function _jarvisPresetsSaveAll(presets){
+  try{ localStorage.setItem('jarvisTunePresets',JSON.stringify(presets)); }catch(e){}
+}
+function jarvisPresetSave(){
+  const inp=document.getElementById('jt-preset-name');
+  if(!inp)return;
+  const name=inp.value.trim();
+  if(!name)return;
+  const presets=_jarvisPresetsLoad();
+  presets[name]=Object.assign({},JARVIS_TUNE);
+  _jarvisPresetsSaveAll(presets);
+  inp.value='';
+  jarvisPresetRenderList();
+}
+function jarvisPresetApply(name){
+  const presets=_jarvisPresetsLoad();
+  const preset=presets[name];
+  if(!preset)return;
+  JARVIS_TUNE=Object.assign({},JARVIS_TUNE_DEFAULTS,preset);
+  _jarvisTuneSave();
+  _ORB_N=JARVIS_TUNE.particleCount;
+  if(jarvisThree){ jarvisThree=null; initOrb(); if(jarvisRAF) startOrbLoop(); }
+  jarvisTunePanelSync();
+}
+function jarvisPresetDelete(name){
+  const presets=_jarvisPresetsLoad();
+  delete presets[name];
+  _jarvisPresetsSaveAll(presets);
+  jarvisPresetRenderList();
+}
+function jarvisPresetRenderList(){
+  const list=document.getElementById('jt-preset-list');
+  if(!list)return;
+  const presets=_jarvisPresetsLoad();
+  const names=Object.keys(presets).sort((a,b)=>a.localeCompare(b));
+  if(names.length===0){
+    list.innerHTML='<div class="jt-preset-empty">No presets saved yet</div>';
+    return;
+  }
+  list.innerHTML=names.map(name=>{
+    const safe=name.replace(/'/g,"\\'");
+    return '<div class="jt-preset-row">'
+      +'<span class="jt-preset-name" title="Load \''+name.replace(/"/g,'&quot;')+'\'" onclick="jarvisPresetApply(\''+safe+'\')">'+name.replace(/</g,'&lt;')+'</span>'
+      +'<button onclick="jarvisPresetDelete(\''+safe+'\')" class="jt-preset-del" title="Delete preset">✕</button>'
+      +'</div>';
+  }).join('');
+}
+// end JARVIS_TUNE presets
 
 // ── JARVIS ORB (ported from github.com/ethanplusai/jarvis) ──────────────────
 // Pure Three.js — particles + connection lines + electrons + tumble + depth Z
