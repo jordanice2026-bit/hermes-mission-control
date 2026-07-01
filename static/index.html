@@ -4408,9 +4408,9 @@ function initOrb(){
   // three concentric shells at different radii + rotation speeds → parallax depth
   const gMain=new THREE.Group(),gInner=new THREE.Group(),gHalo=new THREE.Group();
   group.add(gMain);group.add(gInner);group.add(gHalo);
-  const mainShell=_ariaSphereShell(3000,1.35,glow,{lo:0x4d9cff,hi:0xd6faff,size:0.032,opacity:1.0});
-  const innerShell=_ariaSphereShell(1000,0.85,glow,{lo:0x2f7bff,hi:0xaaf0ff,size:0.034,opacity:0.92});
-  const haloShell=_ariaSphereShell(820,1.78,glow,{lo:0x4f8cff,hi:0xc8f4ff,size:0.026,opacity:0.6});
+  const mainShell=_ariaSphereShell(3000,1.35,glow,{lo:0x8fd0ff,hi:0xffffff,size:0.032,opacity:1.0});
+  const innerShell=_ariaSphereShell(1000,0.85,glow,{lo:0x6bb8ff,hi:0xffffff,size:0.034,opacity:1.0});
+  const haloShell=_ariaSphereShell(820,1.78,glow,{lo:0x9fd8ff,hi:0xffffff,size:0.026,opacity:0.8});
   gMain.add(mainShell.points);gInner.add(innerShell.points);gHalo.add(haloShell.points);
 
   // ambient floating dust in the surrounding space (depth of field)
@@ -4511,22 +4511,27 @@ function startOrbLoop(){
     T.gDust.rotation.x += 0.01*dt;
     const amp = 1 + smooth*0.42;
 
-    // per-particle CURL-NOISE flow: pseudo-divergence-free vector field →
-    // liquid/smoke-like organic drift over the sphere (not a repeating pulse)
+    // ── Perplexity-style volumetric swirl ──
+    // Each particle integrates a curl-ish (divergence-free) velocity field and
+    // wanders THROUGH the sphere's interior — softly contained inside radius R.
+    // Swirl speed scales sharply with audio → particles rush when you talk.
     const ph=T.phase, tt=T.t;
-    function sn(a){return Math.sin(a);} // cheap noise primitive
+    const R=1.35, rmin=R*0.28;                 // main-shell radius / inner bound
+    const speed=(0.05 + smooth*0.95);          // world-units/sec; talking = fast
+    function sn(a){return Math.sin(a);}
     for(let i=0;i<T.base.length;i++){
-      const v=T.base[i], p=ph[i];
-      // sample a smooth flow scalar field, take orthogonal offsets ≈ curl
-      const fx = sn(v.y*2.1 + tt*0.9 + p) + sn(v.z*1.7 - tt*0.6);
-      const fy = sn(v.z*2.3 - tt*0.8 + p) + sn(v.x*1.9 + tt*0.7);
-      const fz = sn(v.x*2.0 + tt*1.0 + p) + sn(v.y*1.6 - tt*0.5);
-      const flow = 0.02 + smooth*0.09;         // flow strength (grows with audio)
-      // radial breath keeps them anchored to the shell while flowing tangentially
-      const breath = amp + smooth*(0.10+0.16*sn(tt*3.0 + p));
-      T.pPos[i*3]   = v.x*breath + fx*flow;
-      T.pPos[i*3+1] = v.y*breath + fy*flow;
-      T.pPos[i*3+2] = v.z*breath + fz*flow;
+      let px=T.pPos[i*3], py=T.pPos[i*3+1], pz=T.pPos[i*3+2];
+      const p=ph[i];
+      // velocity = approximate curl of a smooth noise field (no clumping)
+      const vx = sn(py*1.7 + tt*0.7 + p) - sn(pz*1.5 - tt*0.6);
+      const vy = sn(pz*1.8 - tt*0.6 + p) - sn(px*1.6 + tt*0.7);
+      const vz = sn(px*1.7 + tt*0.7 + p) - sn(py*1.5 - tt*0.6);
+      px += vx*speed*dt; py += vy*speed*dt; pz += vz*speed*dt;
+      // soft containment: keep the swirl inside the sphere volume
+      let r=Math.sqrt(px*px+py*py+pz*pz)||1e-4;
+      if(r>R){ const k=R/r; px*=k;py*=k;pz*=k; }
+      else if(r<rmin){ const k=rmin/r; px*=k;py*=k;pz*=k; }
+      T.pPos[i*3]=px; T.pPos[i*3+1]=py; T.pPos[i*3+2]=pz;
     }
     T.pGeo.attributes.position.needsUpdate=true;
     // crisp dots — small, subtle swell with audio
