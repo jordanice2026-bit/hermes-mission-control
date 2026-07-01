@@ -4461,8 +4461,8 @@ function _ariaDust(N,glow){
   }
   const geo=new THREE.BufferGeometry();
   geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
-  const mat=new THREE.PointsMaterial({map:glow,color:0x999999,size:0.02,sizeAttenuation:true,
-    transparent:true,opacity:0.5,depthWrite:false,alphaTest:0.5,blending:THREE.NormalBlending,fog:true});
+  const mat=new THREE.PointsMaterial({map:glow,color:0x999999,size:0.004,sizeAttenuation:true,
+    transparent:true,opacity:0.12,depthWrite:false,alphaTest:0.5,blending:THREE.NormalBlending,fog:true});
   return new THREE.Points(geo,mat);}
 function initOrb(){
   if(ariaThree||!window.THREE)return;
@@ -4608,7 +4608,7 @@ function startOrbLoop(){
     T.colR=damp(T.colR,tintCol.r,0.5,dt); T.colG=damp(T.colG,tintCol.g,0.5,dt); T.colB=damp(T.colB,tintCol.b,0.5,dt);
     const tint=new THREE.Color(T.colR,T.colG,T.colB);
     T.shells.forEach(s=>{ s.shell.mat.color.copy(tint); });
-    T.gDust.children[0].material.opacity = 0.35 + smooth*0.4;
+    T.gDust.children[0].material.opacity = 0.10;  // near-invisible, no audio boost
 
     // master gentle drift (state transitions live here)
     T.group.rotation.x = Math.sin(T.t*0.11)*0.05;
@@ -4618,8 +4618,8 @@ function startOrbLoop(){
       s.grp.rotation.x += s.rot.x*dt;
       s.grp.rotation.z += s.rot.z*dt;
     });
-    T.gDust.rotation.y += 0.02*dt;
-    T.gDust.rotation.x += 0.01*dt;
+    T.gDust.rotation.y += 0.001*dt;   // extremely slow drift
+    T.gDust.rotation.x += 0.0005*dt;
 
     // ── Outer halo contracts toward inner sphere — non-linear, volume-driven ──
     // smooth² gives a soft response at low volume and aggressive snap at high volume.
