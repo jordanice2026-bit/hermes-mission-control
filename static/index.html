@@ -5337,11 +5337,17 @@ function initOrb(){
   // Connection lines
   
   const linePos=new Float32Array(_ORB_MAX_LINES*6);
+  const lineColor=new Float32Array(_ORB_MAX_LINES*6);
+  lineColor.fill(1);   // default: uniform brightness (no center glow) until frame() computes real values
   const lineGeo=new THREE.BufferGeometry();
   lineGeo.setAttribute('position',new THREE.BufferAttribute(linePos,3));
+  lineGeo.setAttribute('color',new THREE.BufferAttribute(lineColor,3));
   lineGeo.setDrawRange(0,0);
+  // 2026-07-01 core-glow tweak: vertexColors on so lines can brighten toward
+  // the sphere's center when idle/listening (revert: vertexColors:false and
+  // remove the 'color' attribute + the brightness-writing block in frame()).
   const lineMat=new THREE.LineBasicMaterial({color:orbLineColor,transparent:true,opacity:0.0,
-    blending:orbBlend,depthWrite:false});
+    vertexColors:true,blending:orbBlend,depthWrite:false});
   const lines=new THREE.LineSegments(lineGeo,lineMat);
   scene.add(lines);
 
@@ -5407,6 +5413,7 @@ function startOrbLoop(){
   let targetBright=0.6,currentBright=0.6;
   let targetSize=0.4,currentSize=0.4;
   let lineAmount=0,targetLineAmount=0;
+  let coreGlow=0,targetCoreGlow=0;   // 2026-07-01: brighten lines toward sphere center, off during thinking/speaking
   let electronSpawnRate=0,targetElectronRate=0,lastElectronSpawn=0;
   let spinX=0,spinY=0,spinZ=0;
   let transitionEnergy=0,lastOrbState='idle';
@@ -5435,17 +5442,19 @@ function startOrbLoop(){
     }
 
     // State targets
+    // 2026-07-01: coreGlow on for idle/listening (no sound detected), off for thinking/speaking
     switch(orbState){
-      case 'idle':     targetRadius=28;targetSpeed=0.2;targetBright=0.5;targetSize=0.35;targetLineAmount=0.15;targetElectronRate=0;break;
-      case 'listening':targetRadius=22;targetSpeed=0.3;targetBright=0.65;targetSize=0.4;targetLineAmount=0.4;targetElectronRate=0;break;
-      case 'thinking': targetRadius=16;targetSpeed=0.5;targetBright=0.7;targetSize=0.3;targetLineAmount=1.0;targetElectronRate=0.015;break;
-      case 'speaking': targetRadius=18;targetSpeed=0.2;targetBright=0.7;targetSize=0.4;targetLineAmount=0.8;targetElectronRate=0;break;
+      case 'idle':     targetRadius=28;targetSpeed=0.2;targetBright=0.5;targetSize=0.35;targetLineAmount=0.15;targetElectronRate=0;targetCoreGlow=1;break;
+      case 'listening':targetRadius=22;targetSpeed=0.3;targetBright=0.65;targetSize=0.4;targetLineAmount=0.4;targetElectronRate=0;targetCoreGlow=1;break;
+      case 'thinking': targetRadius=16;targetSpeed=0.5;targetBright=0.7;targetSize=0.3;targetLineAmount=1.0;targetElectronRate=0.015;targetCoreGlow=0;break;
+      case 'speaking': targetRadius=18;targetSpeed=0.2;targetBright=0.7;targetSize=0.4;targetLineAmount=0.8;targetElectronRate=0;targetCoreGlow=0;break;
     }
     currentRadius+=(targetRadius-currentRadius)*0.02;
     currentSpeed+=(targetSpeed-currentSpeed)*0.02;
     currentBright+=(targetBright-currentBright)*0.02;
     currentSize+=(targetSize-currentSize)*0.02;
     lineAmount+=(targetLineAmount-lineAmount)*0.02;
+    coreGlow+=(targetCoreGlow-coreGlow)*0.02;
     electronSpawnRate+=(targetElectronRate-electronSpawnRate)*0.02;
 
     // Transition tumble
@@ -5499,10 +5508,17 @@ function startOrbLoop(){
     if(lineAmount>0.01){
       const lp=T.lineGeo.getAttribute('position');
       const la=lp.array;
+      const lc=T.lineGeo.getAttribute('color');
+      const lca=lc.array;
       let lineCount=0;
       const maxDist=lineDistance*(1+bass*0.5);
       const maxDistSq=maxDist*maxDist;
       const step=Math.max(1,Math.floor(_ORB_N/600));
+      // 2026-07-01 core-glow tweak: lines brighten toward the sphere's center
+      // when idle/listening (no sound), fade back to uniform when
+      // thinking/speaking. Revert: delete this block down to (not incl.)
+      // "lp.needsUpdate=true;" and remove the lc.needsUpdate=true line below.
+      const CORE_EDGE_DIM=0.5,CORE_CENTER_BOOST=1.9;
       for(let i=0;i<_ORB_N&&lineCount<_ORB_MAX_LINES;i+=step){
         const i3=i*3;
         const x1=a[i3],y1=a[i3+1],z1=a[i3+2];
@@ -5513,12 +5529,25 @@ function startOrbLoop(){
             const idx=lineCount*6;
             la[idx]=x1;la[idx+1]=y1;la[idx+2]=z1;
             la[idx+3]=a[j3];la[idx+4]=a[j3+1];la[idx+5]=a[j3+2];
+            if(coreGlow>0.01){
+              const d1=Math.sqrt(x1*x1+y1*y1+z1*z1)/currentRadius;
+              const d2=Math.sqrt(a[j3]*a[j3]+a[j3+1]*a[j3+1]+a[j3+2]*a[j3+2])/currentRadius;
+              const t1=Math.max(0,1-d1),t2=Math.max(0,1-d2);
+              const f1=1+coreGlow*((CORE_EDGE_DIM+t1*(CORE_CENTER_BOOST-CORE_EDGE_DIM))-1);
+              const f2=1+coreGlow*((CORE_EDGE_DIM+t2*(CORE_CENTER_BOOST-CORE_EDGE_DIM))-1);
+              lca[idx]=f1;lca[idx+1]=f1;lca[idx+2]=f1;
+              lca[idx+3]=f2;lca[idx+4]=f2;lca[idx+5]=f2;
+            } else {
+              lca[idx]=1;lca[idx+1]=1;lca[idx+2]=1;
+              lca[idx+3]=1;lca[idx+4]=1;lca[idx+5]=1;
+            }
             lineCount++;
           }
         }
       }
       T.lineGeo.setDrawRange(0,lineCount*2);
       lp.needsUpdate=true;
+      lc.needsUpdate=true;
       T.lineMat.opacity=lineAmount*0.12;
       activeConnections=[];
       for(let c=0;c<Math.min(lineCount,500);c++){
@@ -5529,6 +5558,7 @@ function startOrbLoop(){
       T.lineGeo.setDrawRange(0,0);
       activeConnections=[];
     }
+
 
     // Electrons (thinking state only)
     if(activeConnections.length>0&&electronSpawnRate>0.005){
