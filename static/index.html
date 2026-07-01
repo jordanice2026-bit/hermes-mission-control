@@ -651,7 +651,8 @@ nav{display:flex;gap:2px;flex:1}
 .aria-meta{font-size:10px;color:var(--text3);margin-top:3px}
 .aria-typing{align-self:flex-start;display:flex;align-items:center;gap:8px;font-size:12px;color:#00e0ff;font-style:italic;padding:2px 6px}
 .aria-input-row{display:flex;gap:10px;padding:12px 4px 16px;border-top:1px solid var(--border)}
-.aria-input{flex:1;resize:none;background:var(--surface2);border:1px solid rgba(0,180,255,.3);border-radius:14px;padding:12px 15px;color:var(--text);font-size:13.5px;font-family:inherit;max-height:140px}
+.aria-input{flex:1;resize:none;background:var(--surface2);border:1px solid rgba(0,180,255,.3);border-radius:14px;padding:12px 15px;color:var(--text);font-size:13.5px;font-family:inherit;max-height:140px;scrollbar-width:none;-ms-overflow-style:none}
+.aria-input::-webkit-scrollbar{width:0;height:0;display:none}
 .aria-input:focus{outline:none;border-color:#00b4ff;box-shadow:0 0 0 2px rgba(0,180,255,.15)}
 .aria-send{background:linear-gradient(135deg,#00b4ff,#0066cc);color:#fff;border:none;border-radius:14px;padding:0 22px;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s}
 .aria-send:hover{box-shadow:0 0 18px rgba(0,180,255,.5)}
@@ -1101,7 +1102,6 @@ nav{display:flex;gap:2px;flex:1}
       </div>
       <div class="aria-log" id="aria-log">
         <div class="aria-welcome">
-          <div class="aria-welcome-orb">✦</div>
           <div class="aria-welcome-title">Good to see you, Jordan.</div>
           <div class="aria-welcome-text">I'm ARIA — I can see and control everything you've built: the agents, the databases, the listings, the deals, the dashboard itself. Ask me anything, or hand me a job and I'll take care of it.</div>
           <div class="aria-suggestions">
@@ -1114,7 +1114,7 @@ nav{display:flex;gap:2px;flex:1}
       </div>
       <div class="aria-input-row">
         <button class="aria-mic" id="aria-mic" onclick="toggleAriaVoice()" title="Talk to ARIA (voice)">🎙️</button>
-        <textarea class="aria-input" id="aria-input" rows="1" placeholder="Message ARIA…  (she can run anything — queries, changes, deploys, agent orders)" onkeydown="ariaKeydown(event)"></textarea>
+        <textarea class="aria-input" id="aria-input" rows="1" placeholder="Message ARIA" onkeydown="ariaKeydown(event)"></textarea>
         <button class="aria-send" id="aria-send" onclick="sendAria()">Send</button>
       </div>
     </div>
