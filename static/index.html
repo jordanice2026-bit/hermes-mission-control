@@ -4765,7 +4765,8 @@ let ariaVoiceReplyBaseline=0;   // track which assistant msgs already spoken
 const STT = window.SpeechRecognition || window.webkitSpeechRecognition;
 const TTS = window.speechSynthesis;
 
-function ariaVoiceSupported(){ return !!STT && !!TTS; }
+// Fish Audio is primary TTS — only need STT (mic) support check
+function ariaVoiceSupported(){ return !!STT; }
 
 function toggleAriaVoice(){
   if(!ariaVoiceSupported()){
@@ -4798,7 +4799,12 @@ function closeAriaVoice(){
   if(ov)ov.classList.remove('open');
   try{ if(ariaRec)ariaRec.abort(); }catch(e){}
   ariaRec=null;
+  // stop Fish Audio player
+  _ariaAudioStop();
+  // stop browser TTS fallback
   try{ if(TTS)TTS.cancel(); }catch(e){}
+  // reset orb to idle
+  if(ariaThree&&ariaThree.setOrbState) ariaThree.setOrbState('idle');
   if(ariaRAF)cancelAnimationFrame(ariaRAF);ariaRAF=null;
   if(ariaMicStream){ariaMicStream.getTracks().forEach(t=>t.stop());ariaMicStream=null;}
   if(ariaAudioCtx){try{ariaAudioCtx.close();}catch(e){}ariaAudioCtx=null;}
@@ -4951,6 +4957,12 @@ function _ariaAudioStop(){
 
 function _ariaAudioOnFinished(){
   ariaSpeaking=false;
+  // restore mic analyser so orb reacts to user input again
+  if(ariaAudioCtx&&ariaAudioCtx._micAnalyser){
+    ariaAnalyser=ariaAudioCtx._micAnalyser;
+    ariaFreq=new Uint8Array(ariaAnalyser.frequencyBinCount);
+    if(ariaThree&&ariaThree.setAnalyser) ariaThree.setAnalyser(ariaAnalyser);
+  }
   if(ariaVoiceOn){
     const stillWorking=ariaMessages.some(m=>m.role==='user'&&(m.status==='pending'||m.status==='processing'));
     setVoiceState(stillWorking?'thinking':'listening');
@@ -4973,17 +4985,17 @@ async function ariaSpeak(text, onDone){
     if(!r.ok) throw new Error('TTS '+r.status);
     const d=await r.json();
     if(d.audio){
-      await _ariaAudioResume();
-      // set up analyser feed into AudioContext
       const ctx=_ariaAudioCtxGet();
-      if(!ariaAnalyser){
+      if(!_ariaAudioCtx2||!_ariaAudioCtx2._ttsAnalyser){
         const an=ctx.createAnalyser();
         an.fftSize=256; an.smoothingTimeConstant=0.8;
         an.connect(ctx.destination);
-        ariaAnalyser=an;
-        ariaFreq=new Uint8Array(an.frequencyBinCount);
-        if(ariaThree&&ariaThree.setAnalyser) ariaThree.setAnalyser(an);
+        ctx._ttsAnalyser=an;
       }
+      // switch orb to TTS analyser while ARIA is speaking
+      ariaAnalyser=ctx._ttsAnalyser;
+      ariaFreq=new Uint8Array(ariaAnalyser.frequencyBinCount);
+      if(ariaThree&&ariaThree.setAnalyser) ariaThree.setAnalyser(ariaAnalyser);
       _ariaAudioEnqueue(d.audio);
       if(onDone){
         // call onDone after queue drains
@@ -5036,11 +5048,15 @@ async function initVoiceAudio(){
     ariaMicStream=await navigator.mediaDevices.getUserMedia({audio:true});
     ariaAudioCtx=new (window.AudioContext||window.webkitAudioContext)();
     const src=ariaAudioCtx.createMediaStreamSource(ariaMicStream);
-    ariaAnalyser=ariaAudioCtx.createAnalyser();
-    ariaAnalyser.fftSize=128;
-    src.connect(ariaAnalyser);
-    ariaFreq=new Uint8Array(ariaAnalyser.frequencyBinCount);
-  }catch(e){ /* mic denied — orb still animates without reactivity */ }
+    // mic analyser — drives orb while user is speaking
+    const micAnalyser=ariaAudioCtx.createAnalyser();
+    micAnalyser.fftSize=128;
+    src.connect(micAnalyser);
+    ariaAnalyser=micAnalyser;  // default: orb reacts to mic
+    ariaFreq=new Uint8Array(micAnalyser.frequencyBinCount);
+    // store mic analyser so ariaSpeak() can restore it after TTS
+    ariaAudioCtx._micAnalyser=micAnalyser;
+  }catch(e){ /* mic denied — orb still animates without audio reactivity */ }
 }
 function ariaAudioLevel(){
   if(!ariaAnalyser||!ariaFreq)return 0;
@@ -5051,6 +5067,9 @@ function ariaAudioLevel(){
 
 // ── JARVIS ORB (ported from github.com/ethanplusai/jarvis) ──────────────────
 // Pure Three.js — particles + connection lines + electrons + tumble + depth Z
+const _ORB_N=2000;       // particle count
+const _ORB_MAX_LINES=8000;  // max line segments
+const _ORB_MAX_ELECTRONS=200; // max simultaneous electrons
 function initOrb(){
   if(ariaThree||!window.THREE)return;
   const canvas=document.getElementById('aria-voice-canvas');
@@ -5065,12 +5084,12 @@ function initOrb(){
   const camera=new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,1,1000);
   camera.position.z=80;
 
-  const N=2000;
+  
   const geo=new THREE.BufferGeometry();
-  const pos=new Float32Array(N*3);
-  const vel=new Float32Array(N*3);
-  const phase=new Float32Array(N);
-  for(let i=0;i<N;i++){
+  const pos=new Float32Array(_ORB_N*3);
+  const vel=new Float32Array(_ORB_N*3);
+  const phase=new Float32Array(_ORB_N);
+  for(let i=0;i<_ORB_N;i++){
     const theta=Math.random()*Math.PI*2;
     const phi=Math.acos(2*Math.random()-1);
     const r=Math.pow(Math.random(),0.5)*25;
@@ -5086,8 +5105,8 @@ function initOrb(){
   scene.add(points);
 
   // Connection lines
-  const MAX_LINES=8000;
-  const linePos=new Float32Array(MAX_LINES*6);
+  
+  const linePos=new Float32Array(_ORB_MAX_LINES*6);
   const lineGeo=new THREE.BufferGeometry();
   lineGeo.setAttribute('position',new THREE.BufferAttribute(linePos,3));
   lineGeo.setDrawRange(0,0);
@@ -5097,9 +5116,9 @@ function initOrb(){
   scene.add(lines);
 
   // Electrons
-  const MAX_ELECTRONS=200;
+  
   const electronGeo=new THREE.BufferGeometry();
-  const electronPos=new Float32Array(MAX_ELECTRONS*3);
+  const electronPos=new Float32Array(_ORB_MAX_ELECTRONS*3);
   electronGeo.setAttribute('position',new THREE.BufferAttribute(electronPos,3));
   electronGeo.setDrawRange(0,0);
   const electronMat=new THREE.PointsMaterial({color:0xffffff,size:0.8,transparent:true,opacity:1.0,
@@ -5223,7 +5242,7 @@ function startOrbLoop(){
     const p=T.geo.getAttribute('position');
     const a=p.array;
     const vel=T.vel,phase=T.phase;
-    for(let i=0;i<N;i++){
+    for(let i=0;i<_ORB_N;i++){
       const i3=i*3;
       let x=a[i3],y=a[i3+1],z=a[i3+2];
       const px=phase[i];
@@ -5250,11 +5269,11 @@ function startOrbLoop(){
       let lineCount=0;
       const maxDist=lineDistance*(1+bass*0.5);
       const maxDistSq=maxDist*maxDist;
-      const step=Math.max(1,Math.floor(N/600));
-      for(let i=0;i<N&&lineCount<MAX_LINES;i+=step){
+      const step=Math.max(1,Math.floor(_ORB_N/600));
+      for(let i=0;i<_ORB_N&&lineCount<_ORB_MAX_LINES;i+=step){
         const i3=i*3;
         const x1=a[i3],y1=a[i3+1],z1=a[i3+2];
-        for(let j=i+step;j<N&&lineCount<MAX_LINES;j+=step){
+        for(let j=i+step;j<_ORB_N&&lineCount<_ORB_MAX_LINES;j+=step){
           const j3=j*3;
           const dx=a[j3]-x1,dy=a[j3+1]-y1,dz=a[j3+2]-z1;
           if(dx*dx+dy*dy+dz*dz<maxDistSq){
