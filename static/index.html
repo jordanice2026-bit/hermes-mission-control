@@ -4562,7 +4562,7 @@ function startOrbLoop(){
     const speed=(0.05 + smooth*0.95);          // world-units/sec; talking = fast
     function sn(a){return Math.sin(a);}
     // true world-space Z (accounts for shell + group rotation/scale) for depth fade
-    const mainPts=T.shells[0].points; mainPts.updateWorldMatrix(true,false);
+    const mainPts=T.shells[0].shell.points; mainPts.updateWorldMatrix(true,false);
     const me=mainPts.matrixWorld.elements;
     const m2=me[2],m6=me[6],m10=me[10],m14=me[14];
     const camZ=T.camera.position.z;
