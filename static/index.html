@@ -4901,6 +4901,9 @@ async function openAriaVoice(){
   // baseline: only speak assistant replies that arrive AFTER we enter voice mode
   ariaVoiceReplyBaseline=ariaMessages.filter(m=>m.role==='assistant').length;
   await initVoiceAudio();
+  // Eagerly resume/create TTS AudioContext on this user gesture so
+  // Comet (and other strict-autoplay browsers) unlock audio before TTS fires
+  try{ await _ariaAudioResume(); }catch(e){}
   initOrb();
   startOrbLoop();
   setVoiceState('listening');
@@ -5059,21 +5062,39 @@ async function sendAriaVoice(text){
 }
 
 // ── Fish Audio TTS + AudioContext player (Jarvis voice) ──────────────────
-let _ariaAudioCtx2=null;    // dedicated playback AudioContext
-let _ariaAudioQueue=[];     // queued AudioBuffers
+let _ariaAudioCtx2=null;
+let _ariaAudioQueue=[];
 let _ariaAudioPlaying=false;
 let _ariaAudioSource=null;
+let _ariaAudioAnalyser=null;  // TTS-context analyser, always in _ariaAudioCtx2
 
 function _ariaAudioCtxGet(){
-  if(!_ariaAudioCtx2||_ariaAudioCtx2.state==='closed')
-    _ariaAudioCtx2=new AudioContext();
+  if(!_ariaAudioCtx2||_ariaAudioCtx2.state==='closed'){
+    _ariaAudioCtx2=new (window.AudioContext||window.webkitAudioContext)();
+    _ariaAudioAnalyser=null; // reset analyser when context is recreated
+  }
   return _ariaAudioCtx2;
 }
 
 async function _ariaAudioResume(){
   const ctx=_ariaAudioCtxGet();
-  if(ctx.state==='suspended') await ctx.resume();
+  // Some browsers (incl. Comet) suspend AudioContext until user gesture
+  if(ctx.state==='suspended'||ctx.state==='interrupted'){
+    try{ await ctx.resume(); }catch(e){ console.warn('[tts] resume failed',e); }
+  }
   return ctx;
+}
+
+function _ariaAudioGetAnalyser(){
+  const ctx=_ariaAudioCtxGet();
+  if(!_ariaAudioAnalyser){
+    _ariaAudioAnalyser=ctx.createAnalyser();
+    _ariaAudioAnalyser.fftSize=256;
+    _ariaAudioAnalyser.smoothingTimeConstant=0.8;
+    // analyser → destination so audio actually plays out speakers
+    _ariaAudioAnalyser.connect(ctx.destination);
+  }
+  return _ariaAudioAnalyser;
 }
 
 function _ariaAudioPlayNext(){
@@ -5085,15 +5106,15 @@ function _ariaAudioPlayNext(){
   }
   _ariaAudioPlaying=true;
   const ctx=_ariaAudioCtxGet();
+  const an=_ariaAudioGetAnalyser();
   const buf=_ariaAudioQueue.shift();
   const src=ctx.createBufferSource();
   src.buffer=buf;
-  // feed into analyser so orb reacts to voice
-  if(ariaAnalyser) src.connect(ariaAnalyser);
-  else src.connect(ctx.destination);
+  // source → analyser → destination (all in same TTS context — correct!)
+  src.connect(an);
   _ariaAudioSource=src;
   src.onended=()=>{ if(_ariaAudioSource===src) _ariaAudioPlayNext(); };
-  src.start();
+  src.start(0);
 }
 
 async function _ariaAudioEnqueue(base64mp3){
@@ -5105,7 +5126,10 @@ async function _ariaAudioEnqueue(base64mp3){
     const buf=await ctx.decodeAudioData(bytes.buffer.slice(0));
     _ariaAudioQueue.push(buf);
     if(!_ariaAudioPlaying) _ariaAudioPlayNext();
-  }catch(e){ console.warn('[tts] decode error',e); if(!_ariaAudioPlaying&&_ariaAudioQueue.length>0) _ariaAudioPlayNext(); }
+  }catch(e){
+    console.warn('[tts] decode error',e);
+    if(!_ariaAudioPlaying&&_ariaAudioQueue.length>0) _ariaAudioPlayNext();
+  }
 }
 
 function _ariaAudioStop(){
@@ -5147,18 +5171,13 @@ async function ariaSpeak(text, onDone){
     if(!r.ok) throw new Error('TTS '+r.status);
     const d=await r.json();
     if(d.audio){
-      const ctx=_ariaAudioCtxGet();
-      if(!_ariaAudioCtx2||!_ariaAudioCtx2._ttsAnalyser){
-        const an=ctx.createAnalyser();
-        an.fftSize=256; an.smoothingTimeConstant=0.8;
-        an.connect(ctx.destination);
-        ctx._ttsAnalyser=an;
-      }
-      // switch orb to TTS analyser while ARIA is speaking
-      ariaAnalyser=ctx._ttsAnalyser;
-      ariaFreq=new Uint8Array(ariaAnalyser.frequencyBinCount);
-      if(ariaThree&&ariaThree.setAnalyser) ariaThree.setAnalyser(ariaAnalyser);
-      _ariaAudioEnqueue(d.audio);
+      await _ariaAudioResume();
+      // point orb at TTS analyser (self-contained in TTS context)
+      const an=_ariaAudioGetAnalyser();
+      ariaAnalyser=an;
+      ariaFreq=new Uint8Array(an.frequencyBinCount);
+      if(ariaThree&&ariaThree.setAnalyser) ariaThree.setAnalyser(an);
+      await _ariaAudioEnqueue(d.audio);
       if(onDone){
         // call onDone after queue drains
         const orig=_ariaAudioOnFinished;
