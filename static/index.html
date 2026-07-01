@@ -1209,15 +1209,23 @@ nav{display:flex;gap:2px;flex:1}
               <option>Mail Sent</option><option>Called</option><option>Responded</option>
             </select></div>
         </div>
-        <div class="deal-row-2">
-          <div class="form-group"><label class="form-label">Primary Phone</label>
+        <div class="deal-row-3">
+          <div class="form-group"><label class="form-label">Phone 1</label>
             <input class="form-input" id="oc-phone" placeholder="317-555-0100"></div>
-          <div class="form-group"><label class="form-label">Secondary Phone</label>
+          <div class="form-group"><label class="form-label">Phone 2</label>
             <input class="form-input" id="oc-phone2" placeholder="optional"></div>
+          <div class="form-group"><label class="form-label">Phone 3</label>
+            <input class="form-input" id="oc-phone3" placeholder="optional"></div>
+        </div>
+        <div class="deal-row-3">
+          <div class="form-group"><label class="form-label">Email 1</label>
+            <input class="form-input" id="oc-email" placeholder="owner@example.com"></div>
+          <div class="form-group"><label class="form-label">Email 2</label>
+            <input class="form-input" id="oc-email2" placeholder="optional"></div>
+          <div class="form-group"><label class="form-label">Email 3</label>
+            <input class="form-input" id="oc-email3" placeholder="optional"></div>
         </div>
         <div class="deal-row-2">
-          <div class="form-group"><label class="form-label">Email</label>
-            <input class="form-input" id="oc-email" placeholder="owner@example.com"></div>
           <div class="form-group"><label class="form-label">Phone Type</label>
             <select class="form-input" id="oc-phone-type">
               <option value="">—</option><option>Mobile</option><option>Landline</option><option>VoIP</option><option>Unknown</option>
@@ -1987,15 +1995,21 @@ function renderOwners(){
   const search=document.getElementById('owners-search').value.toLowerCase();
   const filtered=owners.filter(o=>{
     if(!search)return true;
-    return (o.name||'').toLowerCase().includes(search)||(o.mailing_state||'').toLowerCase().includes(search)||(o.county||'').toLowerCase().includes(search)||(o.primary_phone||'').includes(search)||(o.email||'').toLowerCase().includes(search)||(o.outreach_stage||o.stage||'').toLowerCase().includes(search);
+    const allPhones=(o.phones||[o.primary_phone]).join(' ');
+    const allEmails=(o.emails||[o.email]).join(' ').toLowerCase();
+    return (o.name||'').toLowerCase().includes(search)||(o.mailing_state||'').toLowerCase().includes(search)||(o.county||'').toLowerCase().includes(search)||allPhones.includes(search)||allEmails.includes(search)||(o.outreach_stage||o.stage||'').toLowerCase().includes(search);
   });
   document.getElementById('owners-count').textContent=filtered.length+' records';
   if(!filtered.length){
     document.getElementById('owners-content').innerHTML='<div class="empty-state"><div class="empty-state-icon">🏠</div><div>'+(owners.length?'No matching owners.':'No owners found.')+'</div></div>';
     return;
   }
-  const rows=filtered.map(o=>`<tr style="cursor:pointer" onclick="openOwnerDetail('${o.id}')"><td><strong>${esc(o.name||'—')}</strong></td><td><span class="contact-badge ${ctBadgeClass(o.contact_type)}">${esc(o.contact_type||'—')}</span></td><td><span class="stage-badge ${stageBadgeClass(o.outreach_stage||o.stage)}">${esc(o.outreach_stage||o.stage||'—')}</span></td><td>${esc(o.primary_phone||'—')}</td><td>${esc(o.email||'—')}</td><td>${esc(o.mailing_state||'—')}</td><td>${esc(o.county||'—')}</td><td style="text-align:center">${(o.property_ids||[]).length||0}</td></tr>`).join('');
-  document.getElementById('owners-content').innerHTML=`<table class="owners-table"><thead><tr><th>Name</th><th>Contact Type</th><th>Stage</th><th>Phone</th><th>Email</th><th>State</th><th>County</th><th># Props</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const rows=filtered.map(o=>{
+    const phoneStr=(o.phones&&o.phones.length)?o.phones.join('<br>'):esc(o.primary_phone||'—');
+    const emailStr=(o.emails&&o.emails.length)?o.emails.map(e=>esc(e)).join('<br>'):esc(o.email||'—');
+    return `<tr style="cursor:pointer" onclick="openOwnerDetail('${o.id}')"><td><strong>${esc(o.name||'—')}</strong></td><td><span class="contact-badge ${ctBadgeClass(o.contact_type)}">${esc(o.contact_type||'—')}</span></td><td><span class="stage-badge ${stageBadgeClass(o.outreach_stage||o.stage)}">${esc(o.outreach_stage||o.stage||'—')}</span></td><td style="font-size:12px">${phoneStr}</td><td style="font-size:12px">${emailStr}</td><td>${esc(o.mailing_state||'—')}</td><td>${esc(o.county||'—')}</td><td style="text-align:center">${(o.property_ids||[]).length||0}</td></tr>`;
+  }).join('');
+  document.getElementById('owners-content').innerHTML=`<table class="owners-table"><thead><tr><th>Name</th><th>Contact Type</th><th>Stage</th><th>Phones</th><th>Emails</th><th>State</th><th>County</th><th># Props</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 function filterOwners(){renderOwners();}
 
@@ -2056,14 +2070,22 @@ function renderOwnerDetail(data){
         <div class="form-group"><label class="form-label">Outreach Stage</label>
           <select class="form-input" id="od-stage">${opt(STAGES,o.outreach_stage)}</select></div>
       </div>
-      <div class="deal-row-2">
-        <div class="form-group"><label class="form-label">Primary Phone</label>
-          <input class="form-input" id="od-phone" value="${esc(o.primary_phone||'')}"></div>
-        <div class="form-group"><label class="form-label">Secondary Phone</label>
-          <input class="form-input" id="od-phone2" value="${esc(o.secondary_phone||'')}"></div>
+      <div class="deal-row-3">
+        <div class="form-group"><label class="form-label">Phone 1</label>
+          <input class="form-input" id="od-phone" value="${esc(o.primary_phone||'')}" placeholder="317-555-0100"></div>
+        <div class="form-group"><label class="form-label">Phone 2</label>
+          <input class="form-input" id="od-phone2" value="${esc(o.secondary_phone||'')}" placeholder="optional"></div>
+        <div class="form-group"><label class="form-label">Phone 3</label>
+          <input class="form-input" id="od-phone3" value="${esc(o.phone3||'')}" placeholder="optional"></div>
       </div>
-      <div class="form-group"><label class="form-label">Email</label>
-        <input class="form-input" id="od-email" type="email" value="${esc(o.email||'')}" placeholder="owner@example.com"></div>
+      <div class="deal-row-3">
+        <div class="form-group"><label class="form-label">Email 1</label>
+          <input class="form-input" id="od-email" type="email" value="${esc(o.email||'')}" placeholder="owner@example.com"></div>
+        <div class="form-group"><label class="form-label">Email 2</label>
+          <input class="form-input" id="od-email2" type="email" value="${esc(o.email2||'')}" placeholder="optional"></div>
+        <div class="form-group"><label class="form-label">Email 3</label>
+          <input class="form-input" id="od-email3" type="email" value="${esc(o.email3||'')}" placeholder="optional"></div>
+      </div>
       <div class="form-group"><label class="form-label">Mailing Address</label>
         <input class="form-input" id="od-addr" value="${esc(o.mailing_address||'')}"></div>
       <div class="deal-row-3">
@@ -2103,7 +2125,10 @@ async function saveOwnerDetail(ownerId){
     verification:g('od-verification').value,
     primary_phone:g('od-phone').value.trim(),
     secondary_phone:g('od-phone2').value.trim(),
+    phone3:g('od-phone3').value.trim(),
     email:g('od-email').value.trim(),
+    email2:g('od-email2').value.trim(),
+    email3:g('od-email3').value.trim(),
     mailing_address:g('od-addr').value.trim(),
     mailing_city:g('od-city').value.trim(),
     mailing_state:g('od-state').value.trim(),
@@ -2124,7 +2149,7 @@ async function saveOwnerDetail(ownerId){
 // ── ADD OWNER (manual entry + optional property) ────────────────────────────
 function openOwnerCreate(){
   const g=id=>document.getElementById(id);
-  ['oc-name','oc-phone','oc-phone2','oc-email','oc-addr','oc-city','oc-zip','oc-notes',
+  ['oc-name','oc-phone','oc-phone2','oc-phone3','oc-email','oc-email2','oc-email3','oc-addr','oc-city','oc-zip','oc-notes',
    'oc-prop-addr','oc-prop-beds','oc-prop-baths','oc-prop-sqft','oc-prop-year','oc-prop-value','oc-prop-equity'].forEach(id=>{const el=g(id);if(el)el.value='';});
   g('oc-contact-type').value='Individual';
   g('oc-stage').value='New Lead';
@@ -2156,8 +2181,11 @@ async function saveNewOwner(){
     verification:g('oc-verification').value,
     primary_phone:g('oc-phone').value.trim()||null,
     secondary_phone:g('oc-phone2').value.trim()||null,
+    phone3:g('oc-phone3').value.trim()||null,
     phone_type:g('oc-phone-type').value||null,
     email:g('oc-email').value.trim()||null,
+    email2:g('oc-email2').value.trim()||null,
+    email3:g('oc-email3').value.trim()||null,
     mailing_address:g('oc-addr').value.trim()||null,
     mailing_city:g('oc-city').value.trim()||null,
     mailing_state:g('oc-state').value.trim()||null,

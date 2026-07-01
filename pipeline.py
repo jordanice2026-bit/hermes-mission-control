@@ -111,15 +111,28 @@ def _sel_prop(v: str): return {"select":{"name":v}}
 # ── Parse helpers ──────────────────────────────────────────────────────────────
 def _parse_owner(page: dict) -> dict:
     p = page.get("properties", {})
+    phone1 = _phone(p.get("Primary Phone"))
+    phone2 = _phone(p.get("Secondary Phone"))
+    phone3 = _phone(p.get("Phone 3"))
+    email1 = _email(p.get("Primary Email"))
+    email2 = _email(p.get("Email 2"))
+    email3 = _email(p.get("Email 3"))
     return {
         "id":                page.get("id",""),
         "name":              _title(p.get("Owner Name")),
         "contact_type":      _sel(p.get("Contact Type")),
         "outreach_stage":    _sel(p.get("Outreach Stage")),
         "verification":      _sel(p.get("Verification Status")),
-        "primary_phone":     _phone(p.get("Primary Phone")),
-        "secondary_phone":   _phone(p.get("Secondary Phone")),
-        "email":             _email(p.get("Primary Email")),
+        # numbered fields
+        "primary_phone":     phone1,
+        "secondary_phone":   phone2,
+        "phone3":            phone3,
+        "email":             email1,   # back-compat alias for primary email
+        "email2":            email2,
+        "email3":            email3,
+        # convenience lists (non-empty, in order) for display/export
+        "phones":            [x for x in (phone1, phone2, phone3) if x],
+        "emails":            [x for x in (email1, email2, email3) if x],
         "mailing_address":   _rt(p.get("Mailing Address")),
         "mailing_city":      _rt(p.get("Mailing City")),
         "mailing_state":     _rt(p.get("Mailing State")),
@@ -364,7 +377,10 @@ class OwnerUpdateBody(BaseModel):
     verification: Optional[str] = None
     primary_phone: Optional[str] = None
     secondary_phone: Optional[str] = None
+    phone3: Optional[str] = None
     email: Optional[str] = None
+    email2: Optional[str] = None
+    email3: Optional[str] = None
     mailing_address: Optional[str] = None
     mailing_city: Optional[str] = None
     mailing_state: Optional[str] = None
@@ -384,7 +400,10 @@ async def update_owner(request: Request, owner_id: str, body: OwnerUpdateBody):
     if body.verification is not None:    props["Verification Status"] = _sel_prop(body.verification)
     if body.primary_phone is not None:   props["Primary Phone"] = {"phone_number": body.primary_phone or None}
     if body.secondary_phone is not None: props["Secondary Phone"] = {"phone_number": body.secondary_phone or None}
+    if body.phone3 is not None:          props["Phone 3"] = {"phone_number": body.phone3 or None}
     if body.email is not None:           props["Primary Email"] = {"email": body.email or None}
+    if body.email2 is not None:          props["Email 2"] = {"email": body.email2 or None}
+    if body.email3 is not None:          props["Email 3"] = {"email": body.email3 or None}
     if body.mailing_address is not None: props["Mailing Address"] = _rt_prop(body.mailing_address)
     if body.mailing_city is not None:    props["Mailing City"] = _rt_prop(body.mailing_city)
     if body.mailing_state is not None:   props["Mailing State"] = _rt_prop(body.mailing_state)
@@ -429,8 +448,11 @@ class OwnerCreateBody(BaseModel):
     verification: Optional[str] = None
     primary_phone: Optional[str] = None
     secondary_phone: Optional[str] = None
+    phone3: Optional[str] = None
     phone_type: Optional[str] = None
     email: Optional[str] = None
+    email2: Optional[str] = None
+    email3: Optional[str] = None
     secondary_email: Optional[str] = None
     mailing_address: Optional[str] = None
     mailing_city: Optional[str] = None
@@ -451,8 +473,11 @@ def _owner_props_from_body(b) -> dict:
     if b.verification:    props["Verification Status"] = _sel_prop(b.verification)
     if b.primary_phone:   props["Primary Phone"] = {"phone_number": b.primary_phone}
     if b.secondary_phone: props["Secondary Phone"] = {"phone_number": b.secondary_phone}
+    if getattr(b, "phone3", None): props["Phone 3"] = {"phone_number": b.phone3}
     if b.phone_type:      props["Phone Type"] = _sel_prop(b.phone_type)
     if b.email:           props["Primary Email"] = {"email": b.email}
+    if getattr(b, "email2", None): props["Email 2"] = {"email": b.email2}
+    if getattr(b, "email3", None): props["Email 3"] = {"email": b.email3}
     if b.secondary_email: props["Secondary Email"] = _rt_prop(b.secondary_email)
     if b.mailing_address: props["Mailing Address"] = _rt_prop(b.mailing_address)
     if b.mailing_city:    props["Mailing City"] = _rt_prop(b.mailing_city)
@@ -839,11 +864,8 @@ async def export_mojo(request: Request):
             o = _parse_owner(page)
             if o["do_not_contact"]: continue
 
-            phones = [o["primary_phone"], o["secondary_phone"]]
-            # Parse extra phones from notes
-            extra_match = re.findall(r'\(\d{3}\) \d{3}-\d{4}', o["notes"])
-            phones.extend(extra_match)
-            phones = [p for p in phones if p]
+            # Use the structured phone fields (Phone 1/2/3) — no more scraping notes
+            phones = o["phones"]
             if not phones: continue
 
             # Split name
