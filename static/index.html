@@ -1150,6 +1150,37 @@ nav{display:flex;gap:2px;flex:1}
   border-color:rgba(14,165,233,0.5);
 }
 #jarvis-voice-controls button.muted{color:rgba(239,68,68,0.7);border-color:rgba(239,68,68,0.35);}
+/* JARVIS_TUNE PANEL CSS — temporary customization panel, safe to delete this
+   whole block (down to the "end JARVIS_TUNE PANEL CSS" comment) plus the
+   matching HTML block (search JARVIS_TUNE PANEL HTML) to fully revert. */
+#jarvis-tune-toggle{
+  width:44px;height:44px;border:1px solid rgba(14,165,233,0.25);border-radius:50%;
+  background:var(--glass-55);color:rgba(14,165,233,0.6);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all 0.2s;
+  backdrop-filter:blur(8px);pointer-events:auto;font-size:16px;
+}
+#jarvis-tune-toggle:hover{background:rgba(14,165,233,0.15);color:rgba(14,165,233,0.9);border-color:rgba(14,165,233,0.5);}
+#jarvis-tune-panel{
+  position:absolute;top:16px;left:16px;width:300px;max-height:calc(100vh - 32px);
+  overflow-y:auto;background:var(--glass-95);border:1px solid rgba(14,165,233,0.2);
+  border-radius:10px;padding:14px;z-index:1015;backdrop-filter:blur(14px);
+  display:none;pointer-events:auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+#jarvis-tune-panel.open{display:block}
+#jarvis-tune-panel h4{margin:0 0 4px;font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(14,165,233,0.8);font-weight:600}
+#jarvis-tune-panel .jt-note{font-size:10px;color:rgba(148,163,184,0.7);margin-bottom:10px;line-height:1.4}
+.jt-row{margin-bottom:10px}
+.jt-row label{display:flex;justify-content:space-between;font-size:11px;color:rgba(226,232,240,0.85);margin-bottom:3px}
+.jt-row label span.jt-val{color:rgba(14,165,233,0.9);font-variant-numeric:tabular-nums}
+.jt-row input[type=range]{width:100%;accent-color:#0ea5e9;cursor:pointer}
+#jarvis-tune-panel .jt-reset{
+  width:100%;margin-top:6px;padding:8px;border:1px solid rgba(239,68,68,0.35);border-radius:6px;
+  background:rgba(239,68,68,0.08);color:rgba(239,68,68,0.85);font-size:11px;letter-spacing:1px;
+  text-transform:uppercase;cursor:pointer;transition:all 0.15s;
+}
+#jarvis-tune-panel .jt-reset:hover{background:rgba(239,68,68,0.18)}
+/* end JARVIS_TUNE PANEL CSS */
 /* Error text */
 #jarvis-voice-error{
   position:absolute;top:40px;left:50%;transform:translateX(-50%);
@@ -1625,6 +1656,7 @@ nav{display:flex;gap:2px;flex:1}
       <canvas id="jarvis-voice-canvas"></canvas>
       <!-- top-right controls: mute + exit only -->
       <div id="jarvis-voice-controls">
+        <button id="jarvis-tune-toggle" title="Customize orb appearance" onclick="jarvisTunePanelToggle()">🎛️</button>
         <button id="jarvis-voice-mic-toggle" title="Mute/Unmute" onclick="jarvisVoiceMicToggle()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
@@ -1638,6 +1670,40 @@ nav{display:flex;gap:2px;flex:1}
           </svg>
         </button>
       </div>
+      <!-- JARVIS_TUNE PANEL HTML — temporary customization panel. Safe to
+           delete this whole <div id="jarvis-tune-panel">...</div> plus the
+           toggle <button id="jarvis-tune-toggle"> above and the matching CSS
+           block (search JARVIS_TUNE PANEL CSS) + JS functions
+           (jarvisTuneSet/jarvisTuneReset/jarvisTunePanel*, search JARVIS_TUNE)
+           to fully revert. -->
+      <div id="jarvis-tune-panel">
+        <h4>Orb Customization</h4>
+        <div class="jt-note">Temporary live-tuning panel. Changes save to this browser and apply immediately.</div>
+        <div class="jt-row"><label>Particle color (hue) <span class="jt-val" id="jt-val-particleHue">205°</span></label>
+          <input type="range" data-tune-key="particleHue" min="0" max="360" step="1" oninput="jarvisTuneInput('particleHue',this)"></div>
+        <div class="jt-row"><label>Line color (hue) <span class="jt-val" id="jt-val-lineHue">205°</span></label>
+          <input type="range" data-tune-key="lineHue" min="0" max="360" step="1" oninput="jarvisTuneInput('lineHue',this)"></div>
+        <div class="jt-row"><label>Particle brightness <span class="jt-val" id="jt-val-particleBrightness">1.00</span></label>
+          <input type="range" data-tune-key="particleBrightness" min="0.1" max="2.5" step="0.05" oninput="jarvisTuneInput('particleBrightness',this)"></div>
+        <div class="jt-row"><label>Line brightness <span class="jt-val" id="jt-val-lineBrightness">1.00</span></label>
+          <input type="range" data-tune-key="lineBrightness" min="0.1" max="2.5" step="0.05" oninput="jarvisTuneInput('lineBrightness',this)"></div>
+        <div class="jt-row"><label>Cluster brightness <span class="jt-val" id="jt-val-clusterBrightness">1.00</span></label>
+          <input type="range" data-tune-key="clusterBrightness" min="0" max="3" step="0.05" oninput="jarvisTuneInput('clusterBrightness',this)"></div>
+        <div class="jt-row"><label>Particle count <span class="jt-val" id="jt-val-particleCount">3000</span></label>
+          <input type="range" data-tune-key="particleCount" min="500" max="8000" step="100" oninput="jarvisTuneInput('particleCount',this)"></div>
+        <div class="jt-row"><label>Line density <span class="jt-val" id="jt-val-lineDensity">1.00</span></label>
+          <input type="range" data-tune-key="lineDensity" min="0" max="3" step="0.05" oninput="jarvisTuneInput('lineDensity',this)"></div>
+        <div class="jt-row"><label>Gravity pull to center <span class="jt-val" id="jt-val-gravityPull">1.00</span></label>
+          <input type="range" data-tune-key="gravityPull" min="0" max="4" step="0.05" oninput="jarvisTuneInput('gravityPull',this)"></div>
+        <div class="jt-row"><label>Particle movement speed <span class="jt-val" id="jt-val-speedMult">1.00</span></label>
+          <input type="range" data-tune-key="speedMult" min="0" max="3" step="0.05" oninput="jarvisTuneInput('speedMult',this)"></div>
+        <div class="jt-row"><label>Orbit / rotation amount <span class="jt-val" id="jt-val-orbitAmount">0.00</span></label>
+          <input type="range" data-tune-key="orbitAmount" min="0" max="3" step="0.05" oninput="jarvisTuneInput('orbitAmount',this)"></div>
+        <div class="jt-row"><label>Volume sensitivity <span class="jt-val" id="jt-val-volumeSensitivity">1.00</span></label>
+          <input type="range" data-tune-key="volumeSensitivity" min="0" max="4" step="0.05" oninput="jarvisTuneInput('volumeSensitivity',this)"></div>
+        <button class="jt-reset" onclick="jarvisTuneReset()">Reset to defaults</button>
+      </div>
+      <!-- end JARVIS_TUNE PANEL HTML -->
       <!-- status: bottom center -->
       <div id="jarvis-voice-state"></div>
       <!-- JARVIS watermark -->
@@ -4929,6 +4995,8 @@ async function openJarvisVoice(){
   startJarvisListening();
   // ensure we're polling for her async replies
   if(!jarvisPollTimer)jarvisPollTimer=setInterval(loadJarvisChat,3000);
+  // JARVIS_TUNE: sync slider panel to whatever was last saved for this browser
+  jarvisTunePanelSync();
 }
 
 function closeJarvisVoice(){
@@ -5272,11 +5340,90 @@ function jarvisAudioLevel(){
   return (s/jarvisFreq.length)/255;   // 0..1
 }
 
+// ── JARVIS_TUNE: TEMPORARY user-facing customization panel ──────────────────
+// 2026-07-01: Lets Jordan live-tune the orb via sliders instead of code edits.
+// Everything below marked "JARVIS_TUNE" is temporary/removable — to fully
+// revert, delete: this whole config block, the panel HTML block (search
+// "JARVIS_TUNE PANEL HTML"), its CSS block ("JARVIS_TUNE PANEL CSS"), and
+// every `JARVIS_TUNE.` reference in startOrbLoop()/initOrb() (each one is
+// commented so you can find them with a search for "JARVIS_TUNE.").
+const JARVIS_TUNE_DEFAULTS={
+  particleCount:3000,     // number of particles — was fixed _ORB_N=3000
+  lineDensity:1.0,        // multiplier on line-connection search radius — 1.0 = current default
+  particleHue:205,        // 0-360 hue for particle color (205=original blue)
+  lineHue:205,            // 0-360 hue for line color
+  particleBrightness:1.0, // multiplier on particle opacity
+  lineBrightness:1.0,     // multiplier on line opacity
+  clusterBrightness:1.0,  // multiplier on how much brighter clusters/flow-veins get vs baseline
+  gravityPull:1.0,        // multiplier on containment pull-to-center force
+  speedMult:1.0,          // multiplier on ambient particle drift speed
+  orbitAmount:0,          // continuous orbit/rotation speed of the whole cloud (0 = none, matches original)
+  volumeSensitivity:1.0   // multiplier on mic input reactivity (bass/mid)
+};
+let JARVIS_TUNE=Object.assign({},JARVIS_TUNE_DEFAULTS);
+(function _jarvisTuneLoad(){
+  try{
+    const saved=JSON.parse(localStorage.getItem('jarvisTuneTemp')||'null');
+    if(saved)JARVIS_TUNE=Object.assign({},JARVIS_TUNE_DEFAULTS,saved);
+  }catch(e){}
+})();
+function _jarvisTuneSave(){
+  try{ localStorage.setItem('jarvisTuneTemp',JSON.stringify(JARVIS_TUNE)); }catch(e){}
+}
+// Applies a single slider change. Most params are read live from JARVIS_TUNE
+// each frame so they just take effect immediately; particleCount changes the
+// buffer size, so that one needs a full orb re-init (same pattern toggleTheme()
+// already uses elsewhere in this file).
+function jarvisTuneSet(key,value){
+  JARVIS_TUNE[key]=value;
+  _jarvisTuneSave();
+  if(key==='particleCount'){
+    _ORB_N=Math.round(value);
+    if(jarvisThree){ jarvisThree=null; initOrb(); if(jarvisRAF) startOrbLoop(); }
+  }
+}
+function jarvisTuneReset(){
+  JARVIS_TUNE=Object.assign({},JARVIS_TUNE_DEFAULTS);
+  _jarvisTuneSave();
+  _ORB_N=JARVIS_TUNE.particleCount;
+  if(jarvisThree){ jarvisThree=null; initOrb(); if(jarvisRAF) startOrbLoop(); }
+  jarvisTunePanelSync();
+}
+function jarvisTunePanelToggle(){
+  const p=document.getElementById('jarvis-tune-panel');
+  if(!p)return;
+  const open=p.classList.toggle('open');
+  if(open)jarvisTunePanelSync();
+}
+function jarvisTunePanelSync(){
+  const p=document.getElementById('jarvis-tune-panel');
+  if(!p)return;
+  p.querySelectorAll('input[type=range]').forEach(inp=>{
+    const k=inp.dataset.tuneKey;
+    if(k in JARVIS_TUNE){
+      inp.value=JARVIS_TUNE[k];
+      const disp=document.getElementById('jt-val-'+k);
+      if(disp)disp.textContent=_jarvisTuneFormat(k,JARVIS_TUNE[k]);
+    }
+  });
+}
+function _jarvisTuneFormat(key,v){
+  if(key==='particleHue'||key==='lineHue')return Math.round(v)+'°';
+  if(key==='particleCount')return Math.round(v);
+  return (Math.round(v*100)/100).toFixed(2);
+}
+function jarvisTuneInput(key,el){
+  const v=parseFloat(el.value);
+  const disp=document.getElementById('jt-val-'+key);
+  if(disp)disp.textContent=_jarvisTuneFormat(key,v);
+  jarvisTuneSet(key,v);
+}
+
 // ── JARVIS ORB (ported from github.com/ethanplusai/jarvis) ──────────────────
 // Pure Three.js — particles + connection lines + electrons + tumble + depth Z
 // 2026-07-01 (round 4): more particles flowing through the sphere, fewer
 // connecting lines. Revert: _ORB_N back to 2000.
-const _ORB_N=3000;       // particle count — was 2000
+let _ORB_N=JARVIS_TUNE.particleCount;       // particle count — JARVIS_TUNE-controlled, was fixed 3000 (originally 2000)
 const _ORB_MAX_LINES=8000;  // max line segments
 const _ORB_MAX_ELECTRONS=200; // max simultaneous electrons
 // 2026-07-01 fluid-glow tweak: organic flowing brightness field, sampled at a
@@ -5466,6 +5613,8 @@ function startOrbLoop(){
       for(let i=8;i<24;i++)mSum+=jarvisFreq[i];
       bass=bSum/(8*255); mid=mSum/(16*255);
     }
+    // JARVIS_TUNE.volumeSensitivity: multiplier on mic reactivity (1.0 = original)
+    bass*=JARVIS_TUNE.volumeSensitivity; mid*=JARVIS_TUNE.volumeSensitivity;
 
     // State targets
     // 2026-07-01: coreGlow on for idle/listening (no sound detected), off for thinking/speaking
@@ -5495,6 +5644,8 @@ function startOrbLoop(){
       spinY+=transitionEnergy*0.015;
       spinZ+=transitionEnergy*0.008*Math.cos(t*1.3);
     }
+    // JARVIS_TUNE.orbitAmount: continuous cloud rotation, 0 = original (no constant spin)
+    if(JARVIS_TUNE.orbitAmount>0.001){ spinY+=JARVIS_TUNE.orbitAmount*0.003; spinX+=JARVIS_TUNE.orbitAmount*0.0012; }
 
     // Depth Z breathing
     let zTarget=Math.sin(t*0.12)*8;
@@ -5521,19 +5672,22 @@ function startOrbLoop(){
     // varies. Revert: set LOW_BASE=1 (or delete the pca[] writes below) to
     // go back to flat, undimmed particles.
     const LOW_BASE=0.55;
+    // JARVIS_TUNE.speedMult / gravityPull: multipliers on ambient drift speed
+    // and containment pull-to-center force (1.0 = original in both cases).
+    const _tuneSpeed=JARVIS_TUNE.speedMult, _tuneGravity=JARVIS_TUNE.gravityPull;
     // ── Particle physics — soft containment, original behaviour ──
     for(let i=0;i<_ORB_N;i++){
       const i3=i*3;
       let x=a[i3],y=a[i3+1],z=a[i3+2];
       const px=phase[i];
-      vel[i3]  +=Math.sin(t*0.05+px)*0.001*currentSpeed;
-      vel[i3+1]+=Math.cos(t*0.06+px*1.3)*0.001*currentSpeed;
-      vel[i3+2]+=Math.sin(t*0.055+px*0.7)*0.001*currentSpeed;
-      vel[i3]  +=Math.sin(t*0.02+px*2.1+y*0.1)*0.0008*currentSpeed;
-      vel[i3+1]+=Math.cos(t*0.025+px*1.7+z*0.1)*0.0008*currentSpeed;
-      vel[i3+2]+=Math.sin(t*0.022+px*0.9+x*0.1)*0.0008*currentSpeed;
+      vel[i3]  +=Math.sin(t*0.05+px)*0.001*currentSpeed*_tuneSpeed;
+      vel[i3+1]+=Math.cos(t*0.06+px*1.3)*0.001*currentSpeed*_tuneSpeed;
+      vel[i3+2]+=Math.sin(t*0.055+px*0.7)*0.001*currentSpeed*_tuneSpeed;
+      vel[i3]  +=Math.sin(t*0.02+px*2.1+y*0.1)*0.0008*currentSpeed*_tuneSpeed;
+      vel[i3+1]+=Math.cos(t*0.025+px*1.7+z*0.1)*0.0008*currentSpeed*_tuneSpeed;
+      vel[i3+2]+=Math.sin(t*0.022+px*0.9+x*0.1)*0.0008*currentSpeed*_tuneSpeed;
       const dist=Math.sqrt(x*x+y*y+z*z)||0.01;
-      const pull=Math.max(0,dist-currentRadius)*0.002+0.0003;
+      const pull=(Math.max(0,dist-currentRadius)*0.002+0.0003)*_tuneGravity;
       vel[i3]-=(x/dist)*pull;vel[i3+1]-=(y/dist)*pull;vel[i3+2]-=(z/dist)*pull;
       if(bass>0.05){vel[i3]+=(x/dist)*bass*0.02;vel[i3+1]+=(y/dist)*bass*0.02;vel[i3+2]+=(z/dist)*bass*0.02;}
       if(orbState==='speaking'&&mid>0.1){const pulse=Math.sin(t*8+px);vel[i3]+=(x/dist)*mid*0.012*pulse;vel[i3+1]+=(y/dist)*mid*0.012*pulse;}
@@ -5572,7 +5726,10 @@ function startOrbLoop(){
       if(coreGlow>0.01){
         const flow=_orbFlowN(x,y,z,t);
         const dens=_densityT(x,y,z);
-        const glow=Math.max(flow,dens);   // flowing waves OR real clusters can light up — whichever is brighter here
+        // JARVIS_TUNE.clusterBrightness: scales how much brighter a flow-vein
+        // or density cluster reads vs baseline (1.0 = original), clamped so
+        // the dimming-only/hue-safe guarantee still holds.
+        const glow=Math.min(1,Math.max(flow,dens)*JARVIS_TUNE.clusterBrightness);
         const bri=LOW_BASE+glow*(1-LOW_BASE);
         const m=1+coreGlow*(bri-1);   // always <=1 — dimming only, color never shifts
         pca[i3]=m;pca[i3+1]=m;pca[i3+2]=m;
@@ -5590,7 +5747,10 @@ function startOrbLoop(){
       const lc=T.lineGeo.getAttribute('color');
       const lca=lc.array;
       let lineCount=0;
-      const maxDist=lineDistance*(1+bass*0.5);
+      // JARVIS_TUNE.lineDensity: multiplier on the line-connection search
+      // radius (1.0 = original) — higher means more particle pairs qualify
+      // as "connected" and more lines are drawn.
+      const maxDist=lineDistance*JARVIS_TUNE.lineDensity*(1+bass*0.5);
       const maxDistSq=maxDist*maxDist;
       const step=Math.max(1,Math.floor(_ORB_N/600));
       // 2026-07-01 fluid-glow tweak: line brightness now follows the same
@@ -5666,11 +5826,20 @@ function startOrbLoop(){
     T.electrons.position.z=cloudZ;
 
     // Material
-    T.mat.opacity=currentBright+bass*0.08;
+    // JARVIS_TUNE.particleBrightness / lineBrightness: multipliers on final
+    // opacity (1.0 = original in both cases).
+    T.mat.opacity=(currentBright+bass*0.08)*JARVIS_TUNE.particleBrightness;
     T.mat.size=currentSize*0.55+bass*0.04;
-    if(orbState==='thinking'){T.mat.color.lerp(new THREE.Color(0x6ec4ff),0.015);T.lineMat.color.lerp(new THREE.Color(0x6ec4ff),0.015);}
-    else if(orbState==='speaking'){T.mat.color.lerp(new THREE.Color(0x5ab8f0),0.015);T.lineMat.color.lerp(new THREE.Color(0x5ab8f0),0.015);}
-    else{T.mat.color.lerp(new THREE.Color(0x4ca8e8),0.015);T.lineMat.color.lerp(new THREE.Color(0x4ca8e8),0.015);}
+    // JARVIS_TUNE.particleHue / lineHue: base hue (0-360°) for particles vs
+    // lines. Original design used a single blue hue (~205°) for both, with a
+    // temperature shift during thinking/speaking — that per-state shift is
+    // preserved and layered on top of the user's chosen hue.
+    const _pBase=new THREE.Color().setHSL(JARVIS_TUNE.particleHue/360,0.72,0.5);
+    const _lBase=new THREE.Color().setHSL(JARVIS_TUNE.lineHue/360,0.72,0.5);
+    if(orbState==='thinking'){T.mat.color.copy(_pBase).lerp(new THREE.Color(0x6ec4ff),0.5);T.lineMat.color.copy(_lBase).lerp(new THREE.Color(0x6ec4ff),0.5);}
+    else if(orbState==='speaking'){T.mat.color.copy(_pBase).lerp(new THREE.Color(0x5ab8f0),0.5);T.lineMat.color.copy(_lBase).lerp(new THREE.Color(0x5ab8f0),0.5);}
+    else{T.mat.color.lerp(_pBase,0.08);T.lineMat.color.lerp(_lBase,0.08);}
+    T.lineMat.opacity=lineAmount*0.12*JARVIS_TUNE.lineBrightness;
 
     // Slow orbital camera drift
     T.camera.position.x=Math.sin(t*0.02)*5;
