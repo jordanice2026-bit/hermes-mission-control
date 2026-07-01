@@ -1394,9 +1394,10 @@ nav{display:flex;gap:2px;flex:1}
           <div class="form-group">
             <label class="form-label">Upload PDF</label>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <input class="form-input" id="deal-pdf-input" type="file" accept=".pdf" style="flex:1;min-width:0">
-              <button type="button" class="btn" id="parse-pdf-btn" onclick="parsePdfPreview(document.getElementById('deal-pdf-input').files[0])">📄 Parse PDF</button>
+              <input class="form-input" id="deal-pdf-input" type="file" accept=".pdf" style="flex:1;min-width:0" onchange="if(this.files[0])parsePdfPreview(this.files[0])">
+              <button type="button" class="btn" id="parse-pdf-btn" onclick="parsePdfPreview(document.getElementById('deal-pdf-input').files[0])">📄 Re-parse</button>
             </div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px">Auto-parses on upload. The PDF is also attached to the deal on save.</div>
           </div>
           <div id="pdf-parse-result"></div>
         </div>
@@ -2371,7 +2372,7 @@ async function parsePdfPreview(file){
   }catch(e){
     showToast('PDF parse failed: '+e.message,'error');
   }finally{
-    if(btn){btn.disabled=false;btn.textContent='📄 Parse PDF';}
+    if(btn){btn.disabled=false;btn.textContent='📄 Re-parse';}
   }
 }
 
