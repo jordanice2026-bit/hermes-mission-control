@@ -1987,15 +1987,15 @@ function renderOwners(){
   const search=document.getElementById('owners-search').value.toLowerCase();
   const filtered=owners.filter(o=>{
     if(!search)return true;
-    return (o.name||'').toLowerCase().includes(search)||(o.mailing_state||'').toLowerCase().includes(search)||(o.county||'').toLowerCase().includes(search)||(o.primary_phone||'').includes(search)||(o.outreach_stage||o.stage||'').toLowerCase().includes(search);
+    return (o.name||'').toLowerCase().includes(search)||(o.mailing_state||'').toLowerCase().includes(search)||(o.county||'').toLowerCase().includes(search)||(o.primary_phone||'').includes(search)||(o.email||'').toLowerCase().includes(search)||(o.outreach_stage||o.stage||'').toLowerCase().includes(search);
   });
   document.getElementById('owners-count').textContent=filtered.length+' records';
   if(!filtered.length){
     document.getElementById('owners-content').innerHTML='<div class="empty-state"><div class="empty-state-icon">🏠</div><div>'+(owners.length?'No matching owners.':'No owners found.')+'</div></div>';
     return;
   }
-  const rows=filtered.map(o=>`<tr style="cursor:pointer" onclick="openOwnerDetail('${o.id}')"><td><strong>${esc(o.name||'—')}</strong></td><td><span class="contact-badge ${ctBadgeClass(o.contact_type)}">${esc(o.contact_type||'—')}</span></td><td><span class="stage-badge ${stageBadgeClass(o.outreach_stage||o.stage)}">${esc(o.outreach_stage||o.stage||'—')}</span></td><td>${esc(o.primary_phone||'—')}</td><td>${esc(o.mailing_state||'—')}</td><td>${esc(o.county||'—')}</td><td style="text-align:center">${(o.property_ids||[]).length||0}</td></tr>`).join('');
-  document.getElementById('owners-content').innerHTML=`<table class="owners-table"><thead><tr><th>Name</th><th>Contact Type</th><th>Stage</th><th>Phone</th><th>State</th><th>County</th><th># Props</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const rows=filtered.map(o=>`<tr style="cursor:pointer" onclick="openOwnerDetail('${o.id}')"><td><strong>${esc(o.name||'—')}</strong></td><td><span class="contact-badge ${ctBadgeClass(o.contact_type)}">${esc(o.contact_type||'—')}</span></td><td><span class="stage-badge ${stageBadgeClass(o.outreach_stage||o.stage)}">${esc(o.outreach_stage||o.stage||'—')}</span></td><td>${esc(o.primary_phone||'—')}</td><td>${esc(o.email||'—')}</td><td>${esc(o.mailing_state||'—')}</td><td>${esc(o.county||'—')}</td><td style="text-align:center">${(o.property_ids||[]).length||0}</td></tr>`).join('');
+  document.getElementById('owners-content').innerHTML=`<table class="owners-table"><thead><tr><th>Name</th><th>Contact Type</th><th>Stage</th><th>Phone</th><th>Email</th><th>State</th><th>County</th><th># Props</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 function filterOwners(){renderOwners();}
 
@@ -2062,6 +2062,8 @@ function renderOwnerDetail(data){
         <div class="form-group"><label class="form-label">Secondary Phone</label>
           <input class="form-input" id="od-phone2" value="${esc(o.secondary_phone||'')}"></div>
       </div>
+      <div class="form-group"><label class="form-label">Email</label>
+        <input class="form-input" id="od-email" type="email" value="${esc(o.email||'')}" placeholder="owner@example.com"></div>
       <div class="form-group"><label class="form-label">Mailing Address</label>
         <input class="form-input" id="od-addr" value="${esc(o.mailing_address||'')}"></div>
       <div class="deal-row-3">
@@ -2101,6 +2103,7 @@ async function saveOwnerDetail(ownerId){
     verification:g('od-verification').value,
     primary_phone:g('od-phone').value.trim(),
     secondary_phone:g('od-phone2').value.trim(),
+    email:g('od-email').value.trim(),
     mailing_address:g('od-addr').value.trim(),
     mailing_city:g('od-city').value.trim(),
     mailing_state:g('od-state').value.trim(),
