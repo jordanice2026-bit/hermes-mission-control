@@ -7,15 +7,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#000000;--surface:#080808;--surface2:#101010;--surface3:#181818;
-  --border:#222222;--border2:#2e2e2e;--border-neon:rgba(0,212,255,.28);
-  --text:#e8e8e8;--text2:#686868;--text3:#363636;
-  --accent:#0055ff;--accent2:#00aaff;--accent-glow:rgba(0,170,255,0.16);
-  --neon:#00d4ff;--neon-glow:rgba(0,212,255,0.18);
-  --green:#00ff88;--green-glow:rgba(0,255,136,0.16);
+  --bg:#000000;--surface:#000000;--surface2:#0a0a0a;--surface3:#111111;
+  --border:#1e1e1e;--border2:#2a2a2a;--border-neon:rgba(0,212,255,.25);
+  --text:#e8e8e8;--text2:#606060;--text3:#323232;
+  --accent:#0055ff;--accent2:#00aaff;--accent-glow:rgba(0,170,255,0.14);
+  --neon:#00d4ff;--neon-glow:rgba(0,212,255,0.16);
+  --green:#00ff88;--green-glow:rgba(0,255,136,0.14);
   --red:#ff2244;--orange:#ff8800;
-  --pending:#404040;--in-progress:#00aaff;--blocked:#ff2244;
-  --done:#00ff88;--cancelled:#1c1c1c;
+  --pending:#383838;--in-progress:#00aaff;--blocked:#ff2244;
+  --done:#00ff88;--cancelled:#141414;
   --radius-sm:2px;--radius:3px;--radius-lg:4px;
   --font:'Rajdhani',sans-serif;--font-mono:'Share Tech Mono',monospace;
 }
@@ -55,7 +55,7 @@ button{font-family:var(--font);cursor:pointer;letter-spacing:.06em}
 #topbar{
   display:flex;align-items:center;gap:16px;
   padding:0 20px;height:52px;
-  background:rgba(0,0,0,.92);
+  background:rgba(0,0,0,.97);
   border-bottom:1px solid var(--border-neon);
   flex-shrink:0;z-index:100;
   backdrop-filter:blur(20px);
@@ -137,11 +137,11 @@ nav{display:flex;gap:2px;flex:1}
 /* ── KPI BAR ── */
 #kpi-bar{
   display:flex;gap:10px;padding:8px 20px;
-  background:rgba(0,0,0,.7);
+  background:rgba(0,0,0,.85);
   border-bottom:1px solid var(--border);flex-shrink:0;
 }
 .kpi-card{
-  background:rgba(8,8,8,.8);
+  background:rgba(0,0,0,.9);
   border:1px solid var(--border);
   clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
   padding:8px 16px 8px 12px;min-width:110px;position:relative;overflow:hidden;
@@ -174,7 +174,7 @@ nav{display:flex;gap:2px;flex:1}
   display:flex;align-items:center;gap:10px;
   padding:10px 20px;
   border-bottom:1px solid var(--border);flex-shrink:0;
-  background:rgba(0,0,0,.6);
+  background:rgba(0,0,0,.92);
 }
 .action-bar .spacer{flex:1}
 .search-input{
@@ -330,7 +330,7 @@ nav{display:flex;gap:2px;flex:1}
 /* ── BREADCRUMB ── */
 .breadcrumb{
   display:flex;align-items:center;gap:8px;padding:10px 20px;
-  background:rgba(0,0,0,.7);border-bottom:1px solid var(--border);
+  background:rgba(0,0,0,.85);border-bottom:1px solid var(--border);
   font-size:12px;flex-shrink:0;letter-spacing:.04em;
 }
 .breadcrumb-link{color:var(--accent2);cursor:pointer;text-transform:uppercase;font-size:11px;font-weight:600;letter-spacing:.08em}
@@ -367,7 +367,7 @@ nav{display:flex;gap:2px;flex:1}
 .owners-container{flex:1;overflow:auto;padding:16px}
 .owners-table{width:100%;border-collapse:collapse}
 .owners-table th{
-  background:rgba(0,0,0,.9);
+  background:rgba(0,0,0,.97);
   border-bottom:1px solid var(--border-neon);
   padding:9px 12px;text-align:left;
   font-size:9px;text-transform:uppercase;letter-spacing:.14em;
@@ -439,7 +439,7 @@ nav{display:flex;gap:2px;flex:1}
   border-radius:var(--radius);
   width:90%;max-width:640px;max-height:90vh;
   display:flex;flex-direction:column;
-  box-shadow:0 0 40px rgba(0,212,255,.15),0 20px 60px rgba(0,0,0,.8);
+  box-shadow:0 0 40px rgba(0,212,255,.15),0 20px 60px rgba(0,0,0,.92);
   clip-path:polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,0 100%);
 }
 .pl-modal-header{
@@ -488,10 +488,10 @@ nav{display:flex;gap:2px;flex:1}
 /* ── TOAST ── */
 #toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
 .toast{
-  background:rgba(8,8,8,.95);border:1px solid var(--border-neon);
+  background:rgba(0,0,0,.97);border:1px solid var(--border-neon);
   border-radius:var(--radius);padding:10px 16px;
   font-size:12px;color:var(--text);
-  box-shadow:0 0 20px rgba(0,212,255,.15),0 4px 24px rgba(0,0,0,.6);
+  box-shadow:0 0 20px rgba(0,212,255,.15),0 4px 24px rgba(0,0,0,.92);
   max-width:320px;animation:slideIn .2s ease;backdrop-filter:blur(12px);
   font-family:var(--font);letter-spacing:.02em;
   clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);
@@ -564,7 +564,7 @@ nav{display:flex;gap:2px;flex:1}
   background:var(--surface);border:1px solid var(--border-neon);
   border-radius:var(--radius);width:100%;max-width:760px;
   display:flex;flex-direction:column;
-  box-shadow:0 0 40px rgba(0,212,255,.12),0 20px 60px rgba(0,0,0,.8);
+  box-shadow:0 0 40px rgba(0,212,255,.12),0 20px 60px rgba(0,0,0,.92);
   margin:auto;
   clip-path:polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,0 100%);
 }
@@ -600,7 +600,7 @@ nav{display:flex;gap:2px;flex:1}
 .tc-section-b{flex:0 0 40%;border-top:2px solid var(--border-neon)}
 .tc-section-header{
   display:flex;align-items:center;gap:8px;padding:10px 16px;
-  background:rgba(0,0,0,.8);border-bottom:1px solid var(--border);
+  background:rgba(0,0,0,.92);border-bottom:1px solid var(--border);
   font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;flex-shrink:0;
 }
 .tc-section-scroll{overflow-y:auto;flex:1;padding:12px 16px}
@@ -656,8 +656,8 @@ nav{display:flex;gap:2px;flex:1}
 .search-dropdown{
   position:absolute;top:38px;right:0;width:380px;
   max-height:440px;overflow-y:auto;
-  background:rgba(8,8,8,.98);border:1px solid var(--border-neon);
-  border-radius:var(--radius);box-shadow:0 0 30px rgba(0,212,255,.12),0 8px 32px rgba(0,0,0,.7);
+  background:rgba(0,0,0,.99);border:1px solid var(--border-neon);
+  border-radius:var(--radius);box-shadow:0 0 30px rgba(0,212,255,.12),0 8px 32px rgba(0,0,0,.85);
   z-index:200;display:none;backdrop-filter:blur(12px);
 }
 .search-dropdown.open{display:block}
@@ -1067,7 +1067,7 @@ nav{display:flex;gap:2px;flex:1}
 .aria-attach-remove{background:none;border:none;color:var(--text3);cursor:pointer;padding:0 2px;font-size:13px;line-height:1;flex-shrink:0;transition:color .15s}
 .aria-attach-remove:hover{color:var(--red)}
 .aria-attach-btn{
-  background:rgba(0,0,0,.8);border:1px solid var(--border-neon);
+  background:rgba(0,0,0,.92);border:1px solid var(--border-neon);
   border-radius:var(--radius-sm);padding:0 12px;font-size:15px;cursor:pointer;
   transition:all .15s;flex-shrink:0;height:100%;min-height:44px;
   display:flex;align-items:center;justify-content:center;
@@ -1076,7 +1076,7 @@ nav{display:flex;gap:2px;flex:1}
 .aria-attach-btn:hover{border-color:var(--neon);box-shadow:0 0 12px rgba(0,212,255,.2)}
 .aria-input{
   flex:1;resize:none;
-  background:rgba(8,8,8,.8);
+  background:rgba(0,0,0,.9);
   border:1px solid var(--border-neon);border-radius:var(--radius-sm);
   padding:12px 15px;color:var(--text);font-size:13px;font-family:var(--font);
   max-height:140px;scrollbar-width:none;-ms-overflow-style:none;
@@ -1095,7 +1095,7 @@ nav{display:flex;gap:2px;flex:1}
 .aria-send:hover{box-shadow:0 0 20px rgba(0,212,255,.4);background:linear-gradient(135deg,rgba(0,100,255,.7),rgba(0,220,255,.6))}
 .aria-send:disabled{opacity:.4;cursor:default;box-shadow:none}
 .aria-mic{
-  background:rgba(8,8,8,.8);border:1px solid var(--border-neon);
+  background:rgba(0,0,0,.9);border:1px solid var(--border-neon);
   border-radius:var(--radius-sm);padding:0 14px;font-size:16px;cursor:pointer;
   transition:all .15s;flex-shrink:0;
   clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);
