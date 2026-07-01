@@ -4531,6 +4531,7 @@ function initOrb(){
   }catch(e){ composer=null; console.warn('[ARIA] bloom composer unavailable, using direct render',e); }
 
   ariaThree={renderer,scene,camera,group,shells,gDust,glow,composer,bloomPass,afterPass,rmax,
+             gHalo,haloScale:1.0,
              mainBaseCol:mainShell.basecol,mainCol:mainShell.col,
              base:mainShell.base,phase:mainShell.phase,pPos:mainShell.pos,
              pGeo:mainShell.geo,pMat:mainShell.mat,t:0,camZ:6,dolly:1.18};
@@ -4621,6 +4622,16 @@ function startOrbLoop(){
     });
     T.gDust.rotation.y += 0.02*dt;
     T.gDust.rotation.x += 0.01*dt;
+
+    // ── Outer halo contracts toward the inner sphere when sound is detected ──
+    // At silence: halo sits at its natural scale (1.0 = full radius 1.78).
+    // With sound: smoothly shrinks down toward the main shell radius (scale ~0.75).
+    // A soft sine wobble keeps it feeling alive even when contracted.
+    const haloWobble = 1.0 + Math.sin(T.t*2.8)*0.018 + Math.sin(T.t*1.3)*0.010;
+    const tgtHalo = (1.0 - smooth*0.28) * haloWobble;   // contracts inward with audio
+    T.haloScale = damp(T.haloScale, tgtHalo, smooth>0.05 ? 0.08 : 0.25, dt);
+    T.gHalo.scale.setScalar(T.haloScale);
+
     const amp = 1 + smooth*0.42;
 
     // #6 eased cinematic dolly: pull slightly closer while active, ease back at rest
