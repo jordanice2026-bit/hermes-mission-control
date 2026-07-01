@@ -114,6 +114,8 @@ def _parse_owner(page: dict) -> dict:
     phone1 = _phone(p.get("Primary Phone"))
     phone2 = _phone(p.get("Secondary Phone"))
     phone3 = _phone(p.get("Phone 3"))
+    phone4 = _phone(p.get("Phone 4"))
+    phone5 = _phone(p.get("Phone 5"))
     email1 = _email(p.get("Primary Email"))
     email2 = _email(p.get("Email 2"))
     email3 = _email(p.get("Email 3"))
@@ -127,11 +129,13 @@ def _parse_owner(page: dict) -> dict:
         "primary_phone":     phone1,
         "secondary_phone":   phone2,
         "phone3":            phone3,
+        "phone4":            phone4,
+        "phone5":            phone5,
         "email":             email1,   # back-compat alias for primary email
         "email2":            email2,
         "email3":            email3,
         # convenience lists (non-empty, in order) for display/export
-        "phones":            [x for x in (phone1, phone2, phone3) if x],
+        "phones":            [x for x in (phone1, phone2, phone3, phone4, phone5) if x],
         "emails":            [x for x in (email1, email2, email3) if x],
         "mailing_address":   _rt(p.get("Mailing Address")),
         "mailing_city":      _rt(p.get("Mailing City")),
@@ -378,6 +382,8 @@ class OwnerUpdateBody(BaseModel):
     primary_phone: Optional[str] = None
     secondary_phone: Optional[str] = None
     phone3: Optional[str] = None
+    phone4: Optional[str] = None
+    phone5: Optional[str] = None
     email: Optional[str] = None
     email2: Optional[str] = None
     email3: Optional[str] = None
@@ -401,6 +407,8 @@ async def update_owner(request: Request, owner_id: str, body: OwnerUpdateBody):
     if body.primary_phone is not None:   props["Primary Phone"] = {"phone_number": body.primary_phone or None}
     if body.secondary_phone is not None: props["Secondary Phone"] = {"phone_number": body.secondary_phone or None}
     if body.phone3 is not None:          props["Phone 3"] = {"phone_number": body.phone3 or None}
+    if body.phone4 is not None:          props["Phone 4"] = {"phone_number": body.phone4 or None}
+    if body.phone5 is not None:          props["Phone 5"] = {"phone_number": body.phone5 or None}
     if body.email is not None:           props["Primary Email"] = {"email": body.email or None}
     if body.email2 is not None:          props["Email 2"] = {"email": body.email2 or None}
     if body.email3 is not None:          props["Email 3"] = {"email": body.email3 or None}
@@ -449,6 +457,8 @@ class OwnerCreateBody(BaseModel):
     primary_phone: Optional[str] = None
     secondary_phone: Optional[str] = None
     phone3: Optional[str] = None
+    phone4: Optional[str] = None
+    phone5: Optional[str] = None
     phone_type: Optional[str] = None
     email: Optional[str] = None
     email2: Optional[str] = None
@@ -474,6 +484,8 @@ def _owner_props_from_body(b) -> dict:
     if b.primary_phone:   props["Primary Phone"] = {"phone_number": b.primary_phone}
     if b.secondary_phone: props["Secondary Phone"] = {"phone_number": b.secondary_phone}
     if getattr(b, "phone3", None): props["Phone 3"] = {"phone_number": b.phone3}
+    if getattr(b, "phone4", None): props["Phone 4"] = {"phone_number": b.phone4}
+    if getattr(b, "phone5", None): props["Phone 5"] = {"phone_number": b.phone5}
     if b.phone_type:      props["Phone Type"] = _sel_prop(b.phone_type)
     if b.email:           props["Primary Email"] = {"email": b.email}
     if getattr(b, "email2", None): props["Email 2"] = {"email": b.email2}
@@ -856,16 +868,18 @@ async def export_mojo(request: Request):
 
         buf = io.StringIO()
         w   = csv.writer(buf)
-        # Mojo Dialer standard import columns
-        w.writerow(["First Name","Last Name","Phone 1","Phone 2","Phone 3",
+        # Mojo Dialer standard import columns (up to 5 phones)
+        w.writerow(["First Name","Last Name","Phone 1","Phone 2","Phone 3","Phone 4","Phone 5",
+                    "Email 1","Email 2","Email 3",
                     "Address","City","State","Zip","Notes"])
         count = 0
         for page in owners_raw:
             o = _parse_owner(page)
             if o["do_not_contact"]: continue
 
-            # Use the structured phone fields (Phone 1/2/3) — no more scraping notes
+            # Use the structured phone fields (Phone 1-5) — no more scraping notes
             phones = o["phones"]
+            emails = o["emails"]
             if not phones: continue
 
             # Split name
@@ -883,6 +897,11 @@ async def export_mojo(request: Request):
                 phones[0] if len(phones) > 0 else "",
                 phones[1] if len(phones) > 1 else "",
                 phones[2] if len(phones) > 2 else "",
+                phones[3] if len(phones) > 3 else "",
+                phones[4] if len(phones) > 4 else "",
+                emails[0] if len(emails) > 0 else "",
+                emails[1] if len(emails) > 1 else "",
+                emails[2] if len(emails) > 2 else "",
                 o["mailing_address"], o["mailing_city"], o["mailing_state"], o["mailing_zip"],
                 notes_str
             ])

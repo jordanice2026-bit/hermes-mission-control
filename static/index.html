@@ -1217,6 +1217,12 @@ nav{display:flex;gap:2px;flex:1}
           <div class="form-group"><label class="form-label">Phone 3</label>
             <input class="form-input" id="oc-phone3" placeholder="optional"></div>
         </div>
+        <div class="deal-row-2">
+          <div class="form-group"><label class="form-label">Phone 4</label>
+            <input class="form-input" id="oc-phone4" placeholder="optional"></div>
+          <div class="form-group"><label class="form-label">Phone 5</label>
+            <input class="form-input" id="oc-phone5" placeholder="optional"></div>
+        </div>
         <div class="deal-row-3">
           <div class="form-group"><label class="form-label">Email 1</label>
             <input class="form-input" id="oc-email" placeholder="owner@example.com"></div>
@@ -2078,6 +2084,12 @@ function renderOwnerDetail(data){
         <div class="form-group"><label class="form-label">Phone 3</label>
           <input class="form-input" id="od-phone3" value="${esc(o.phone3||'')}" placeholder="optional"></div>
       </div>
+      <div class="deal-row-2">
+        <div class="form-group"><label class="form-label">Phone 4</label>
+          <input class="form-input" id="od-phone4" value="${esc(o.phone4||'')}" placeholder="optional"></div>
+        <div class="form-group"><label class="form-label">Phone 5</label>
+          <input class="form-input" id="od-phone5" value="${esc(o.phone5||'')}" placeholder="optional"></div>
+      </div>
       <div class="deal-row-3">
         <div class="form-group"><label class="form-label">Email 1</label>
           <input class="form-input" id="od-email" type="email" value="${esc(o.email||'')}" placeholder="owner@example.com"></div>
@@ -2126,6 +2138,8 @@ async function saveOwnerDetail(ownerId){
     primary_phone:g('od-phone').value.trim(),
     secondary_phone:g('od-phone2').value.trim(),
     phone3:g('od-phone3').value.trim(),
+    phone4:g('od-phone4').value.trim(),
+    phone5:g('od-phone5').value.trim(),
     email:g('od-email').value.trim(),
     email2:g('od-email2').value.trim(),
     email3:g('od-email3').value.trim(),
@@ -2149,7 +2163,7 @@ async function saveOwnerDetail(ownerId){
 // ── ADD OWNER (manual entry + optional property) ────────────────────────────
 function openOwnerCreate(){
   const g=id=>document.getElementById(id);
-  ['oc-name','oc-phone','oc-phone2','oc-phone3','oc-email','oc-email2','oc-email3','oc-addr','oc-city','oc-zip','oc-notes',
+  ['oc-name','oc-phone','oc-phone2','oc-phone3','oc-phone4','oc-phone5','oc-email','oc-email2','oc-email3','oc-addr','oc-city','oc-zip','oc-notes',
    'oc-prop-addr','oc-prop-beds','oc-prop-baths','oc-prop-sqft','oc-prop-year','oc-prop-value','oc-prop-equity'].forEach(id=>{const el=g(id);if(el)el.value='';});
   g('oc-contact-type').value='Individual';
   g('oc-stage').value='New Lead';
@@ -2182,6 +2196,8 @@ async function saveNewOwner(){
     primary_phone:g('oc-phone').value.trim()||null,
     secondary_phone:g('oc-phone2').value.trim()||null,
     phone3:g('oc-phone3').value.trim()||null,
+    phone4:g('oc-phone4').value.trim()||null,
+    phone5:g('oc-phone5').value.trim()||null,
     phone_type:g('oc-phone-type').value||null,
     email:g('oc-email').value.trim()||null,
     email2:g('oc-email2').value.trim()||null,
