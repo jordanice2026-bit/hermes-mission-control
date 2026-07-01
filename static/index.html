@@ -4418,14 +4418,8 @@ function initOrb(){
   const dust=_ariaDust(640,glow);
   const gDust=new THREE.Group();gDust.add(dust);scene.add(gDust);
 
-  // #5 reactive core — a faint central glow that pulses (brightens) with voice.
-  // Additive so bloom picks it up as a focal "heartbeat".
-  const coreMat=new THREE.SpriteMaterial({map:glow,color:0x9fe0ff,transparent:true,
-    opacity:0.0,depthWrite:false,depthTest:false,blending:THREE.AdditiveBlending});
-  const core=new THREE.Sprite(coreMat);
-  core.scale.set(0.6,0.6,0.6);
-  group.add(core);
-
+  // #6 density variation — per-particle max radius so a few dots drift slightly
+  // beyond the sphere for a softer, less rigid boundary.
   const shells=[
     {shell:mainShell,grp:gMain,rot:{x:0.02,y:0.10,z:0.01},animate:true},
     {shell:innerShell,grp:gInner,rot:{x:-0.05,y:-0.14,z:0.02},animate:false},
@@ -4459,7 +4453,7 @@ function initOrb(){
     }
   }catch(e){ composer=null; console.warn('[ARIA] bloom composer unavailable, using direct render',e); }
 
-  ariaThree={renderer,scene,camera,group,shells,gDust,glow,composer,bloomPass,afterPass,core,coreMat,rmax,
+  ariaThree={renderer,scene,camera,group,shells,gDust,glow,composer,bloomPass,afterPass,rmax,
              mainBaseCol:mainShell.basecol,mainCol:mainShell.col,
              base:mainShell.base,phase:mainShell.phase,pPos:mainShell.pos,
              pGeo:mainShell.geo,pMat:mainShell.mat,t:0,camZ:6,dolly:1.18};
@@ -4592,14 +4586,6 @@ function startOrbLoop(){
     T.pGeo.attributes.color.needsUpdate=true;
     // crisp dots — small, subtle swell with audio
     T.pMat.size=0.030+smooth*0.014;
-
-    // #5 reactive core: faint central glow that brightens (pulses) with voice
-    if(T.coreMat){
-      T.coreMat.color.copy(tint);
-      T.coreMat.opacity = damp(T.coreMat.opacity, 0.10 + smooth*0.55, 0.12, dt);
-      const cs = (0.5 + smooth*0.7)*s0;
-      T.core.scale.set(cs,cs,cs);
-    }
 
     // #1 selective bloom: only bright cores glow, subtle surge with voice
     if(T.bloomPass){ T.bloomPass.strength = 0.30 + smooth*0.55; }
