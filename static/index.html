@@ -655,6 +655,25 @@ nav{display:flex;gap:2px;flex:1}
 .aria-send{background:linear-gradient(135deg,#00b4ff,#0066cc);color:#fff;border:none;border-radius:14px;padding:0 22px;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s}
 .aria-send:hover{box-shadow:0 0 18px rgba(0,180,255,.5)}
 .aria-send:disabled{opacity:.5;cursor:default;box-shadow:none}
+.aria-mic{background:var(--surface2);border:1px solid rgba(0,180,255,.3);border-radius:14px;padding:0 14px;font-size:16px;cursor:pointer;transition:all .15s;flex-shrink:0}
+.aria-mic:hover{border-color:#00b4ff;box-shadow:0 0 14px rgba(0,180,255,.35)}
+/* ── IMMERSIVE VOICE OVERLAY ── */
+.aria-voice-overlay{position:fixed;inset:0;z-index:1000;background:radial-gradient(ellipse at center,#05101f 0%,#01060d 70%,#000 100%);display:none;align-items:center;justify-content:center}
+.aria-voice-overlay.open{display:flex}
+#aria-voice-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.aria-voice-ui{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:18px;pointer-events:none;width:100%;max-width:640px;padding:0 20px}
+.aria-voice-state{font-size:15px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:#7fe9ff;text-shadow:0 0 16px rgba(0,200,255,.6);margin-top:44vh;transition:color .3s}
+.aria-voice-state.listening{color:#7fe9ff}
+.aria-voice-state.thinking{color:#ffd27f}
+.aria-voice-state.speaking{color:#8affc4}
+.aria-voice-transcript{font-size:18px;color:#dff6ff;text-align:center;line-height:1.5;min-height:28px;max-width:560px;text-shadow:0 0 10px rgba(0,140,255,.3)}
+.aria-voice-controls{display:flex;gap:18px;pointer-events:auto;margin-top:6px}
+.aria-voice-btn{width:56px;height:56px;border-radius:50%;border:1px solid rgba(0,180,255,.4);background:rgba(0,40,80,.5);color:#bfefff;font-size:20px;cursor:pointer;transition:all .18s;backdrop-filter:blur(6px)}
+.aria-voice-btn:hover{background:rgba(0,120,220,.5);box-shadow:0 0 22px rgba(0,180,255,.6);transform:scale(1.06)}
+.aria-voice-btn.muted{opacity:.45;border-style:dashed}
+.aria-voice-end{border-color:rgba(255,90,90,.5);color:#ffb3b3}
+.aria-voice-end:hover{background:rgba(200,40,40,.4);box-shadow:0 0 22px rgba(255,80,80,.5)}
+.aria-voice-hint{font-size:12px;color:rgba(160,200,230,.6);text-align:center;pointer-events:none;max-width:420px}
 .aria-history{flex-direction:column;gap:0;background:var(--surface2);border:1px solid rgba(0,180,255,.25);border-radius:12px;margin:0 4px 10px;max-height:260px;overflow-y:auto}
 .aria-history-head{font-size:11px;font-weight:700;color:#00e0ff;padding:10px 14px 6px;letter-spacing:.06em;text-transform:uppercase}
 .aria-history-list{display:flex;flex-direction:column}
@@ -705,6 +724,7 @@ nav{display:flex;gap:2px;flex:1}
 :root.light .brand-logo{background:linear-gradient(135deg,#1d4ed8 0%,#0066ff 100%);box-shadow:0 0 14px rgba(37,99,235,.2)}
 :root.light .user-avatar{background:linear-gradient(135deg,#1d4ed8 0%,#0066ff 100%);box-shadow:0 0 10px rgba(37,99,235,.15)}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
 </head>
 <body>
 
@@ -1080,8 +1100,23 @@ nav{display:flex;gap:2px;flex:1}
         </div>
       </div>
       <div class="aria-input-row">
+        <button class="aria-mic" id="aria-mic" onclick="toggleAriaVoice()" title="Talk to ARIA (voice)">🎙️</button>
         <textarea class="aria-input" id="aria-input" rows="1" placeholder="Message ARIA…  (she can run anything — queries, changes, deploys, agent orders)" onkeydown="ariaKeydown(event)"></textarea>
         <button class="aria-send" id="aria-send" onclick="sendAria()">Send</button>
+      </div>
+    </div>
+
+    <!-- IMMERSIVE VOICE OVERLAY (Perplexity-style 3D orb) -->
+    <div class="aria-voice-overlay" id="aria-voice-overlay">
+      <canvas id="aria-voice-canvas"></canvas>
+      <div class="aria-voice-ui">
+        <div class="aria-voice-state" id="aria-voice-state">Listening…</div>
+        <div class="aria-voice-transcript" id="aria-voice-transcript"></div>
+        <div class="aria-voice-controls">
+          <button class="aria-voice-btn" id="aria-voice-mic-toggle" onclick="ariaVoiceMicToggle()" title="Mute / unmute mic">🎙️</button>
+          <button class="aria-voice-btn aria-voice-end" onclick="closeAriaVoice()" title="Exit voice mode">✕</button>
+        </div>
+        <div class="aria-voice-hint">Speak naturally — ARIA answers out loud and gets to work. Say “new conversation” to reset.</div>
       </div>
     </div>
   </div>
@@ -3962,6 +3997,7 @@ async function loadAriaChat(){
     const temps=ariaMessages.filter(m=>m.id.startsWith('tmp-')&&!(d.messages||[]).some(s=>s.role==='user'&&s.text===m.text));
     ariaMessages=(d.messages||[]).concat(temps);
     renderAria(false, d.worker_online);
+    ariaMaybeSpeakReply();   // if in voice mode + a new reply landed, speak it
   }catch(e){}
 }
 function renderAria(force, workerOnline){
@@ -4056,6 +4092,319 @@ function backToLiveAria(ev){
   ariaViewingArchive=false;ariaLastRendered=0;
   loadAria();
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ARIA VOICE MODE — Perplexity-style 3D orb + speech in/out (all client-side)
+// ═══════════════════════════════════════════════════════════════════════════
+let ariaVoiceOn=false, ariaRec=null, ariaMicMuted=false, ariaVoiceState='idle';
+let ariaAudioCtx=null, ariaAnalyser=null, ariaMicStream=null, ariaFreq=null;
+let ariaThree=null, ariaRAF=null;
+let ariaSpeaking=false, ariaPendingRestart=false;
+let ariaVoiceReplyBaseline=0;   // track which assistant msgs already spoken
+
+const STT = window.SpeechRecognition || window.webkitSpeechRecognition;
+const TTS = window.speechSynthesis;
+
+function ariaVoiceSupported(){ return !!STT && !!TTS; }
+
+function toggleAriaVoice(){
+  if(!ariaVoiceSupported()){
+    showToast('Voice needs Chrome, Edge, or Safari (Web Speech API).','error');
+    return;
+  }
+  ariaVoiceOn ? closeAriaVoice() : openAriaVoice();
+}
+
+async function openAriaVoice(){
+  const ov=document.getElementById('aria-voice-overlay');
+  ov.classList.add('open');
+  ariaVoiceOn=true;
+  // baseline: only speak assistant replies that arrive AFTER we enter voice mode
+  ariaVoiceReplyBaseline=ariaMessages.filter(m=>m.role==='assistant').length;
+  await initVoiceAudio();
+  initOrb();
+  startOrbLoop();
+  setVoiceState('listening');
+  ariaGreet();
+  startAriaListening();
+  // ensure we're polling for her async replies
+  if(!ariaPollTimer)ariaPollTimer=setInterval(loadAriaChat,3000);
+}
+
+function closeAriaVoice(){
+  ariaVoiceOn=false;
+  const ov=document.getElementById('aria-voice-overlay');
+  if(ov)ov.classList.remove('open');
+  try{ if(ariaRec)ariaRec.abort(); }catch(e){}
+  ariaRec=null;
+  try{ if(TTS)TTS.cancel(); }catch(e){}
+  if(ariaRAF)cancelAnimationFrame(ariaRAF);ariaRAF=null;
+  if(ariaMicStream){ariaMicStream.getTracks().forEach(t=>t.stop());ariaMicStream=null;}
+  if(ariaAudioCtx){try{ariaAudioCtx.close();}catch(e){}ariaAudioCtx=null;}
+  ariaSpeaking=false;
+}
+
+function setVoiceState(s){
+  ariaVoiceState=s;
+  const el=document.getElementById('aria-voice-state');
+  if(!el)return;
+  el.className='aria-voice-state '+s;
+  el.textContent = s==='listening'?'Listening…' : s==='thinking'?'Working…' : s==='speaking'?'ARIA' : '…';
+}
+function setVoiceTranscript(t){ const el=document.getElementById('aria-voice-transcript'); if(el)el.textContent=t||''; }
+
+// ── Speech recognition (mic → text) ──
+function startAriaListening(){
+  if(!ariaVoiceOn||ariaMicMuted||ariaSpeaking)return;
+  if(!STT)return;
+  try{
+    ariaRec=new STT();
+    ariaRec.lang='en-US';
+    ariaRec.interimResults=true;
+    ariaRec.continuous=false;
+    let finalText='';
+    ariaRec.onresult=(e)=>{
+      let interim='';
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const tr=e.results[i];
+        if(tr.isFinal)finalText+=tr[0].transcript;
+        else interim+=tr[0].transcript;
+      }
+      setVoiceTranscript(finalText||interim);
+    };
+    ariaRec.onerror=(e)=>{ /* no-match/aborted are normal */ };
+    ariaRec.onend=()=>{
+      const said=(finalText||'').trim();
+      if(said && ariaVoiceOn){ handleVoiceUtterance(said); }
+      else if(ariaVoiceOn && !ariaSpeaking && !ariaMicMuted){ setTimeout(startAriaListening,250); }
+    };
+    ariaRec.start();
+  }catch(e){ setTimeout(startAriaListening,600); }
+}
+
+function handleVoiceUtterance(text){
+  setVoiceTranscript(text);
+  const low=text.toLowerCase();
+  // voice command: new conversation
+  if(/^(new conversation|new session|start over|reset)\b/.test(low)){
+    newAriaSession();
+    ariaSpeak("Fresh start. What can I do for you, Jordan?");
+    return;
+  }
+  if(/^(exit|close|stop voice|goodbye|that's all)\b/.test(low)){
+    ariaSpeak("Standing by.", ()=>closeAriaVoice());
+    return;
+  }
+  // Instant verbal acknowledgment, THEN dispatch the real task
+  setVoiceState('thinking');
+  const ack = pickAck();
+  ariaSpeak(ack);              // instant, client-side — the "instantaneous" feel
+  sendAriaVoice(text);         // fire the real agentic task in the background
+}
+
+function pickAck(){
+  const acks=["On it, Jordan.","Right away.","Consider it done — working on it now.","Got it. Let me handle that.","Understood. On it."];
+  return acks[Math.floor(Math.random()*acks.length)];
+}
+
+// Send a voice message through the normal EA pipeline (background agentic work)
+async function sendAriaVoice(text){
+  ariaMessages.push({id:'tmp-'+Date.now(),role:'user',text,status:'pending',ts:Date.now()});
+  renderAria(true);
+  try{
+    const r=await api('/api/ea/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+    if(!r.ok)throw new Error('send failed');
+    startAriaPolling();
+  }catch(e){ ariaSpeak("I couldn't reach the system to start that. Try again?"); setVoiceState('listening'); startAriaListening(); }
+}
+
+// ── Text-to-speech (ARIA speaks) ──
+let ariaVoicePick=null;
+function pickAriaTtsVoice(){
+  if(ariaVoicePick)return ariaVoicePick;
+  const vs=TTS.getVoices()||[];
+  // prefer a natural english voice
+  ariaVoicePick = vs.find(v=>/en-US/.test(v.lang)&&/(Samantha|Google US English|Zira|Aria|Jenny)/i.test(v.name))
+              || vs.find(v=>/en-US/.test(v.lang)) || vs.find(v=>/^en/.test(v.lang)) || vs[0] || null;
+  return ariaVoicePick;
+}
+if(TTS){ TTS.onvoiceschanged=()=>{ariaVoicePick=null;pickAriaTtsVoice();}; }
+
+function ariaSpeak(text, onDone){
+  if(!TTS||!text){ if(onDone)onDone(); return; }
+  try{ TTS.cancel(); }catch(e){}
+  // stop listening while speaking so we don't hear ourselves
+  ariaSpeaking=true;
+  try{ if(ariaRec)ariaRec.abort(); }catch(e){}
+  if(ariaVoiceOn)setVoiceState('speaking');
+  const u=new SpeechSynthesisUtterance(text.slice(0,600));
+  const v=pickAriaTtsVoice(); if(v)u.voice=v;
+  u.rate=1.05; u.pitch=1.0;
+  u.onend=()=>{
+    ariaSpeaking=false;
+    if(onDone)onDone();
+    if(ariaVoiceOn){
+      // return to listening (unless still working on a task)
+      setVoiceState(ariaMessages.some(m=>m.role==='user'&&(m.status==='pending'||m.status==='processing'))?'thinking':'listening');
+      if(!ariaMicMuted)setTimeout(startAriaListening,200);
+    }
+  };
+  u.onerror=()=>{ ariaSpeaking=false; if(onDone)onDone(); if(ariaVoiceOn&&!ariaMicMuted)setTimeout(startAriaListening,300); };
+  TTS.speak(u);
+}
+
+function ariaGreet(){
+  const hour=new Date().getHours();
+  const g = hour<12?"Good morning":hour<18?"Good afternoon":"Good evening";
+  ariaSpeak(`${g}, Jordan. ARIA online. What do you need?`);
+}
+
+function ariaVoiceMicToggle(){
+  ariaMicMuted=!ariaMicMuted;
+  const b=document.getElementById('aria-voice-mic-toggle');
+  if(b)b.classList.toggle('muted',ariaMicMuted);
+  if(ariaMicMuted){ try{if(ariaRec)ariaRec.abort();}catch(e){} setVoiceTranscript('(mic muted)'); }
+  else { setVoiceTranscript(''); if(!ariaSpeaking)startAriaListening(); }
+}
+
+// Hook: when a NEW assistant reply lands while in voice mode, speak it
+function ariaMaybeSpeakReply(){
+  if(!ariaVoiceOn)return;
+  const assistants=ariaMessages.filter(m=>m.role==='assistant');
+  if(assistants.length>ariaVoiceReplyBaseline){
+    const latest=assistants[assistants.length-1];
+    ariaVoiceReplyBaseline=assistants.length;
+    ariaSpeak(latest.text);
+  }
+}
+
+// ── Microphone audio analyser (drives orb reactivity) ──
+async function initVoiceAudio(){
+  try{
+    ariaMicStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    ariaAudioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const src=ariaAudioCtx.createMediaStreamSource(ariaMicStream);
+    ariaAnalyser=ariaAudioCtx.createAnalyser();
+    ariaAnalyser.fftSize=128;
+    src.connect(ariaAnalyser);
+    ariaFreq=new Uint8Array(ariaAnalyser.frequencyBinCount);
+  }catch(e){ /* mic denied — orb still animates without reactivity */ }
+}
+function ariaAudioLevel(){
+  if(!ariaAnalyser||!ariaFreq)return 0;
+  ariaAnalyser.getByteFrequencyData(ariaFreq);
+  let s=0; for(let i=0;i<ariaFreq.length;i++)s+=ariaFreq[i];
+  return (s/ariaFreq.length)/255;   // 0..1
+}
+
+// ── The 3D orb: particle sphere + interconnected lines (Three.js) ──
+function initOrb(){
+  if(ariaThree||!window.THREE)return;
+  const canvas=document.getElementById('aria-voice-canvas');
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  const w=window.innerWidth,h=window.innerHeight;
+  renderer.setSize(w,h);
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(60,w/h,0.1,100);
+  camera.position.z=3.4;
+
+  const group=new THREE.Group();
+  scene.add(group);
+
+  // Fibonacci-sphere particle distribution
+  const N=340, R=1.35;
+  const base=[];
+  for(let i=0;i<N;i++){
+    const y=1-(i/(N-1))*2;
+    const rad=Math.sqrt(1-y*y);
+    const theta=Math.PI*(3-Math.sqrt(5))*i;
+    base.push(new THREE.Vector3(Math.cos(theta)*rad*R, y*R, Math.sin(theta)*rad*R));
+  }
+  // points
+  const pGeo=new THREE.BufferGeometry();
+  const pPos=new Float32Array(N*3);
+  base.forEach((v,i)=>{pPos[i*3]=v.x;pPos[i*3+1]=v.y;pPos[i*3+2]=v.z;});
+  pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+  const pMat=new THREE.PointsMaterial({color:0x66e0ff,size:0.045,transparent:true,opacity:0.95,blending:THREE.AdditiveBlending});
+  const points=new THREE.Points(pGeo,pMat);
+  group.add(points);
+
+  // interconnected lines between near neighbours
+  const linePairs=[];
+  for(let i=0;i<N;i++){
+    for(let j=i+1;j<N;j++){
+      if(base[i].distanceTo(base[j])<0.42){ linePairs.push(i,j); }
+    }
+  }
+  const lGeo=new THREE.BufferGeometry();
+  const lPos=new Float32Array(linePairs.length*3);
+  lGeo.setAttribute('position',new THREE.BufferAttribute(lPos,3));
+  const lMat=new THREE.LineBasicMaterial({color:0x1e90ff,transparent:true,opacity:0.28,blending:THREE.AdditiveBlending});
+  const lines=new THREE.LineSegments(lGeo,lMat);
+  group.add(lines);
+
+  // inner glow core
+  const coreGeo=new THREE.SphereGeometry(0.55,32,32);
+  const coreMat=new THREE.MeshBasicMaterial({color:0x0af,transparent:true,opacity:0.18,blending:THREE.AdditiveBlending});
+  group.add(new THREE.Mesh(coreGeo,coreMat));
+
+  ariaThree={renderer,scene,camera,group,points,lines,base,linePairs,lGeo,pGeo,pPos,lPos,pMat,lMat,t:0};
+  window.addEventListener('resize',ariaOrbResize);
+}
+function ariaOrbResize(){
+  if(!ariaThree)return;
+  const w=window.innerWidth,h=window.innerHeight;
+  ariaThree.camera.aspect=w/h;ariaThree.camera.updateProjectionMatrix();
+  ariaThree.renderer.setSize(w,h);
+}
+function startOrbLoop(){
+  if(!ariaThree)return;
+  const T=ariaThree;
+  let smooth=0;
+  function frame(){
+    if(!ariaVoiceOn){return;}
+    T.t+=0.01;
+    const lvl=ariaAudioLevel();
+    // when ARIA is speaking, drive motion with a synthetic pulse; else use mic
+    const drive = ariaSpeaking ? (0.35+0.35*Math.abs(Math.sin(T.t*6))) : lvl;
+    smooth += (drive-smooth)*0.15;
+    const amp = 1 + smooth*0.6;
+
+    // state-based color
+    let col = ariaVoiceState==='thinking'?0xffc24d : ariaVoiceState==='speaking'?0x4dffa3 : 0x66e0ff;
+    T.pMat.color.setHex(col);
+    T.lMat.color.setHex(ariaVoiceState==='thinking'?0xff9a2e:ariaVoiceState==='speaking'?0x2ee88a:0x1e90ff);
+    T.lMat.opacity = 0.18 + smooth*0.4;
+
+    // breathe + rotate
+    T.group.rotation.y += 0.0025 + smooth*0.02;
+    T.group.rotation.x = Math.sin(T.t*0.3)*0.15;
+
+    // displace particles along their normal by noise + audio
+    for(let i=0;i<T.base.length;i++){
+      const v=T.base[i];
+      const n=Math.sin(T.t*1.6 + i*0.35)*0.05 + smooth*0.28;
+      const s=amp+n;
+      T.pPos[i*3]=v.x*s; T.pPos[i*3+1]=v.y*s; T.pPos[i*3+2]=v.z*s;
+    }
+    T.pGeo.attributes.position.needsUpdate=true;
+    // update lines to follow displaced points
+    for(let k=0;k<T.linePairs.length;k+=2){
+      const a=T.linePairs[k],b=T.linePairs[k+1];
+      const o=(k/2)*6;
+      T.lPos[o]=T.pPos[a*3];T.lPos[o+1]=T.pPos[a*3+1];T.lPos[o+2]=T.pPos[a*3+2];
+      T.lPos[o+3]=T.pPos[b*3];T.lPos[o+4]=T.pPos[b*3+1];T.lPos[o+5]=T.pPos[b*3+2];
+    }
+    T.lGeo.attributes.position.needsUpdate=true;
+    T.pMat.size=0.04+smooth*0.05;
+
+    T.renderer.render(T.scene,T.camera);
+    ariaRAF=requestAnimationFrame(frame);
+  }
+  ariaRAF=requestAnimationFrame(frame);
+}
+
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MANAGER CHAT (assign tasks in natural language, in-dashboard)
