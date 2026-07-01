@@ -4297,7 +4297,50 @@ function ariaAudioLevel(){
   return (s/ariaFreq.length)/255;   // 0..1
 }
 
-// ── The 3D orb: particle sphere + interconnected lines (Three.js) ──
+// ── The 3D orb: holographic particle system (Three.js) ──
+function _ariaGlowTexture(){
+  const s=64,c=document.createElement('canvas');c.width=c.height=s;
+  const x=c.getContext('2d');
+  const g=x.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
+  g.addColorStop(0,'rgba(255,255,255,1)');
+  g.addColorStop(0.22,'rgba(255,255,255,0.85)');
+  g.addColorStop(0.5,'rgba(255,255,255,0.32)');
+  g.addColorStop(1,'rgba(255,255,255,0)');
+  x.fillStyle=g;x.fillRect(0,0,s,s);
+  return new THREE.CanvasTexture(c);
+}
+function _ariaSphereShell(N,R,glow,opts){
+  // Fibonacci sphere with a height-based cyan gradient baked into vertex colors
+  const base=[],phase=new Float32Array(N);
+  const pos=new Float32Array(N*3),col=new Float32Array(N*3);
+  const cLo=new THREE.Color(opts.lo),cHi=new THREE.Color(opts.hi);
+  for(let i=0;i<N;i++){
+    const y=1-(i/(N-1))*2,rad=Math.sqrt(Math.max(0,1-y*y)),th=Math.PI*(3-Math.sqrt(5))*i;
+    const v=new THREE.Vector3(Math.cos(th)*rad*R,y*R,Math.sin(th)*rad*R);
+    base.push(v);phase[i]=Math.random()*Math.PI*2;
+    pos[i*3]=v.x;pos[i*3+1]=v.y;pos[i*3+2]=v.z;
+    const cc=cLo.clone().lerp(cHi,(y+1)/2);
+    col[i*3]=cc.r;col[i*3+1]=cc.g;col[i*3+2]=cc.b;
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const mat=new THREE.PointsMaterial({map:glow,size:opts.size,sizeAttenuation:true,vertexColors:true,
+    transparent:true,opacity:opts.opacity,depthWrite:false,blending:THREE.AdditiveBlending,fog:true});
+  return {base,phase,pos,geo,mat,points:new THREE.Points(geo,mat)};
+}
+function _ariaDust(N,glow){
+  const pos=new Float32Array(N*3);
+  for(let i=0;i<N;i++){
+    const r=2.2+Math.random()*2.0,th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);
+    pos[i*3]=r*Math.sin(ph)*Math.cos(th);pos[i*3+1]=r*Math.sin(ph)*Math.sin(th);pos[i*3+2]=r*Math.cos(ph);
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const mat=new THREE.PointsMaterial({map:glow,color:0x2ea8ff,size:0.02,sizeAttenuation:true,
+    transparent:true,opacity:0.5,depthWrite:false,blending:THREE.AdditiveBlending,fog:true});
+  return new THREE.Points(geo,mat);
+}
 function initOrb(){
   if(ariaThree||!window.THREE)return;
   const canvas=document.getElementById('aria-voice-canvas');
@@ -4306,34 +4349,35 @@ function initOrb(){
   const w=window.innerWidth,h=window.innerHeight;
   renderer.setSize(w,h);
   const scene=new THREE.Scene();
+  // volumetric depth: far particles fade into black → true 3D read
+  scene.fog=new THREE.FogExp2(0x000000,0.26);
   const camera=new THREE.PerspectiveCamera(60,w/h,0.1,100);
   camera.position.z=3.4;
 
-  const group=new THREE.Group();
+  const group=new THREE.Group();            // master: state transitions (pos/scale/rot)
   scene.add(group);
+  const glow=_ariaGlowTexture();
 
-  // Fibonacci-sphere particle distribution — dense + very fine
-  const N=1600, R=1.35;
-  const base=[];
-  for(let i=0;i<N;i++){
-    const y=1-(i/(N-1))*2;
-    const rad=Math.sqrt(1-y*y);
-    const theta=Math.PI*(3-Math.sqrt(5))*i;
-    base.push(new THREE.Vector3(Math.cos(theta)*rad*R, y*R, Math.sin(theta)*rad*R));
-  }
-  // per-particle random phase for organic, non-uniform shimmer
-  const phase=new Float32Array(N);
-  for(let i=0;i<N;i++)phase[i]=Math.random()*Math.PI*2;
-  // points — tiny, soft, size-attenuated dots (sizeAttenuation gives depth/3D cue)
-  const pGeo=new THREE.BufferGeometry();
-  const pPos=new Float32Array(N*3);
-  base.forEach((v,i)=>{pPos[i*3]=v.x;pPos[i*3+1]=v.y;pPos[i*3+2]=v.z;});
-  pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
-  const pMat=new THREE.PointsMaterial({color:0x66e0ff,size:0.008,sizeAttenuation:true,transparent:true,opacity:0.92,depthWrite:false,blending:THREE.AdditiveBlending});
-  const points=new THREE.Points(pGeo,pMat);
-  group.add(points);
+  // three concentric shells at different radii + rotation speeds → parallax depth
+  const gMain=new THREE.Group(),gInner=new THREE.Group(),gHalo=new THREE.Group();
+  group.add(gMain);group.add(gInner);group.add(gHalo);
+  const mainShell=_ariaSphereShell(1500,1.35,glow,{lo:0x1866ff,hi:0x9ff2ff,size:0.05,opacity:0.95});
+  const innerShell=_ariaSphereShell(520,0.85,glow,{lo:0x0b3cff,hi:0x66e6ff,size:0.055,opacity:0.7});
+  const haloShell=_ariaSphereShell(420,1.78,glow,{lo:0x1e5cff,hi:0x8fe8ff,size:0.04,opacity:0.34});
+  gMain.add(mainShell.points);gInner.add(innerShell.points);gHalo.add(haloShell.points);
 
-  ariaThree={renderer,scene,camera,group,points,base,phase,pGeo,pPos,pMat,t:0};
+  // ambient floating dust in the surrounding space (depth of field)
+  const dust=_ariaDust(320,glow);
+  const gDust=new THREE.Group();gDust.add(dust);scene.add(gDust);
+
+  const shells=[
+    {shell:mainShell,grp:gMain,rot:{x:0.02,y:0.10,z:0.01},animate:true},
+    {shell:innerShell,grp:gInner,rot:{x:-0.05,y:-0.14,z:0.02},animate:false},
+    {shell:haloShell,grp:gHalo,rot:{x:0.03,y:0.06,z:-0.03},animate:false},
+  ];
+  ariaThree={renderer,scene,camera,group,shells,gDust,glow,
+             base:mainShell.base,phase:mainShell.phase,pPos:mainShell.pos,
+             pGeo:mainShell.geo,pMat:mainShell.mat,t:0};
   window.addEventListener('resize',ariaOrbResize);
 }
 function ariaOrbResize(){
@@ -4378,16 +4422,24 @@ function startOrbLoop(){
     T.group.position.y = T.posY;
     const s0 = T.scale;
     T.group.scale.set(s0,s0,s0);
-    T.pMat.color.setRGB(T.colR,T.colG,T.colB);
+    // tint multiplies the baked gradient: near-white idle → teal when active
+    const tint=new THREE.Color(T.colR,T.colG,T.colB);
+    T.shells.forEach(s=>{ s.shell.mat.color.copy(tint); });
+    T.gDust.children[0].material.opacity = 0.35 + smooth*0.4;
 
-    // gentle continuous rotation + subtle 3-axis drift for a living, dynamic feel
-    T.group.rotation.y += (0.10 + smooth*0.9)*dt;
-    T.group.rotation.x = Math.sin(T.t*0.35)*0.14 + Math.sin(T.t*0.11)*0.05;
-    T.group.rotation.z = Math.sin(T.t*0.23)*0.04;
+    // master gentle drift (state transitions live here)
+    T.group.rotation.x = Math.sin(T.t*0.11)*0.05;
+    // each shell rotates on its own axes/speed → parallax = real 3D depth
+    T.shells.forEach(s=>{
+      s.grp.rotation.y += (s.rot.y + smooth*0.6)*dt;
+      s.grp.rotation.x += s.rot.x*dt;
+      s.grp.rotation.z += s.rot.z*dt;
+    });
+    T.gDust.rotation.y += 0.02*dt;
+    T.gDust.rotation.x += 0.01*dt;
     const amp = 1 + smooth*0.42;
 
-    // per-particle organic displacement: multi-frequency noise keyed off each
-    // particle's random phase → flowing, non-uniform shimmer (not a rigid pulse)
+    // per-particle organic displacement on the MAIN shell only (flowing shimmer)
     const ph=T.phase;
     for(let i=0;i<T.base.length;i++){
       const v=T.base[i], p=ph[i];
@@ -4398,8 +4450,8 @@ function startOrbLoop(){
       T.pPos[i*3]=v.x*s; T.pPos[i*3+1]=v.y*s; T.pPos[i*3+2]=v.z*s;
     }
     T.pGeo.attributes.position.needsUpdate=true;
-    // fine dots that swell only slightly with audio
-    T.pMat.size=0.007+smooth*0.012;
+    // glow sprites swell slightly with audio
+    T.pMat.size=0.045+smooth*0.03;
 
     T.renderer.render(T.scene,T.camera);
     ariaRAF=requestAnimationFrame(frame);
