@@ -635,8 +635,8 @@ nav{display:flex;gap:2px;flex:1}
 .aria-status.online{color:#00e0ff}
 .aria-log{flex:1;overflow-y:auto;padding:10px 4px 16px;display:flex;flex-direction:column;gap:14px;scrollbar-width:none;-ms-overflow-style:none}
 .aria-log::-webkit-scrollbar{width:0;height:0;display:none}
-.aria-welcome{text-align:center;margin:auto;max-width:520px;padding:30px 10px}
-.aria-welcome-orb{font-size:40px;color:#00e0ff;text-shadow:0 0 20px rgba(0,224,255,.6);margin-bottom:10px}
+.aria-welcome{text-align:center;margin:auto;max-width:520px;padding:16px 10px}
+.aria-welcome-canvas{display:block;margin:0 auto 18px;border-radius:50%}
 .aria-welcome-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px}
 .aria-welcome-text{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:18px}
 .aria-suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
@@ -1103,6 +1103,7 @@ nav{display:flex;gap:2px;flex:1}
       </div>
       <div class="aria-log" id="aria-log">
         <div class="aria-welcome">
+          <canvas class="aria-welcome-canvas" id="aria-mini-canvas" width="220" height="220"></canvas>
           <div class="aria-welcome-title">Good to see you, Jordan.</div>
           <div class="aria-welcome-text">I'm ARIA — I can see and control everything you've built: the agents, the databases, the listings, the deals, the dashboard itself. Ask me anything, or hand me a job and I'll take care of it.</div>
           <div class="aria-suggestions">
@@ -3979,8 +3980,84 @@ let ariaViewingArchive=false;
 function ariaKeydown(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAria();} }
 function ariaSuggest(el){ const i=document.getElementById('aria-input'); i.value=el.textContent; i.focus(); }
 async function loadAria(){
+  window._ariaWelcomeHTML=undefined;   // clear cached welcome so star doesn't restore
   await loadAriaChat();
   if(!ariaPollTimer){ ariaPollTimer=setInterval(loadAriaChat, 4000); }
+  startMiniOrb();
+}
+
+// ── Mini ambient orb on the ARIA welcome screen (same particle system, scaled down) ──
+let _miniOrbRAF=null;
+function startMiniOrb(){
+  cancelAnimationFrame(_miniOrbRAF);
+  const canvas=document.getElementById('aria-mini-canvas');
+  if(!canvas)return;
+  // wait for THREE to load if deferred
+  if(!window.THREE){ setTimeout(startMiniOrb,200); return; }
+  const S=220, r=S*window.devicePixelRatio||S;
+  canvas.width=canvas.height=r;
+  canvas.style.width=canvas.style.height=S+'px';
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance'});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,3));
+  renderer.setSize(S,S);
+  renderer.outputEncoding=THREE.sRGBEncoding;
+  const scene=new THREE.Scene();
+  scene.fog=new THREE.FogExp2(0x000000,0.22);
+  const camera=new THREE.PerspectiveCamera(55,1,0.1,100);
+  camera.position.z=4.2;
+  const group=new THREE.Group(); scene.add(group);
+  // simple dot texture
+  const sc=document.createElement('canvas'); sc.width=sc.height=128;
+  const sx=sc.getContext('2d');
+  sx.clearRect(0,0,128,128);
+  sx.fillStyle='#fff'; sx.beginPath(); sx.arc(64,64,52,0,Math.PI*2); sx.fill();
+  const tex=new THREE.CanvasTexture(sc);
+  tex.minFilter=THREE.LinearMipmapLinearFilter; tex.generateMipmaps=true;
+  // build one sphere shell
+  const N=1200, R=1.3;
+  const pos=new Float32Array(N*3), col=new Float32Array(N*3), ph=new Float32Array(N);
+  const pPos=new Float32Array(N*3);
+  const cLo=new THREE.Color(0x8fd0ff), cHi=new THREE.Color(0xffffff);
+  for(let i=0;i<N;i++){
+    const y=1-(i/(N-1))*2, rad=Math.sqrt(Math.max(0,1-y*y)), th=Math.PI*(3-Math.sqrt(5))*i;
+    pPos[i*3]=pos[i*3]=Math.cos(th)*rad*R;
+    pPos[i*3+1]=pos[i*3+1]=y*R;
+    pPos[i*3+2]=pos[i*3+2]=Math.sin(th)*rad*R;
+    const cc=cLo.clone().lerp(cHi,(y+1)/2);
+    col[i*3]=cc.r; col[i*3+1]=cc.g; col[i*3+2]=cc.b;
+    ph[i]=Math.random()*Math.PI*2;
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+  geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const mat=new THREE.PointsMaterial({map:tex,size:0.055,sizeAttenuation:true,vertexColors:true,
+    transparent:true,opacity:1,depthWrite:false,alphaTest:0.5,blending:THREE.NormalBlending,fog:true});
+  group.add(new THREE.Points(geo,mat));
+  let t=0, last=performance.now();
+  function miniFrame(){
+    _miniOrbRAF=requestAnimationFrame(miniFrame);
+    // stop if canvas is no longer in DOM (tab switched away)
+    if(!document.getElementById('aria-mini-canvas')){ cancelAnimationFrame(_miniOrbRAF); renderer.dispose(); return; }
+    const now=performance.now(), dt=Math.min(0.05,(now-last)/1000)||0.016; last=now; t+=dt;
+    group.rotation.y+=0.10*dt; group.rotation.x=Math.sin(t*0.18)*0.06;
+    const speed=0.06;
+    const rmin=R*0.28;
+    function sn(a){return Math.sin(a);}
+    for(let i=0;i<N;i++){
+      let px=pPos[i*3], py=pPos[i*3+1], pz=pPos[i*3+2]; const p=ph[i];
+      const vx=sn(py*1.7+t*0.7+p)-sn(pz*1.5-t*0.6);
+      const vy=sn(pz*1.8-t*0.6+p)-sn(px*1.6+t*0.7);
+      const vz=sn(px*1.7+t*0.7+p)-sn(py*1.5-t*0.6);
+      px+=vx*speed*dt; py+=vy*speed*dt; pz+=vz*speed*dt;
+      let r=Math.sqrt(px*px+py*py+pz*pz)||1e-4;
+      if(r>R){const k=R/r;px*=k;py*=k;pz*=k;}
+      else if(r<rmin){const k=rmin/r;px*=k;py*=k;pz*=k;}
+      pPos[i*3]=px; pPos[i*3+1]=py; pPos[i*3+2]=pz;
+    }
+    geo.attributes.position.needsUpdate=true;
+    renderer.render(scene,camera);
+  }
+  miniFrame();
 }
 async function sendAria(){
   const input=document.getElementById('aria-input');
@@ -4061,7 +4138,7 @@ async function newAriaSession(){
   }catch(e){}
   ariaMessages=[];ariaLastRendered=0;
   if(ariaPollTimer){clearInterval(ariaPollTimer);ariaPollTimer=setInterval(loadAriaChat,4000);}
-  document.getElementById('aria-log').innerHTML='<div class="aria-welcome"><div class="aria-welcome-orb">✦</div><div class="aria-welcome-title">Fresh start.</div><div class="aria-welcome-text">New conversation. What can I do for you, Jordan?</div></div>';
+  document.getElementById('aria-log').innerHTML='<div class="aria-welcome"><canvas class="aria-welcome-canvas" id="aria-mini-canvas" width="220" height="220"></canvas><div class="aria-welcome-title">Fresh start.</div><div class="aria-welcome-text">New conversation. What can I do for you, Jordan?</div></div>';
   const st=document.getElementById('aria-status');if(st){st.textContent='✦ online';st.className='aria-status online';}
   const orb=document.getElementById('aria-orb');if(orb)orb.classList.remove('thinking');
   showToast('New ARIA conversation started','success');
