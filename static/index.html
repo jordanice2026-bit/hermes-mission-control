@@ -4489,69 +4489,134 @@ function startMiniOrb(){
   cancelAnimationFrame(_miniOrbRAF);
   const canvas=document.getElementById('aria-mini-canvas');
   if(!canvas)return;
-  // wait for THREE to load if deferred
   if(!window.THREE){ setTimeout(startMiniOrb,200); return; }
-  const S=220, r=S*window.devicePixelRatio||S;
-  canvas.width=canvas.height=r;
+
+  const S=220;
+  const pr=Math.min(window.devicePixelRatio||1,2);
+  canvas.width=canvas.height=S*pr;
   canvas.style.width=canvas.style.height=S+'px';
-  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance'});
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,3));
+
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
+  renderer.setPixelRatio(pr);
   renderer.setSize(S,S);
-  renderer.outputEncoding=THREE.sRGBEncoding;
+  renderer.setClearColor(0x000000,1);
+
   const scene=new THREE.Scene();
-  scene.fog=new THREE.FogExp2(0x000000,0.22);
-  const camera=new THREE.PerspectiveCamera(55,1,0.1,100);
-  camera.position.z=4.2;
-  const group=new THREE.Group(); scene.add(group);
-  // simple dot texture
-  const sc=document.createElement('canvas'); sc.width=sc.height=128;
+  const camera=new THREE.PerspectiveCamera(45,1,1,1000);
+  // fit the orb (max radius 28) to the 220px square
+  const fovRad=45*Math.PI/180;
+  camera.position.z=32/Math.tan(fovRad/2)+4;
+
+  // same circular sprite as the main orb
+  const sc=document.createElement('canvas'); sc.width=sc.height=64;
   const sx=sc.getContext('2d');
-  sx.clearRect(0,0,128,128);
-  sx.fillStyle='#fff'; sx.beginPath(); sx.arc(64,64,52,0,Math.PI*2); sx.fill();
-  const tex=new THREE.CanvasTexture(sc);
-  tex.minFilter=THREE.LinearMipmapLinearFilter; tex.generateMipmaps=true;
-  // build one sphere shell
-  const N=1200, R=1.3;
-  const pos=new Float32Array(N*3), col=new Float32Array(N*3), ph=new Float32Array(N);
-  const pPos=new Float32Array(N*3);
-  const cLo=new THREE.Color(0xa0a0a0), cHi=new THREE.Color(0xffffff);
-  for(let i=0;i<N;i++){
-    const y=1-(i/(N-1))*2, rad=Math.sqrt(Math.max(0,1-y*y)), th=Math.PI*(3-Math.sqrt(5))*i;
-    pPos[i*3]=pos[i*3]=Math.cos(th)*rad*R;
-    pPos[i*3+1]=pos[i*3+1]=y*R;
-    pPos[i*3+2]=pos[i*3+2]=Math.sin(th)*rad*R;
-    const cc=cLo.clone().lerp(cHi,(y+1)/2);
-    col[i*3]=cc.r; col[i*3+1]=cc.g; col[i*3+2]=cc.b;
-    ph[i]=Math.random()*Math.PI*2;
-  }
+  const sg=sx.createRadialGradient(32,32,0,32,32,32);
+  sg.addColorStop(0,'rgba(255,255,255,1)');
+  sg.addColorStop(0.4,'rgba(255,255,255,0.9)');
+  sg.addColorStop(1,'rgba(255,255,255,0)');
+  sx.fillStyle=sg; sx.beginPath(); sx.arc(32,32,32,0,Math.PI*2); sx.fill();
+  const miniTex=new THREE.CanvasTexture(sc);
+
+  // same N/particle setup as main orb
+  const MN=600; // fewer particles for the small canvas
   const geo=new THREE.BufferGeometry();
-  geo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
-  geo.setAttribute('color',new THREE.BufferAttribute(col,3));
-  const mat=new THREE.PointsMaterial({map:tex,size:0.055,sizeAttenuation:true,vertexColors:true,
-    transparent:true,opacity:1,depthWrite:false,alphaTest:0.5,blending:THREE.NormalBlending,fog:true});
-  group.add(new THREE.Points(geo,mat));
-  let t=0, last=performance.now();
+  const pos=new Float32Array(MN*3);
+  const vel=new Float32Array(MN*3);
+  const phase=new Float32Array(MN);
+  for(let i=0;i<MN;i++){
+    const theta=Math.random()*Math.PI*2;
+    const phi=Math.acos(2*Math.random()-1);
+    const r=Math.pow(Math.random(),0.5)*22;
+    pos[i*3]=r*Math.sin(phi)*Math.cos(theta);
+    pos[i*3+1]=r*Math.sin(phi)*Math.sin(theta);
+    pos[i*3+2]=r*Math.cos(phi);
+    phase[i]=Math.random()*1000;
+  }
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const mat=new THREE.PointsMaterial({map:miniTex,size:0.28,transparent:true,opacity:0.65,
+    sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false,alphaTest:0.01,
+    color:0x4ca8e8});
+  scene.add(new THREE.Points(geo,mat));
+
+  // connection lines
+  const ML=1500;
+  const lPos=new Float32Array(ML*6);
+  const lGeo=new THREE.BufferGeometry();
+  lGeo.setAttribute('position',new THREE.BufferAttribute(lPos,3));
+  lGeo.setDrawRange(0,0);
+  const lMat=new THREE.LineBasicMaterial({color:0x4ca8e8,transparent:true,opacity:0,
+    blending:THREE.AdditiveBlending,depthWrite:false});
+  scene.add(new THREE.LineSegments(lGeo,lMat));
+
+  const clock=new THREE.Clock();
+  let spinX=0,spinY=0,transE=0,lastState='idle',cloudZ=0,cloudZVel=0;
+  let curR=22,curSpd=0.2,curBright=0.5,lineAmt=0;
+
   function miniFrame(){
     _miniOrbRAF=requestAnimationFrame(miniFrame);
-    // stop if canvas is no longer in DOM (tab switched away)
-    if(!document.getElementById('aria-mini-canvas')){ cancelAnimationFrame(_miniOrbRAF); renderer.dispose(); return; }
-    const now=performance.now(), dt=Math.min(0.05,(now-last)/1000)||0.016; last=now; t+=dt;
-    group.rotation.y+=0.10*dt; group.rotation.x=Math.sin(t*0.18)*0.06;
-    const speed=0.06;
-    const rmin=R*0.28;
-    function sn(a){return Math.sin(a);}
-    for(let i=0;i<N;i++){
-      let px=pPos[i*3], py=pPos[i*3+1], pz=pPos[i*3+2]; const p=ph[i];
-      const vx=sn(py*1.7+t*0.7+p)-sn(pz*1.5-t*0.6);
-      const vy=sn(pz*1.8-t*0.6+p)-sn(px*1.6+t*0.7);
-      const vz=sn(px*1.7+t*0.7+p)-sn(py*1.5-t*0.6);
-      px+=vx*speed*dt; py+=vy*speed*dt; pz+=vz*speed*dt;
-      let r=Math.sqrt(px*px+py*py+pz*pz)||1e-4;
-      if(r>R){const k=R/r;px*=k;py*=k;pz*=k;}
-      else if(r<rmin){const k=rmin/r;px*=k;py*=k;pz*=k;}
-      pPos[i*3]=px; pPos[i*3+1]=py; pPos[i*3+2]=pz;
+    if(!document.getElementById('aria-mini-canvas')){
+      cancelAnimationFrame(_miniOrbRAF); renderer.dispose(); return;
     }
-    geo.attributes.position.needsUpdate=true;
+    const t=clock.getElapsedTime();
+
+    // idle state targets
+    curR+=(22-curR)*0.02; curSpd+=(0.18-curSpd)*0.02;
+    curBright+=(0.55-curBright)*0.02; lineAmt+=(0.12-lineAmt)*0.02;
+
+    // gentle tumble
+    transE*=0.985;
+    spinX+=transE*0.01*Math.sin(t*1.7);
+    spinY+=0.008; // constant slow rotation
+
+    // depth breathing
+    cloudZVel+=(Math.sin(t*0.12)*4-cloudZ)*0.008;
+    cloudZVel*=0.94; cloudZ+=cloudZVel;
+
+    const p=geo.getAttribute('position');
+    const a=p.array;
+    for(let i=0;i<MN;i++){
+      const i3=i*3, ph=phase[i];
+      vel[i3]  +=Math.sin(t*0.05+ph)*0.001*curSpd;
+      vel[i3+1]+=Math.cos(t*0.06+ph*1.3)*0.001*curSpd;
+      vel[i3+2]+=Math.sin(t*0.055+ph*0.7)*0.001*curSpd;
+      vel[i3]  +=Math.sin(t*0.02+ph*2.1+a[i3+1]*0.1)*0.0008*curSpd;
+      vel[i3+1]+=Math.cos(t*0.025+ph*1.7+a[i3+2]*0.1)*0.0008*curSpd;
+      vel[i3+2]+=Math.sin(t*0.022+ph*0.9+a[i3]*0.1)*0.0008*curSpd;
+      const dist=Math.sqrt(a[i3]*a[i3]+a[i3+1]*a[i3+1]+a[i3+2]*a[i3+2])||0.01;
+      const pull=Math.max(0,dist-curR)*0.002+0.0003;
+      vel[i3]-=(a[i3]/dist)*pull; vel[i3+1]-=(a[i3+1]/dist)*pull; vel[i3+2]-=(a[i3+2]/dist)*pull;
+      vel[i3]*=0.992; vel[i3+1]*=0.992; vel[i3+2]*=0.992;
+      a[i3]+=vel[i3]; a[i3+1]+=vel[i3+1]; a[i3+2]+=vel[i3+2];
+    }
+    p.needsUpdate=true;
+
+    // lines
+    if(lineAmt>0.01){
+      const la=lPos; let lc=0; const md=8,mdSq=md*md;
+      const step=Math.max(1,Math.floor(MN/200));
+      for(let i=0;i<MN&&lc<ML;i+=step){
+        const i3=i*3, x1=a[i3],y1=a[i3+1],z1=a[i3+2];
+        for(let j=i+step;j<MN&&lc<ML;j+=step){
+          const j3=j*3,dx=a[j3]-x1,dy=a[j3+1]-y1,dz=a[j3+2]-z1;
+          if(dx*dx+dy*dy+dz*dz<mdSq){
+            const idx=lc*6;
+            la[idx]=x1;la[idx+1]=y1;la[idx+2]=z1;
+            la[idx+3]=a[j3];la[idx+4]=a[j3+1];la[idx+5]=a[j3+2];
+            lc++;
+          }
+        }
+      }
+      lGeo.setDrawRange(0,lc*2);
+      lGeo.getAttribute('position').needsUpdate=true;
+      lMat.opacity=lineAmt*0.10;
+    }
+
+    // apply rotation
+    const pts=scene.children[0]; pts.rotation.x=spinX; pts.rotation.y=spinY; pts.position.z=cloudZ;
+    const lns=scene.children[1]; lns.rotation.x=spinX; lns.rotation.y=spinY; lns.position.z=cloudZ;
+    mat.opacity=curBright;
+    camera.position.x=Math.sin(t*0.02)*2; camera.position.y=Math.cos(t*0.03)*1.2;
+    camera.lookAt(0,0,cloudZ*0.2);
     renderer.render(scene,camera);
   }
   miniFrame();
@@ -5178,7 +5243,16 @@ function initOrb(){
 
   const scene=new THREE.Scene();
   const camera=new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,1,1000);
-  camera.position.z=80;
+  // fit camera: compute z so the orb (max radius 28) always fills the screen
+  function _orbFitZ(){
+    const fovRad=camera.fov*Math.PI/180;
+    const aspect=window.innerWidth/window.innerHeight;
+    const R=30; // max radius with breathing room
+    const zV=R/Math.tan(fovRad/2);      // vertical fit
+    const zH=R/(Math.tan(fovRad/2)*aspect); // horizontal fit
+    return Math.max(zV,zH)+5;           // take the tighter + small margin
+  }
+  camera.position.z=_orbFitZ();
 
   
   const geo=new THREE.BufferGeometry();
@@ -5253,7 +5327,7 @@ function initOrb(){
   ariaThree={renderer,scene,camera,points,geo,mat,lines,lineGeo,lineMat,
     electrons,electronGeo,electronMat,activeElectrons,
     vel,phase,activeConnections,
-    orbState,clock,
+    orbState,clock,fitZ:_orbFitZ,
     setOrbState(s){ orbState=s; },
     setAnalyser(a){ ariaAnalyser=a; if(a)ariaFreq=new Uint8Array(a.frequencyBinCount); }
   };
@@ -5268,6 +5342,8 @@ function ariaOrbResize(){
   ariaThree.camera.aspect=w/h;
   ariaThree.camera.updateProjectionMatrix();
   ariaThree.renderer.setSize(w,h);
+  // keep orb fully in frame at any window size
+  if(ariaThree.fitZ) ariaThree.camera.position.z=ariaThree.fitZ();
 }
 
 function startOrbLoop(){
