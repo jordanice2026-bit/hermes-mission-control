@@ -601,6 +601,18 @@ nav{display:flex;gap:2px;flex:1}
 .mgr-run-summary{color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mgr-run-time{color:var(--text3);font-size:11px;white-space:nowrap}
 .mgr-empty{text-align:center;padding:30px;color:var(--text3);font-size:13px}
+/* ── OWNER DETAIL ── */
+.owner-detail-grid{display:flex;flex-direction:column;gap:10px}
+.owner-props-section{margin-top:8px}
+.owner-prop-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:8px}
+.owner-prop-addr{font-size:13px;font-weight:600;margin-bottom:3px}
+.owner-prop-specs{font-size:11px;color:var(--text3);margin-bottom:8px}
+.owner-prop-links{display:flex;gap:8px;flex-wrap:wrap}
+.owner-link-badge{font-size:11px;padding:4px 10px;border-radius:8px;font-weight:500}
+.owner-link-badge.ol-listing{background:rgba(0,230,118,.12);color:var(--done);cursor:pointer}
+.owner-link-badge.ol-deal{background:rgba(41,121,255,.12);color:var(--accent2);cursor:pointer}
+.owner-link-badge.ol-listing:hover,.owner-link-badge.ol-deal:hover{filter:brightness(1.2)}
+.owner-link-badge.ol-none{background:var(--surface3);color:var(--text3)}
 /* ── Light mode overrides for hardcoded values ── */
 :root.light .pl-modal-overlay{background:rgba(8,13,42,.45)}
 :root.light .deal-modal-overlay{background:rgba(8,13,42,.45)}
@@ -1096,6 +1108,11 @@ nav{display:flex;gap:2px;flex:1}
         <label class="form-label">Notes</label>
         <textarea class="form-textarea" id="listing-notes" rows="3" style="min-height:64px"></textarea>
       </div>
+      <div class="form-group" id="listing-upload-group">
+        <label class="form-label">Listing Agreement Document <span style="color:var(--text3);font-weight:400">(optional — PDF; auto-parses terms on upload)</span></label>
+        <input class="form-input" id="listing-doc-file" type="file" accept=".pdf,application/pdf">
+        <div id="listing-upload-status" style="font-size:12px;color:var(--text3);margin-top:6px"></div>
+      </div>
     </div>
     <div class="pl-modal-footer">
       <button class="btn" onclick="closeListingModal()">Cancel</button>
@@ -1112,6 +1129,19 @@ nav{display:flex;gap:2px;flex:1}
       <button class="pl-modal-close" onclick="closeListingDetails()">✕</button>
     </div>
     <div class="deal-modal-body" id="ld-body">
+      <div class="loading"><div class="spinner"></div> Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- OWNER DETAIL MODAL (edit contact + linked properties/listings/deals) -->
+<div class="deal-modal-overlay" id="owner-modal">
+  <div class="deal-modal-card">
+    <div class="deal-modal-header">
+      <div class="deal-modal-title" id="owner-modal-title">Owner</div>
+      <button class="pl-modal-close" onclick="closeOwnerDetail()">✕</button>
+    </div>
+    <div class="deal-modal-body" id="owner-modal-body">
       <div class="loading"><div class="spinner"></div> Loading…</div>
     </div>
   </div>
@@ -1241,6 +1271,12 @@ nav{display:flex;gap:2px;flex:1}
         <!-- Section 1: Property -->
         <div class="deal-section">
           <div class="deal-section-title">Property</div>
+          <div class="form-group">
+            <label class="form-label">Select Existing Listing <span style="color:var(--text3);font-weight:400">(optional — links the deal to a listing)</span></label>
+            <select class="form-input" id="deal-listing-select" onchange="onDealListingSelect()">
+              <option value="">— Type address manually below —</option>
+            </select>
+          </div>
           <div class="form-group">
             <label class="form-label">Property Address *</label>
             <input class="form-input" id="deal-address" required placeholder="123 Main St, City, State 12345">
@@ -1811,10 +1847,129 @@ function renderOwners(){
     document.getElementById('owners-content').innerHTML='<div class="empty-state"><div class="empty-state-icon">🏠</div><div>'+(owners.length?'No matching owners.':'No owners found.')+'</div></div>';
     return;
   }
-  const rows=filtered.map(o=>`<tr><td><strong>${esc(o.name||'—')}</strong></td><td><span class="contact-badge ${ctBadgeClass(o.contact_type)}">${esc(o.contact_type||'—')}</span></td><td><span class="stage-badge ${stageBadgeClass(o.outreach_stage||o.stage)}">${esc(o.outreach_stage||o.stage||'—')}</span></td><td>${esc(o.primary_phone||'—')}</td><td>${esc(o.mailing_state||'—')}</td><td>${esc(o.county||'—')}</td><td style="text-align:center">${(o.property_ids||[]).length||0}</td></tr>`).join('');
+  const rows=filtered.map(o=>`<tr style="cursor:pointer" onclick="openOwnerDetail('${o.id}')"><td><strong>${esc(o.name||'—')}</strong></td><td><span class="contact-badge ${ctBadgeClass(o.contact_type)}">${esc(o.contact_type||'—')}</span></td><td><span class="stage-badge ${stageBadgeClass(o.outreach_stage||o.stage)}">${esc(o.outreach_stage||o.stage||'—')}</span></td><td>${esc(o.primary_phone||'—')}</td><td>${esc(o.mailing_state||'—')}</td><td>${esc(o.county||'—')}</td><td style="text-align:center">${(o.property_ids||[]).length||0}</td></tr>`).join('');
   document.getElementById('owners-content').innerHTML=`<table class="owners-table"><thead><tr><th>Name</th><th>Contact Type</th><th>Stage</th><th>Phone</th><th>State</th><th>County</th><th># Props</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 function filterOwners(){renderOwners();}
+
+// ── OWNER DETAIL (edit contact + linked properties/listings/deals) ──────────
+let currentOwnerDetail=null;
+async function openOwnerDetail(ownerId){
+  const modal=document.getElementById('owner-modal');
+  const body=document.getElementById('owner-modal-body');
+  modal.classList.add('open');
+  body.innerHTML='<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try{
+    const r=await api('/api/owners/'+ownerId);
+    if(!r.ok)throw new Error(r.statusText);
+    const data=await r.json();
+    currentOwnerDetail=data;
+    renderOwnerDetail(data);
+  }catch(e){
+    body.innerHTML='<div class="empty-state"><div class="empty-state-icon">⚠️</div><div>Failed to load owner.</div></div>';
+    showToast('Failed to load owner','error');
+  }
+}
+function closeOwnerDetail(){document.getElementById('owner-modal').classList.remove('open');currentOwnerDetail=null;}
+function renderOwnerDetail(data){
+  const o=data.owner||{};
+  const props=data.properties||[];
+  document.getElementById('owner-modal-title').textContent=o.name||'Owner';
+  const CT=['Individual','LLC','Trust','Estate','Partnership'];
+  const STAGES=['New Lead','Verified','Email Sent','Mail Sent','Called','Responded','Listed','Dead','Do Not Contact'];
+  const VER=['Unverified','Verified','Bad Contact'];
+  const opt=(arr,cur)=>arr.map(v=>`<option value="${esc(v)}" ${v===cur?'selected':''}>${esc(v)}</option>`).join('');
+  // linked properties section
+  let propHtml='';
+  if(!props.length){
+    propHtml='<div style="color:var(--text3);font-size:13px;padding:8px 0">No properties linked to this owner.</div>';
+  }else{
+    propHtml=props.map(p=>{
+      const listingBadge=p.listing
+        ? `<span class="owner-link-badge ol-listing" onclick="closeOwnerDetail();switchView('listings');setTimeout(()=>openListingDetails('${p.listing.id}'),400)">📋 In Listings (${esc(p.listing.status||'—')}) →</span>`
+        : `<span class="owner-link-badge ol-none">Not listed</span>`;
+      const dealBadge=p.deal
+        ? `<span class="owner-link-badge ol-deal" onclick="closeOwnerDetail();switchView('deals');setTimeout(()=>openDealDetails&&openDealDetails('${p.deal.id}'),400)">🤝 In Deals (${esc(p.deal.status||'—')}) →</span>`
+        : `<span class="owner-link-badge ol-none">No deal</span>`;
+      const specs=[p.prop_type,p.beds?`${p.beds}bd`:'',p.baths?`${p.baths}ba`:'',p.sqft?`${p.sqft}sqft`:''].filter(Boolean).join(' · ');
+      return `<div class="owner-prop-card">
+        <div class="owner-prop-addr">${esc(p.address||'Unknown address')}</div>
+        ${specs?`<div class="owner-prop-specs">${esc(specs)}</div>`:''}
+        <div class="owner-prop-links">${listingBadge}${dealBadge}</div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('owner-modal-body').innerHTML=`
+    <div class="owner-detail-grid">
+      <div class="form-group"><label class="form-label">Owner Name</label>
+        <input class="form-input" id="od-name" value="${esc(o.name||'')}"></div>
+      <div class="deal-row-2">
+        <div class="form-group"><label class="form-label">Contact Type</label>
+          <select class="form-input" id="od-contact-type">${opt(CT,o.contact_type)}</select></div>
+        <div class="form-group"><label class="form-label">Outreach Stage</label>
+          <select class="form-input" id="od-stage">${opt(STAGES,o.outreach_stage)}</select></div>
+      </div>
+      <div class="deal-row-2">
+        <div class="form-group"><label class="form-label">Primary Phone</label>
+          <input class="form-input" id="od-phone" value="${esc(o.primary_phone||'')}"></div>
+        <div class="form-group"><label class="form-label">Secondary Phone</label>
+          <input class="form-input" id="od-phone2" value="${esc(o.secondary_phone||'')}"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Mailing Address</label>
+        <input class="form-input" id="od-addr" value="${esc(o.mailing_address||'')}"></div>
+      <div class="deal-row-3">
+        <div class="form-group"><label class="form-label">City</label>
+          <input class="form-input" id="od-city" value="${esc(o.mailing_city||'')}"></div>
+        <div class="form-group"><label class="form-label">State</label>
+          <input class="form-input" id="od-state" value="${esc(o.mailing_state||'')}"></div>
+        <div class="form-group"><label class="form-label">Zip</label>
+          <input class="form-input" id="od-zip" value="${esc(o.mailing_zip||'')}"></div>
+      </div>
+      <div class="deal-row-2">
+        <div class="form-group"><label class="form-label">County</label>
+          <input class="form-input" id="od-county" value="${esc(o.county||'')}"></div>
+        <div class="form-group"><label class="form-label">Verification</label>
+          <select class="form-input" id="od-verification">${opt(VER,o.verification)}</select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Notes</label>
+        <textarea class="form-textarea" id="od-notes" rows="2">${esc(o.notes||'')}</textarea></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+        <input type="checkbox" id="od-dnc" ${o.do_not_contact?'checked':''}> Do Not Contact</label>
+    </div>
+    <div class="owner-props-section">
+      <div class="deal-section-title" style="margin-top:16px">Linked Properties (${props.length})</div>
+      ${propHtml}
+    </div>
+    <div class="pl-modal-footer" style="margin-top:16px;padding:0">
+      <button class="btn" onclick="closeOwnerDetail()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveOwnerDetail('${o.id}')">Save Changes</button>
+    </div>`;
+}
+async function saveOwnerDetail(ownerId){
+  const g=id=>document.getElementById(id);
+  const payload={
+    name:g('od-name').value.trim(),
+    contact_type:g('od-contact-type').value,
+    outreach_stage:g('od-stage').value,
+    verification:g('od-verification').value,
+    primary_phone:g('od-phone').value.trim(),
+    secondary_phone:g('od-phone2').value.trim(),
+    mailing_address:g('od-addr').value.trim(),
+    mailing_city:g('od-city').value.trim(),
+    mailing_state:g('od-state').value.trim(),
+    mailing_zip:g('od-zip').value.trim(),
+    county:g('od-county').value.trim(),
+    notes:g('od-notes').value.trim(),
+    do_not_contact:g('od-dnc').checked
+  };
+  try{
+    const r=await api('/api/owners/'+ownerId,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||r.statusText);
+    showToast('Owner updated','success');
+    closeOwnerDetail();
+    loadOwners();
+  }catch(e){showToast('Save failed: '+e.message,'error');}
+}
 
 // ── PIPELINE ──────────────────────────────────────────────────────────────
 async function loadPipeline(){
@@ -2167,7 +2322,33 @@ async function openDealModal(){
   if(pr)pr.innerHTML='';
   const comm=document.getElementById('deal-commission');
   if(comm)comm.value='2.5';
+  await populateDealListingSelect();
   document.getElementById('deal-modal').classList.add('open');
+}
+// Populate the "select existing listing" dropdown with current listings
+async function populateDealListingSelect(){
+  const sel=document.getElementById('deal-listing-select');
+  if(!sel)return;
+  try{
+    if(!listings||!listings.length){
+      const r=await api('/api/listings');
+      if(r.ok){const d=await r.json();listings=d.listings||d||[];}
+    }
+    sel.innerHTML='<option value="">— Type address manually below —</option>'+
+      (listings||[]).map(l=>`<option value="${l.id}" data-address="${esc(l.address||'')}" data-mls="${esc(l.mls_number||'')}" data-commission="${l.commission_pct?(l.commission_pct*100):''}" data-price="${l.list_price||''}">${esc(l.address||'(no address)')} ${l.status?'· '+esc(l.status):''}</option>`).join('');
+  }catch(e){/* dropdown stays with manual-only option */}
+}
+// When a listing is picked, auto-fill address (+ MLS/commission if present)
+function onDealListingSelect(){
+  const sel=document.getElementById('deal-listing-select');
+  const opt=sel&&sel.options[sel.selectedIndex];
+  if(!opt||!opt.value)return;
+  const addr=opt.getAttribute('data-address')||'';
+  const mls=opt.getAttribute('data-mls')||'';
+  const comm=opt.getAttribute('data-commission')||'';
+  if(addr)document.getElementById('deal-address').value=addr;
+  if(mls&&document.getElementById('deal-mls'))document.getElementById('deal-mls').value=mls;
+  if(comm&&document.getElementById('deal-commission'))document.getElementById('deal-commission').value=comm;
 }
 
 function closeDealModal(){
@@ -3008,6 +3189,8 @@ async function openListingModal(editId){
   document.getElementById('listing-status').value='Pre-Listing';
   document.getElementById('listing-proptype').value='';
   document.getElementById('listing-type').value='';
+  const _df=document.getElementById('listing-doc-file');if(_df)_df.value='';
+  const _us=document.getElementById('listing-upload-status');if(_us)_us.textContent='';
   document.getElementById('listing-modal-title').textContent='New Listing';
   if(editId){
     const l=listings.find(x=>x.id===editId);
@@ -3055,7 +3238,30 @@ async function saveListing(){
     if(id){r=await api('/api/listings/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
     else{r=await api('/api/listings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
     if(!r.ok)throw new Error((await r.json().catch(()=>({}))).detail||r.statusText);
-    showToast('Listing saved','success');
+    const saved=await r.json().catch(()=>({}));
+    const listingId=id||saved.id;
+    // If a document was attached, upload + parse it (auto-fills terms)
+    const fileInput=document.getElementById('listing-doc-file');
+    const file=fileInput&&fileInput.files&&fileInput.files[0];
+    if(file&&listingId){
+      const st=document.getElementById('listing-upload-status');
+      st.textContent='⏳ Uploading & parsing '+file.name+'…';
+      try{
+        const fd=new FormData();
+        fd.append('doc_type','listing');
+        fd.append('file',file);
+        const ur=await api('/api/listings/'+listingId+'/upload',{method:'POST',body:fd});
+        if(!ur.ok)throw new Error((await ur.json().catch(()=>({}))).detail||ur.statusText);
+        const ud=await ur.json().catch(()=>({}));
+        const parsed=ud.parsed||{};
+        const filled=Object.keys(parsed).filter(k=>parsed[k]&&k!=='error').length;
+        showToast('Listing saved + document parsed'+(filled?` (${filled} fields auto-filled)`:''),'success');
+      }catch(ue){
+        showToast('Listing saved, but document upload failed: '+ue.message,'error');
+      }
+    }else{
+      showToast('Listing saved','success');
+    }
     closeListingModal();loadListings();
   }catch(e){showToast('Save failed: '+e.message,'error');}
 }

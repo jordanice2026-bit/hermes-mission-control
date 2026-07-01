@@ -291,6 +291,119 @@ async def get_owners(request: Request):
 
 
 # ==============================================================================
+# GET /api/owners/{owner_id}  — one owner + linked properties cross-referenced
+#                               against Listings and Deals (matched by address)
+# ==============================================================================
+@router.get("/api/owners/{owner_id}")
+async def get_owner_detail(request: Request, owner_id: str):
+    _require_auth(request)
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            owner_page = await _get_page(client, owner_id)
+            owner = _parse_owner(owner_page)
+
+            # Fetch the owner's linked property pages
+            prop_pages = []
+            for pid in owner.get("property_ids", []):
+                try:
+                    prop_pages.append(await _get_page(client, pid))
+                except Exception:
+                    pass
+            properties = [_parse_property(p) for p in prop_pages]
+
+            # Pull all listings + deals once, index by normalized address
+            import listings as _lst
+            import tc as _tc
+            listings_raw, deals_raw = await asyncio.gather(
+                _query_all(client, _lst.LISTINGS_DS_ID),
+                _query_all(client, _tc.DEALS_DS_ID),
+            )
+
+        def _norm(addr: str) -> str:
+            return "".join(ch for ch in (addr or "").lower() if ch.isalnum())
+
+        listing_by_addr = {}
+        for lp in listings_raw:
+            la = _title(lp.get("properties", {}).get("Property Address"))
+            if la:
+                listing_by_addr[_norm(la)] = {"id": lp.get("id", ""), "address": la,
+                                              "status": _sel(lp.get("properties", {}).get("Listing Status"))}
+        deal_by_addr = {}
+        for dp in deals_raw:
+            da = _title(dp.get("properties", {}).get("Property Address"))
+            if da:
+                deal_by_addr[_norm(da)] = {"id": dp.get("id", ""), "address": da,
+                                           "status": _sel(dp.get("properties", {}).get("Status"))}
+
+        # Cross-reference each property
+        for prop in properties:
+            key = _norm(prop.get("address", ""))
+            prop["listing"] = listing_by_addr.get(key)   # None or {id,address,status}
+            prop["deal"] = deal_by_addr.get(key)
+
+        return JSONResponse({"owner": owner, "properties": properties,
+                             "updated_at": int(time.time() * 1000)})
+    except HTTPException: raise
+    except Exception as e:
+        logger.exception("get_owner_detail: %s", e)
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+async def _noop_list():
+    return []
+
+
+# ==============================================================================
+# PATCH /api/owners/{owner_id}  — edit owner contact information
+# ==============================================================================
+class OwnerUpdateBody(BaseModel):
+    name: Optional[str] = None
+    contact_type: Optional[str] = None
+    outreach_stage: Optional[str] = None
+    verification: Optional[str] = None
+    primary_phone: Optional[str] = None
+    secondary_phone: Optional[str] = None
+    email: Optional[str] = None
+    mailing_address: Optional[str] = None
+    mailing_city: Optional[str] = None
+    mailing_state: Optional[str] = None
+    mailing_zip: Optional[str] = None
+    county: Optional[str] = None
+    notes: Optional[str] = None
+    do_not_contact: Optional[bool] = None
+
+
+@router.patch("/api/owners/{owner_id}")
+async def update_owner(request: Request, owner_id: str, body: OwnerUpdateBody):
+    _require_auth(request)
+    props: dict = {}
+    if body.name is not None:            props["Owner Name"] = {"title": [{"type": "text", "text": {"content": body.name}}]}
+    if body.contact_type is not None:    props["Contact Type"] = _sel_prop(body.contact_type)
+    if body.outreach_stage is not None:  props["Outreach Stage"] = _sel_prop(body.outreach_stage)
+    if body.verification is not None:    props["Verification Status"] = _sel_prop(body.verification)
+    if body.primary_phone is not None:   props["Primary Phone"] = {"phone_number": body.primary_phone or None}
+    if body.secondary_phone is not None: props["Secondary Phone"] = {"phone_number": body.secondary_phone or None}
+    if body.mailing_address is not None: props["Mailing Address"] = _rt_prop(body.mailing_address)
+    if body.mailing_city is not None:    props["Mailing City"] = _rt_prop(body.mailing_city)
+    if body.mailing_state is not None:   props["Mailing State"] = _rt_prop(body.mailing_state)
+    if body.mailing_zip is not None:     props["Mailing Zip"] = _rt_prop(body.mailing_zip)
+    if body.county is not None:          props["County"] = _sel_prop(body.county)
+    if body.notes is not None:           props["Notes"] = _rt_prop(body.notes)
+    if body.do_not_contact is not None:  props["Do Not Contact"] = {"checkbox": body.do_not_contact}
+    if not props:
+        return JSONResponse({"ok": False, "error": "no fields to update"}, status_code=400)
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            await _update_page(client, owner_id, props)
+            page = await _get_page(client, owner_id)
+        return JSONResponse({"ok": True, "owner": _parse_owner(page)})
+    except HTTPException: raise
+    except Exception as e:
+        logger.exception("update_owner: %s", e)
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+# ==============================================================================
 # POST /api/seller-pipeline/generate  — run email draft generation script
 # ==============================================================================
 @router.post("/api/seller-pipeline/generate")
