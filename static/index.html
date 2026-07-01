@@ -1161,86 +1161,7 @@ nav{display:flex;gap:2px;flex:1}
 .aria-voice-hint{display:none}
 .aria-voice-ui{display:none}
 
-/* ── JARVIS UI ANIMATIONS ───────────────────────────────────────────── */
-
-/* 1. Cinematic voice overlay open/close */
-.aria-voice-overlay{transition:opacity .4s ease,transform .4s ease}
-.aria-voice-overlay.open{opacity:1;transform:scale(1)}
-.aria-voice-overlay:not(.open){opacity:0;transform:scale(1.04);pointer-events:none}
-
-/* 2. Pulse rings */
-#aria-pulse-rings{position:absolute;inset:0;pointer-events:none;z-index:1}
-
-/* 3. Waveform bar */
-#aria-waveform{
-  position:absolute;bottom:140px;left:50%;transform:translateX(-50%);
-  width:280px;height:36px;pointer-events:none;z-index:1010;opacity:0;
-  transition:opacity .4s ease;
-}
-#aria-waveform.active{opacity:1}
-
-/* 4. HUD corner frame */
-#aria-hud{position:absolute;inset:0;pointer-events:none;z-index:1009}
-.aria-hud-corner{position:absolute;width:40px;height:40px;}
-.aria-hud-corner::before,.aria-hud-corner::after{
-  content:'';position:absolute;background:rgba(14,165,233,0.35);
-  animation:hudPulse 3s ease-in-out infinite;
-}
-.aria-hud-corner::before{width:100%;height:1px;top:0;left:0}
-.aria-hud-corner::after{width:1px;height:100%;top:0;left:0}
-.aria-hud-corner.tr{top:20px;right:20px;transform:rotate(90deg)}
-.aria-hud-corner.br{bottom:20px;right:20px;transform:rotate(180deg)}
-.aria-hud-corner.bl{bottom:20px;left:20px;transform:rotate(270deg)}
-.aria-hud-corner.tl{top:20px;left:20px}
-@keyframes hudPulse{0%,100%{opacity:.25}50%{opacity:.6}}
-
-/* 5. Typing cursor on ARIA label */
-#aria-voice-label::after{
-  content:'█';font-size:8px;margin-left:3px;
-  animation:blink .9s step-end infinite;
-  color:rgba(14,165,233,0.4);
-}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-
-/* 6. State-color on status text */
-#aria-voice-state.listening{color:rgba(14,165,233,0.6)}
-#aria-voice-state.thinking{color:rgba(251,191,36,0.7)}
-#aria-voice-state.speaking{color:rgba(52,211,153,0.7)}
-
-/* 7. KPI counter animation */
-@keyframes kpiIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.kpi-value.counting{animation:kpiIn .3s ease forwards}
-
-/* 8. Glitch text on state change */
-@keyframes glitch{
-  0%{clip-path:inset(40% 0 61% 0);transform:translate(-2px,0)}
-  25%{clip-path:inset(10% 0 85% 0);transform:translate(2px,0)}
-  50%{clip-path:inset(70% 0 5% 0);transform:translate(-1px,0)}
-  75%{clip-path:inset(55% 0 30% 0);transform:translate(1px,0)}
-  100%{clip-path:inset(0);transform:none}
-}
-.glitch-anim{animation:glitch .15s steps(1) forwards}
-
-/* 9. Staggered card slide-in */
-@keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.card-animate{animation:cardIn .3s ease forwards;opacity:0}
-
-/* 10. Background perspective grid on dashboard */
-.app-body::before{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background-image:
-    linear-gradient(rgba(0,212,255,.018) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(0,212,255,.018) 1px,transparent 1px);
-  background-size:48px 48px;
-  mask-image:radial-gradient(ellipse 80% 60% at 50% 50%,black 30%,transparent 100%);
-}
-
-/* 11. Micro-sound visual flash on button click */
-@keyframes btnFlash{0%{box-shadow:0 0 0 0 rgba(14,165,233,.5)}100%{box-shadow:0 0 0 12px rgba(14,165,233,0)}}
-.btn-flash{animation:btnFlash .35s ease forwards}
-
-/* View slide-in */
-.view.active>*{animation:cardIn .25s ease forwards}
+/* ── HISTORY PANEL ── */
 .aria-history{flex-direction:column;gap:0;background:rgba(0,0,0,.95);border:1px solid var(--border-neon);border-radius:var(--radius);margin:0 4px 10px;max-height:260px;overflow-y:auto}
 .aria-history-head{font-size:9px;font-weight:700;color:var(--neon);padding:10px 14px 6px;letter-spacing:.16em;text-transform:uppercase;font-family:var(--font-mono)}
 .aria-history-list{display:flex;flex-direction:column}
@@ -1688,17 +1609,6 @@ nav{display:flex;gap:2px;flex:1}
     <!-- IMMERSIVE VOICE OVERLAY — Jarvis design -->
     <div class="aria-voice-overlay" id="aria-voice-overlay">
       <canvas id="aria-voice-canvas"></canvas>
-      <!-- pulse rings canvas (behind orb) -->
-      <canvas id="aria-pulse-rings"></canvas>
-      <!-- HUD corner frame -->
-      <div id="aria-hud">
-        <div class="aria-hud-corner tl"></div>
-        <div class="aria-hud-corner tr"></div>
-        <div class="aria-hud-corner br"></div>
-        <div class="aria-hud-corner bl"></div>
-      </div>
-      <!-- waveform bar (shows when speaking) -->
-      <canvas id="aria-waveform"></canvas>
       <!-- top-right controls: mute + exit only -->
       <div id="aria-voice-controls">
         <button id="aria-voice-mic-toggle" title="Mute/Unmute" onclick="ariaVoiceMicToggle()">
@@ -2391,10 +2301,6 @@ function switchView(view){
   const vid=mapping[view]||('view-'+view);
   const el=document.getElementById(vid);
   if(el)el.classList.add('active');
-  // stagger cards in the newly active view (Jarvis UI enhancement)
-  if(typeof _staggerCards==='function'){
-    setTimeout(()=>{ if(el)_staggerCards(el); },50);
-  }
   if(view==='owners')loadOwners();
   if(view==='pipeline')loadPipeline();
   if(view==='departments')loadDepartments();
@@ -2489,11 +2395,11 @@ function renderBoard(){
     // KPI
     document.getElementById('cnt-'+k).textContent=tasks.length;
   });
-  _origKpiSet('kpi-pending',cols.pending.length);
-  _origKpiSet('kpi-inprogress',cols.inprogress.length);
-  _origKpiSet('kpi-blocked',cols.blocked.length);
-  _origKpiSet('kpi-done',cols.done.length);
-  _origKpiSet('kpi-total',Object.keys(board).length);
+  document.getElementById('kpi-pending').textContent=cols.pending.length;
+  document.getElementById('kpi-inprogress').textContent=cols.inprogress.length;
+  document.getElementById('kpi-blocked').textContent=cols.blocked.length;
+  document.getElementById('kpi-done').textContent=cols.done.length;
+  document.getElementById('kpi-total').textContent=Object.keys(board).length;
 }
 function makeTaskCard(t,ctx='board'){
   const card=document.createElement('div');
@@ -4966,191 +4872,7 @@ async function deleteAriaSession(ev,id){
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// JARVIS UI ENHANCEMENT ANIMATIONS
-// ═══════════════════════════════════════════════════════════════════════════
-
-// ── 1. Micro click sound (synthetic, no file needed) ──
-function _playClick(){
-  try{
-    const ctx=new (window.AudioContext||window.webkitAudioContext)();
-    const o=ctx.createOscillator(), g=ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.frequency.setValueAtTime(1200,ctx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(600,ctx.currentTime+0.04);
-    g.gain.setValueAtTime(0.06,ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.06);
-    o.start(); o.stop(ctx.currentTime+0.06);
-    setTimeout(()=>ctx.close(),200);
-  }catch(e){}
-}
-function _playWhoosh(){
-  try{
-    const ctx=new (window.AudioContext||window.webkitAudioContext)();
-    const buf=ctx.createBuffer(1,ctx.sampleRate*0.3,ctx.sampleRate);
-    const d=buf.getChannelData(0);
-    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2)*0.12;
-    const src=ctx.createBufferSource(), g=ctx.createGain();
-    const f=ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=800;
-    src.buffer=buf; src.connect(f); f.connect(g); g.connect(ctx.destination);
-    g.gain.setValueAtTime(0,ctx.currentTime);
-    g.gain.linearRampToValueAtTime(1,ctx.currentTime+0.05);
-    g.gain.linearRampToValueAtTime(0,ctx.currentTime+0.3);
-    src.start(); setTimeout(()=>ctx.close(),500);
-  }catch(e){}
-}
-
-// Add click flash + sound to all buttons
-document.addEventListener('click',function(e){
-  const btn=e.target.closest('button,.btn,.nav-item');
-  if(!btn)return;
-  _playClick();
-  btn.classList.remove('btn-flash');
-  void btn.offsetWidth; // force reflow
-  btn.classList.add('btn-flash');
-  setTimeout(()=>btn.classList.remove('btn-flash'),400);
-},true);
-
-// ── 2. KPI count-up animation ──
-function _animateKpi(el, target){
-  if(!el||isNaN(target))return;
-  el.classList.add('counting');
-  const start=0, dur=600, t0=performance.now();
-  function step(now){
-    const p=Math.min(1,(now-t0)/dur);
-    const ease=1-Math.pow(1-p,3); // cubic ease-out
-    el.textContent=Math.round(start+(target-start)*ease);
-    if(p<1) requestAnimationFrame(step);
-    else el.textContent=target;
-  }
-  requestAnimationFrame(step);
-}
-
-// Patch the KPI setter to animate
-const _origKpiSet=function(id,val){
-  const el=document.getElementById(id);
-  if(el){ _animateKpi(el,parseInt(val)||0); }
-};
-
-// ── 3. Glitch text helper ──
-function _glitchText(el){
-  if(!el)return;
-  el.classList.remove('glitch-anim');
-  void el.offsetWidth;
-  el.classList.add('glitch-anim');
-  setTimeout(()=>el.classList.remove('glitch-anim'),200);
-}
-
-// ── 4. Staggered card animation ──
-function _staggerCards(container, selector='.task-card,.dept-card,.kpi-card'){
-  if(!container)return;
-  const cards=[...container.querySelectorAll(selector)];
-  cards.forEach((c,i)=>{
-    c.style.animationDelay=`${i*40}ms`;
-    c.classList.remove('card-animate');
-    void c.offsetWidth;
-    c.classList.add('card-animate');
-  });
-}
-
-// (switchView card-stagger enhancement is inlined directly into the
-// original switchView function below — do NOT redeclare switchView here,
-// duplicate function declarations hoist and silently overwrite each other,
-// causing infinite recursion the moment a tab is clicked)
-
-// ── 5. Pulse rings renderer ──
-let _pulseRingsRAF=null;
-const _pulseRings=[];
-function _startPulseRings(){
-  const canvas=document.getElementById('aria-pulse-rings');
-  if(!canvas)return;
-  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
-  const cx=canvas.getContext('2d');
-  const cx2=canvas.width/2, cy2=canvas.height/2;
-
-  function _addRing(color='rgba(14,165,233,'){
-    _pulseRings.push({r:0,maxR:Math.min(cx2,cy2)*0.52,alpha:0.5,color});
-  }
-
-  let _lastRingTime=0;
-  function loop(now){
-    _pulseRingsRAF=requestAnimationFrame(loop);
-    cx.clearRect(0,0,canvas.width,canvas.height);
-
-    // spawn rings based on state
-    const interval=ariaSpeaking?800:ariaVoiceState==='listening'?2500:4000;
-    if(now-_lastRingTime>interval){
-      const col=ariaSpeaking?'rgba(52,211,153,':
-                ariaVoiceState==='thinking'?'rgba(251,191,36,':'rgba(14,165,233,';
-      _addRing(col); _lastRingTime=now;
-    }
-
-    for(let i=_pulseRings.length-1;i>=0;i--){
-      const r=_pulseRings[i];
-      r.r+=ariaSpeaking?1.8:1.1;
-      r.alpha*=0.975;
-      if(r.alpha<0.01||r.r>r.maxR){ _pulseRings.splice(i,1); continue; }
-      cx.beginPath();
-      cx.arc(cx2,cy2,r.r,0,Math.PI*2);
-      cx.strokeStyle=r.color+r.alpha+')';
-      cx.lineWidth=1.5;
-      cx.stroke();
-    }
-  }
-  requestAnimationFrame(loop);
-}
-function _stopPulseRings(){
-  if(_pulseRingsRAF)cancelAnimationFrame(_pulseRingsRAF);
-  _pulseRingsRAF=null; _pulseRings.length=0;
-}
-
-// ── 6. Waveform bar renderer ──
-let _waveRAF=null;
-function _startWaveform(){
-  const canvas=document.getElementById('aria-waveform');
-  if(!canvas)return;
-  const W=280,H=36;
-  canvas.width=W*2; canvas.height=H*2; // HiDPI
-  canvas.style.width=W+'px'; canvas.style.height=H+'px';
-  const cx=canvas.getContext('2d'); cx.scale(2,2);
-  const bars=28, gap=3;
-
-  function loop(){
-    _waveRAF=requestAnimationFrame(loop);
-    cx.clearRect(0,0,W,H);
-
-    let level=0;
-    if(ariaAnalyser&&ariaFreq){
-      ariaAnalyser.getByteFrequencyData(ariaFreq);
-      let s=0; for(let i=0;i<ariaFreq.length;i++)s+=ariaFreq[i];
-      level=(s/ariaFreq.length)/255;
-    }
-
-    // show/hide
-    const wc=document.getElementById('aria-waveform');
-    if(wc){ wc.classList.toggle('active',ariaSpeaking&&level>0.01); }
-
-    const bw=(W-(bars-1)*gap)/bars;
-    const col=ariaSpeaking?'rgba(52,211,153,':'rgba(14,165,233,';
-    for(let i=0;i<bars;i++){
-      const noise=Math.random()*0.3+0.7;
-      const h=ariaSpeaking ? Math.max(3,level*H*noise*2.5) : 2;
-      const x=i*(bw+gap), y=(H-h)/2;
-      cx.fillStyle=col+(0.4+level*0.5)+')';
-      cx.fillRect(x,y,bw,h);
-    }
-  }
-  requestAnimationFrame(loop);
-}
-function _stopWaveform(){
-  if(_waveRAF)cancelAnimationFrame(_waveRAF);
-  _waveRAF=null;
-  const wc=document.getElementById('aria-waveform');
-  if(wc)wc.classList.remove('active');
-}
-
-// (setVoiceState glitch/color enhancement is inlined directly into the
-// original setVoiceState function below — see the "same hoisting bug" note above)
-
+// ARIA VOICE MODE — Perplexity-style 3D orb + speech in/out (all client-side)
 // ═══════════════════════════════════════════════════════════════════════════
 let ariaVoiceOn=false, ariaRec=null, ariaMicMuted=false, ariaVoiceState='idle';
 let ariaAudioCtx=null, ariaAnalyser=null, ariaMicStream=null, ariaFreq=null;
@@ -5186,9 +4908,6 @@ async function openAriaVoice(){
   startOrbLoop();
   setVoiceState('listening');
   if(ariaThree&&ariaThree.setOrbState) ariaThree.setOrbState('listening');
-  _startPulseRings();
-  _startWaveform();
-  _playWhoosh();
   ariaGreet();
   startAriaListening();
   // ensure we're polling for her async replies
@@ -5207,9 +4926,6 @@ function closeAriaVoice(){
   try{ if(TTS)TTS.cancel(); }catch(e){}
   // reset orb to idle
   if(ariaThree&&ariaThree.setOrbState) ariaThree.setOrbState('idle');
-  _stopPulseRings();
-  _stopWaveform();
-  _playWhoosh();
   if(ariaRAF)cancelAnimationFrame(ariaRAF);ariaRAF=null;
   if(ariaMicStream){ariaMicStream.getTracks().forEach(t=>t.stop());ariaMicStream=null;}
   if(ariaAudioCtx){try{ariaAudioCtx.close();}catch(e){}ariaAudioCtx=null;}
@@ -5226,14 +4942,10 @@ function setVoiceState(s){
   ariaVoiceState=s;
   const el=document.getElementById('aria-voice-state');
   if(!el)return;
-  // glitch effect on every state change (Jarvis UI enhancement)
-  if(typeof _glitchText==='function') _glitchText(el);
   // Jarvis-style: lowercase, bottom center, faded
   const labels={listening:'listening...',thinking:'thinking...',speaking:'',idle:''};
   el.textContent=labels[s]||'';
   el.style.opacity=(s==='idle'||s==='speaking')?'0':'1';
-  // state color class (Jarvis UI enhancement)
-  el.className=s;
   // keep Jarvis orb in sync
   if(ariaThree&&ariaThree.setOrbState){
     const orbMap={listening:'listening',thinking:'thinking',speaking:'speaking'};
