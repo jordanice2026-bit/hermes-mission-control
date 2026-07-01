@@ -10,7 +10,9 @@ Invoked by command_worker.py for each pending EA chat message. It:
   1. Loads the persistent EA session id (for Jarvis-style memory across messages).
   2. Runs `hermes chat -q <message>` (resume if we have a session, else fresh).
   3. Persists the (possibly new) session id.
-  4. POSTs the assistant's reply back to the dashboard.
+  4. POSTs the assistant's reply back to the dashboard — WITH RETRIES, so a
+     transient network blip can never leave a message stuck at "thinking"
+     forever with no trace of what happened.
 
 Usage:
     python3 ea_runner.py --message-id <id> --text "<user message>"
@@ -23,6 +25,7 @@ import time
 import argparse
 import subprocess
 import urllib.request
+import urllib.error
 
 HERMES = '/opt/hermes/.venv/bin/hermes'
 SESSION_FILE = '/opt/data/ea_session.json'
@@ -31,6 +34,21 @@ DASHBOARD_URL = os.environ.get('MISSION_CONTROL_URL', 'https://hermes-mission-co
 SYNC_TOKEN = os.environ.get('MISSION_CONTROL_TOKEN', '') or os.environ.get('SYNC_TOKEN', '')
 MAX_TURNS = 40
 TIMEOUT = 600  # 10 min hard cap per message
+
+ERROR_LOG = '/opt/data/ea_runner_errors.log'   # persistent — command_worker.py DEVNULLs stdout/stderr
+
+POST_RETRIES = 5
+POST_RETRY_BACKOFF = [2, 5, 10, 20, 30]  # seconds between attempts
+
+
+def log_error(msg: str):
+    """Append to a persistent error log — command_worker.py DEVNULLs this
+    process's stdout/stderr, so anything not logged here vanishes silently."""
+    try:
+        with open(ERROR_LOG, 'a') as f:
+            f.write(f'[{time.strftime("%Y-%m-%d %H:%M:%S")}] {msg}\n')
+    except Exception:
+        pass
 
 
 def load_session_id():
@@ -44,7 +62,7 @@ def save_session_id(sid):
     try:
         json.dump({'session_id': sid, 'updated_at': int(time.time())}, open(SESSION_FILE, 'w'))
     except Exception as e:
-        sys.stderr.write(f'save_session_id failed: {e}\n')
+        log_error(f'save_session_id failed: {e}')
 
 
 def load_soul():
@@ -55,7 +73,8 @@ def load_soul():
 
 
 def run_agent(text: str) -> tuple[str, str]:
-    """Run one agentic turn. Returns (reply_text, session_id)."""
+    """Run one agentic turn. Returns (reply_text, session_id). Never raises —
+    every failure path returns a user-visible reply string instead."""
     sid = load_session_id()
     # Prepend the persona on the FIRST message only (fresh session)
     prompt = text
@@ -73,51 +92,89 @@ def run_agent(text: str) -> tuple[str, str]:
         out = proc.stdout or ''
         err = proc.stderr or ''
     except subprocess.TimeoutExpired:
+        log_error(f'TIMEOUT after {TIMEOUT}s for message: {text[:100]}')
         return ("I ran out of time on that one (10-min cap). Try breaking it into smaller steps.", sid)
     except Exception as e:
+        log_error(f'subprocess.run failed: {e!r} for message: {text[:100]}')
         return (f"Runner error: {e}", sid)
 
     # Extract session id from trailing "session_id: XXX" (emitted on stderr in -Q mode)
     new_sid = sid
-    m = re.search(r'session_id:\s*(\S+)', err) or re.search(r'session_id:\s*(\S+)', out)
-    if m:
-        new_sid = m.group(1)
-        save_session_id(new_sid)
+    try:
+        m = re.search(r'session_id:\s*(\S+)', err) or re.search(r'session_id:\s*(\S+)', out)
+        if m:
+            new_sid = m.group(1)
+            save_session_id(new_sid)
+    except Exception as e:
+        log_error(f'session_id extraction failed: {e!r}')
 
     # The reply is clean on stdout in -Q mode; strip any stray session/banner lines
-    reply_lines = []
-    for line in out.splitlines():
-        if re.match(r'\s*session_id:\s*\S+', line):
-            continue
-        if line.startswith('↻ Resumed session'):
-            continue
-        reply_lines.append(line)
-    reply = '\n'.join(reply_lines).strip()
-    if not reply:
-        reply = (err.strip()[:500] or "Done.")
+    try:
+        reply_lines = []
+        for line in out.splitlines():
+            if re.match(r'\s*session_id:\s*\S+', line):
+                continue
+            if line.startswith('↻ Resumed session'):
+                continue
+            reply_lines.append(line)
+        reply = '\n'.join(reply_lines).strip()
+        if not reply:
+            reply = (err.strip()[:500] or "Done.")
+    except Exception as e:
+        log_error(f'reply extraction failed: {e!r}; raw stdout len={len(out)}')
+        reply = err.strip()[:500] or out.strip()[:500] or "Done (reply parsing failed — check logs)."
+
     return (reply, new_sid)
 
 
-def post_reply(message_id: str, reply: str, status: str = 'done', hermes_sid: str = ''):
+def post_reply(message_id: str, reply: str, status: str = 'done', hermes_sid: str = '') -> bool:
+    """POST the reply back to the dashboard. Retries with backoff on any
+    failure (network blip, cold-start, DNS hiccup, 5xx) so a transient issue
+    can never silently strand a message in 'processing' forever."""
     if not SYNC_TOKEN:
-        sys.stderr.write('no sync token; cannot post reply\n')
+        log_error(f'no sync token; cannot post reply for {message_id}. Reply was: {reply[:200]}')
         print(reply)
-        return
+        return False
+
     payload = json.dumps({'chat_updates': [{'id': message_id, 'status': status, 'reply': reply}],
                           'hermes_sid': hermes_sid,
                           'jobs': [], 'system_status': 'ea', 'results': [],
                           'ea': True}).encode()
-    req = urllib.request.Request(
-        f'{DASHBOARD_URL}/api/ea/chat/reply',
-        data=payload,
-        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {SYNC_TOKEN}'},
-        method='POST',
-    )
+
+    last_err = None
+    for attempt in range(1, POST_RETRIES + 1):
+        try:
+            req = urllib.request.Request(
+                f'{DASHBOARD_URL}/api/ea/chat/reply',
+                data=payload,
+                headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {SYNC_TOKEN}'},
+                method='POST',
+            )
+            with urllib.request.urlopen(req, timeout=30) as r:
+                if r.status in (200, 201):
+                    if attempt > 1:
+                        log_error(f'post_reply succeeded for {message_id} on attempt {attempt}')
+                    return True
+                last_err = f'HTTP {r.status}'
+        except Exception as e:
+            last_err = repr(e)
+            log_error(f'post_reply attempt {attempt}/{POST_RETRIES} failed for {message_id}: {last_err}')
+
+        if attempt < POST_RETRIES:
+            time.sleep(POST_RETRY_BACKOFF[min(attempt - 1, len(POST_RETRY_BACKOFF) - 1)])
+
+    # All retries exhausted — this is the one case a reply can still be lost.
+    # Persist it to disk so it's at minimum recoverable/inspectable, and log
+    # loudly so it shows up if anyone checks the error log.
+    log_error(f'POST_REPLY GAVE UP after {POST_RETRIES} attempts for {message_id}. '
+              f'Last error: {last_err}. Reply was: {reply[:500]}')
     try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            return r.status in (200, 201)
-    except Exception as e:
-        sys.stderr.write(f'post_reply failed: {e}\n')
+        with open('/opt/data/ea_lost_replies.jsonl', 'a') as f:
+            f.write(json.dumps({'message_id': message_id, 'reply': reply, 'sid': hermes_sid,
+                                 'ts': int(time.time())}) + '\n')
+    except Exception:
+        pass
+    return False
 
 
 def main():
@@ -126,10 +183,25 @@ def main():
     ap.add_argument('--text', required=True)
     args = ap.parse_args()
 
-    reply, sid = run_agent(args.text)
-    post_reply(args.message_id, reply, hermes_sid=sid)
-    print(f'[ea] replied to {args.message_id} (session {sid}): {reply[:80]}')
+    # Top-level safety net: NO exception here can ever leave the frontend
+    # stuck showing "thinking" forever with zero trace of what happened.
+    try:
+        reply, sid = run_agent(args.text)
+    except Exception as e:
+        log_error(f'UNCAUGHT exception in run_agent for {args.message_id}: {e!r}')
+        reply, sid = (f"Something went wrong on my end and I couldn't finish that "
+                      f"(internal error: {e}). Please try asking again.", load_session_id())
+
+    ok = post_reply(args.message_id, reply, hermes_sid=sid)
+    status_word = 'delivered' if ok else 'FAILED TO DELIVER (see ea_runner_errors.log)'
+    print(f'[ea] {status_word} reply for {args.message_id} (session {sid}): {reply[:80]}')
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as e:
+        # Absolute last resort — even argparse or an import-time failure
+        # shouldn't be able to hide silently.
+        log_error(f'FATAL uncaught exception in main(): {e!r}')
+        sys.exit(1)
