@@ -4312,8 +4312,8 @@ function initOrb(){
   const group=new THREE.Group();
   scene.add(group);
 
-  // Fibonacci-sphere particle distribution — dense + fine
-  const N=1100, R=1.35;
+  // Fibonacci-sphere particle distribution — dense + very fine
+  const N=1600, R=1.35;
   const base=[];
   for(let i=0;i<N;i++){
     const y=1-(i/(N-1))*2;
@@ -4324,35 +4324,16 @@ function initOrb(){
   // per-particle random phase for organic, non-uniform shimmer
   const phase=new Float32Array(N);
   for(let i=0;i<N;i++)phase[i]=Math.random()*Math.PI*2;
-  // points — small, soft, size-attenuated dots
+  // points — tiny, soft, size-attenuated dots (sizeAttenuation gives depth/3D cue)
   const pGeo=new THREE.BufferGeometry();
   const pPos=new Float32Array(N*3);
   base.forEach((v,i)=>{pPos[i*3]=v.x;pPos[i*3+1]=v.y;pPos[i*3+2]=v.z;});
   pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
-  const pMat=new THREE.PointsMaterial({color:0x66e0ff,size:0.014,sizeAttenuation:true,transparent:true,opacity:0.9,depthWrite:false,blending:THREE.AdditiveBlending});
+  const pMat=new THREE.PointsMaterial({color:0x66e0ff,size:0.008,sizeAttenuation:true,transparent:true,opacity:0.92,depthWrite:false,blending:THREE.AdditiveBlending});
   const points=new THREE.Points(pGeo,pMat);
   group.add(points);
 
-  // interconnected lines between near neighbours (sparse, since denser sphere)
-  const linePairs=[];
-  for(let i=0;i<N;i++){
-    for(let j=i+1;j<N;j++){
-      if(base[i].distanceTo(base[j])<0.20){ linePairs.push(i,j); }
-    }
-  }
-  const lGeo=new THREE.BufferGeometry();
-  const lPos=new Float32Array(linePairs.length*3);
-  lGeo.setAttribute('position',new THREE.BufferAttribute(lPos,3));
-  const lMat=new THREE.LineBasicMaterial({color:0x1e90ff,transparent:true,opacity:0.12,depthWrite:false,blending:THREE.AdditiveBlending});
-  const lines=new THREE.LineSegments(lGeo,lMat);
-  group.add(lines);
-
-  // inner glow core
-  const coreGeo=new THREE.SphereGeometry(0.55,32,32);
-  const coreMat=new THREE.MeshBasicMaterial({color:0x0af,transparent:true,opacity:0.12,depthWrite:false,blending:THREE.AdditiveBlending});
-  group.add(new THREE.Mesh(coreGeo,coreMat));
-
-  ariaThree={renderer,scene,camera,group,points,lines,base,phase,linePairs,lGeo,pGeo,pPos,lPos,pMat,lMat,t:0};
+  ariaThree={renderer,scene,camera,group,points,base,phase,pGeo,pPos,pMat,t:0};
   window.addEventListener('resize',ariaOrbResize);
 }
 function ariaOrbResize(){
@@ -4398,8 +4379,6 @@ function startOrbLoop(){
     const s0 = T.scale;
     T.group.scale.set(s0,s0,s0);
     T.pMat.color.setRGB(T.colR,T.colG,T.colB);
-    T.lMat.color.setRGB(T.colR*0.7,T.colG*0.8,T.colB*0.9);
-    T.lMat.opacity = 0.07 + smooth*0.30;
 
     // gentle continuous rotation + subtle 3-axis drift for a living, dynamic feel
     T.group.rotation.y += (0.10 + smooth*0.9)*dt;
@@ -4419,15 +4398,8 @@ function startOrbLoop(){
       T.pPos[i*3]=v.x*s; T.pPos[i*3+1]=v.y*s; T.pPos[i*3+2]=v.z*s;
     }
     T.pGeo.attributes.position.needsUpdate=true;
-    for(let k=0;k<T.linePairs.length;k+=2){
-      const a=T.linePairs[k],b=T.linePairs[k+1];
-      const o=(k/2)*6;
-      T.lPos[o]=T.pPos[a*3];T.lPos[o+1]=T.pPos[a*3+1];T.lPos[o+2]=T.pPos[a*3+2];
-      T.lPos[o+3]=T.pPos[b*3];T.lPos[o+4]=T.pPos[b*3+1];T.lPos[o+5]=T.pPos[b*3+2];
-    }
-    T.lGeo.attributes.position.needsUpdate=true;
     // fine dots that swell only slightly with audio
-    T.pMat.size=0.013+smooth*0.018;
+    T.pMat.size=0.007+smooth*0.012;
 
     T.renderer.render(T.scene,T.camera);
     ariaRAF=requestAnimationFrame(frame);
