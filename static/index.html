@@ -41,13 +41,8 @@ body{
   font-size:14px;
   letter-spacing:.02em;
 }
-body::before{
-  content:'';
-  position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.012) 2px,rgba(0,212,255,.012) 4px);
-  animation:scanMove 8s linear infinite;
-}
-@keyframes scanMove{from{background-position:0 0}to{background-position:0 100%}}
+body::before{display:none}
+@keyframes scanMove{}
 a{color:inherit;text-decoration:none}
 button{font-family:var(--font);cursor:pointer;letter-spacing:.06em}
 
