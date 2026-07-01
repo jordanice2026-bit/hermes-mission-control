@@ -987,89 +987,89 @@ nav{display:flex;gap:2px;flex:1}
 }
 .mgr-chat-input:focus{outline:none;border-color:var(--neon);box-shadow:0 0 0 1px rgba(0,212,255,.1)}
 
-/* ── ARIA (Executive Assistant) ── */
-.nav-item-aria{color:var(--neon);font-weight:700;text-shadow:0 0 10px rgba(0,212,255,.5);letter-spacing:.12em}
-.nav-item-aria.active{background:rgba(0,212,255,.1);color:var(--neon);border:1px solid rgba(0,212,255,.3)}
-.aria-shell{display:flex;flex-direction:column;height:calc(100vh - 120px);max-width:1000px;margin:0 auto;padding:0 16px}
-.aria-header{display:flex;align-items:center;gap:14px;padding:14px 4px 12px}
-.aria-orb{
+/* ── JARVIS (Executive Assistant) ── */
+.nav-item-jarvis{color:var(--neon);font-weight:700;text-shadow:0 0 10px rgba(0,212,255,.5);letter-spacing:.12em}
+.nav-item-jarvis.active{background:rgba(0,212,255,.1);color:var(--neon);border:1px solid rgba(0,212,255,.3)}
+.jarvis-shell{display:flex;flex-direction:column;height:calc(100vh - 120px);max-width:1000px;margin:0 auto;padding:0 16px}
+.jarvis-header{display:flex;align-items:center;gap:14px;padding:14px 4px 12px}
+.jarvis-orb{
   width:38px;height:38px;
   clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
   background:linear-gradient(135deg,var(--accent),var(--neon));
   display:flex;align-items:center;justify-content:center;
   flex-shrink:0;
   box-shadow:0 0 20px var(--neon-glow),0 0 40px var(--accent-glow);
-  animation:ariaPulse 3.5s ease-in-out infinite;
+  animation:jarvisPulse 3.5s ease-in-out infinite;
 }
-@keyframes ariaPulse{
+@keyframes jarvisPulse{
   0%,100%{box-shadow:0 0 20px var(--neon-glow),0 0 40px var(--accent-glow)}
   50%{box-shadow:0 0 30px rgba(0,212,255,.45),0 0 60px rgba(0,170,255,.3)}
 }
-.aria-orb.thinking{animation:ariaPulseFast 1s ease-in-out infinite}
-@keyframes ariaPulseFast{
+.jarvis-orb.thinking{animation:jarvisPulseFast 1s ease-in-out infinite}
+@keyframes jarvisPulseFast{
   0%,100%{box-shadow:0 0 18px rgba(0,212,255,.6)}
   50%{box-shadow:0 0 40px rgba(0,212,255,1),0 0 80px rgba(0,212,255,.4)}
 }
-.aria-title{font-size:18px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--neon)}
-.aria-sub{font-size:10px;color:var(--text3);margin-top:1px;letter-spacing:.06em}
-.aria-status{font-size:10px;color:var(--text3);white-space:nowrap;font-family:var(--font-mono);letter-spacing:.06em}
-.aria-status.online{color:var(--neon)}
-.aria-log{flex:1;overflow-y:auto;padding:10px 4px 16px;display:flex;flex-direction:column;gap:14px;scrollbar-width:none;-ms-overflow-style:none}
-.aria-log::-webkit-scrollbar{width:0;height:0;display:none}
-.aria-welcome{text-align:center;width:100%;display:flex;flex-direction:column;align-items:center;padding:16px 10px}
-.aria-welcome-canvas{display:block;margin:0 auto 18px;}
-.aria-welcome-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px;letter-spacing:.06em}
-.aria-welcome-text{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:18px}
-.aria-suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
-.aria-chip{
+.jarvis-title{font-size:18px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--neon)}
+.jarvis-sub{font-size:10px;color:var(--text3);margin-top:1px;letter-spacing:.06em}
+.jarvis-status{font-size:10px;color:var(--text3);white-space:nowrap;font-family:var(--font-mono);letter-spacing:.06em}
+.jarvis-status.online{color:var(--neon)}
+.jarvis-log{flex:1;overflow-y:auto;padding:10px 4px 16px;display:flex;flex-direction:column;gap:14px;scrollbar-width:none;-ms-overflow-style:none}
+.jarvis-log::-webkit-scrollbar{width:0;height:0;display:none}
+.jarvis-welcome{text-align:center;width:100%;display:flex;flex-direction:column;align-items:center;padding:16px 10px}
+.jarvis-welcome-canvas{display:block;margin:0 auto 18px;}
+.jarvis-welcome-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px;letter-spacing:.06em}
+.jarvis-welcome-text{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:18px}
+.jarvis-suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.jarvis-chip{
   background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);
   color:var(--text2);padding:8px 14px;
   clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
   font-size:12px;cursor:pointer;transition:all .15s;letter-spacing:.04em;
   font-family:var(--font);
 }
-.aria-chip:hover{border-color:var(--neon);color:var(--neon);background:rgba(0,212,255,.12)}
-.aria-msg{display:flex;flex-direction:column;max-width:82%}
-.aria-msg.user{align-self:flex-end;align-items:flex-end}
-.aria-msg.assistant{align-self:flex-start;align-items:flex-start}
-.aria-bubble{
+.jarvis-chip:hover{border-color:var(--neon);color:var(--neon);background:rgba(0,212,255,.12)}
+.jarvis-msg{display:flex;flex-direction:column;max-width:82%}
+.jarvis-msg.user{align-self:flex-end;align-items:flex-end}
+.jarvis-msg.assistant{align-self:flex-start;align-items:flex-start}
+.jarvis-bubble{
   padding:11px 15px;border-radius:var(--radius);
   font-size:13.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word;
   letter-spacing:.02em;
 }
-.aria-msg.user .aria-bubble{
+.jarvis-msg.user .jarvis-bubble{
   background:linear-gradient(135deg,rgba(0,85,255,.65),rgba(0,170,255,.45));
   color:#fff;border:1px solid rgba(0,170,255,.3);border-bottom-right-radius:0;
 }
-.aria-msg.assistant .aria-bubble{
+.jarvis-msg.assistant .jarvis-bubble{
   background:var(--surface2);color:var(--text);
   border:1px solid var(--border-neon);border-bottom-left-radius:0;
 }
-.aria-meta{font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--font-mono)}
-.aria-typing{align-self:flex-start;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--neon);font-style:italic;padding:2px 6px;font-family:var(--font-mono);letter-spacing:.08em}
-.aria-input-row{display:flex;gap:10px;padding:12px 4px 16px;flex-direction:column}
-.aria-input-controls{display:flex;gap:10px;align-items:stretch;height:44px}
-.aria-attach-bar{display:flex;flex-wrap:wrap;gap:6px;padding:0 4px 2px}
-.aria-attach-pill{
+.jarvis-meta{font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--font-mono)}
+.jarvis-typing{align-self:flex-start;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--neon);font-style:italic;padding:2px 6px;font-family:var(--font-mono);letter-spacing:.08em}
+.jarvis-input-row{display:flex;gap:10px;padding:12px 4px 16px;flex-direction:column}
+.jarvis-input-controls{display:flex;gap:10px;align-items:stretch;height:44px}
+.jarvis-attach-bar{display:flex;flex-wrap:wrap;gap:6px;padding:0 4px 2px}
+.jarvis-attach-pill{
   display:inline-flex;align-items:center;gap:6px;
   background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25);
   border-radius:2px;padding:4px 8px;font-size:11px;
   color:var(--neon);font-family:var(--font-mono);letter-spacing:.04em;
   max-width:280px;
 }
-.aria-attach-pill-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
-.aria-attach-pill-size{color:var(--text3);font-size:10px;flex-shrink:0}
-.aria-attach-remove{background:none;border:none;color:var(--text3);cursor:pointer;padding:0 2px;font-size:13px;line-height:1;flex-shrink:0;transition:color .15s}
-.aria-attach-remove:hover{color:var(--red)}
-.aria-attach-btn{
+.jarvis-attach-pill-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.jarvis-attach-pill-size{color:var(--text3);font-size:10px;flex-shrink:0}
+.jarvis-attach-remove{background:none;border:none;color:var(--text3);cursor:pointer;padding:0 2px;font-size:13px;line-height:1;flex-shrink:0;transition:color .15s}
+.jarvis-attach-remove:hover{color:var(--red)}
+.jarvis-attach-btn{
   background:rgba(0,0,0,.92);border:1px solid var(--border-neon);
   border-radius:var(--radius-sm);padding:0 12px;font-size:15px;cursor:pointer;
   transition:all .15s;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
   clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);
 }
-.aria-attach-btn:hover{border-color:var(--neon);box-shadow:0 0 12px rgba(0,212,255,.2)}
-.aria-input{
+.jarvis-attach-btn:hover{border-color:var(--neon);box-shadow:0 0 12px rgba(0,212,255,.2)}
+.jarvis-input{
   flex:1;resize:none;
   background:rgba(0,0,0,.9);
   border:1px solid var(--border-neon);border-radius:var(--radius-sm);
@@ -1077,10 +1077,10 @@ nav{display:flex;gap:2px;flex:1}
   max-height:44px;scrollbar-width:none;-ms-overflow-style:none;
   transition:all .2s;letter-spacing:.02em;line-height:44px;
 }
-.aria-input::-webkit-scrollbar{width:0;height:0;display:none}
-.aria-input:focus{outline:none;border-color:var(--neon);box-shadow:0 0 0 2px rgba(0,212,255,.1),0 0 20px rgba(0,212,255,.05)}
-.aria-input::placeholder{color:var(--text3);letter-spacing:.04em}
-.aria-send{
+.jarvis-input::-webkit-scrollbar{width:0;height:0;display:none}
+.jarvis-input:focus{outline:none;border-color:var(--neon);box-shadow:0 0 0 2px rgba(0,212,255,.1),0 0 20px rgba(0,212,255,.05)}
+.jarvis-input::placeholder{color:var(--text3);letter-spacing:.04em}
+.jarvis-send{
   background:linear-gradient(135deg,rgba(0,85,255,.6),rgba(0,212,255,.4));
   color:#fff;border:1px solid var(--neon);border-radius:var(--radius-sm);
   padding:0 22px;font-weight:700;font-size:12px;cursor:pointer;transition:all .15s;
@@ -1088,31 +1088,31 @@ nav{display:flex;gap:2px;flex:1}
   clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);
   flex-shrink:0;
 }
-.aria-mic{
+.jarvis-mic{
   background:rgba(0,0,0,.92);border:1px solid var(--border-neon);
   border-radius:var(--radius-sm);padding:0 14px;font-size:16px;cursor:pointer;
   transition:all .15s;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
   clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);
 }
-.aria-mic:hover{border-color:var(--neon);box-shadow:0 0 14px rgba(0,212,255,.3)}
-.aria-send:hover{box-shadow:0 0 20px rgba(0,212,255,.4);background:linear-gradient(135deg,rgba(0,100,255,.7),rgba(0,220,255,.6))}
-.aria-send:disabled{opacity:.4;cursor:default;box-shadow:none}
+.jarvis-mic:hover{border-color:var(--neon);box-shadow:0 0 14px rgba(0,212,255,.3)}
+.jarvis-send:hover{box-shadow:0 0 20px rgba(0,212,255,.4);background:linear-gradient(135deg,rgba(0,100,255,.7),rgba(0,220,255,.6))}
+.jarvis-send:disabled{opacity:.4;cursor:default;box-shadow:none}
 
 /* ── IMMERSIVE VOICE OVERLAY — Jarvis style ── */
-.aria-voice-overlay{position:fixed;inset:0;z-index:1000;background:#050508;display:none;align-items:center;justify-content:center}
-.aria-voice-overlay.open{display:flex}
-#aria-voice-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+.jarvis-voice-overlay{position:fixed;inset:0;z-index:1000;background:#050508;display:none;align-items:center;justify-content:center}
+.jarvis-voice-overlay.open{display:flex}
+#jarvis-voice-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
 /* Status text — bottom center, lowercase, faded */
-#aria-voice-state{
+#jarvis-voice-state{
   position:absolute;bottom:104px;left:50%;transform:translateX(-50%);
   color:rgba(14,165,233,0.5);font-size:13px;letter-spacing:2px;
   text-transform:lowercase;font-weight:300;transition:opacity 0.5s ease;
   pointer-events:none;z-index:1010;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   white-space:nowrap;
 }
-/* ARIA watermark label */
-#aria-voice-label{
+/* JARVIS watermark label */
+#jarvis-voice-label{
   position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
   color:rgba(14,165,233,0.2);font-size:10px;letter-spacing:4px;
   text-transform:uppercase;font-weight:300;
@@ -1120,65 +1120,65 @@ nav{display:flex;gap:2px;flex:1}
   white-space:nowrap;
 }
 /* Top-right controls */
-#aria-voice-controls{
+#jarvis-voice-controls{
   position:absolute;bottom:52px;left:50%;transform:translateX(-50%);
   display:flex;gap:16px;z-index:1010;pointer-events:auto;
 }
-#aria-voice-controls button{
+#jarvis-voice-controls button{
   width:44px;height:44px;
   border:1px solid rgba(14,165,233,0.25);border-radius:50%;
   background:rgba(0,0,0,0.55);color:rgba(14,165,233,0.6);
   cursor:pointer;display:flex;align-items:center;justify-content:center;
   transition:all 0.2s;backdrop-filter:blur(8px);pointer-events:auto;
 }
-#aria-voice-controls button:hover{
+#jarvis-voice-controls button:hover{
   background:rgba(14,165,233,0.15);color:rgba(14,165,233,0.9);
   border-color:rgba(14,165,233,0.5);
 }
-#aria-voice-controls button.muted{color:rgba(239,68,68,0.7);border-color:rgba(239,68,68,0.35);}
+#jarvis-voice-controls button.muted{color:rgba(239,68,68,0.7);border-color:rgba(239,68,68,0.35);}
 /* Error text */
-#aria-voice-error{
+#jarvis-voice-error{
   position:absolute;top:40px;left:50%;transform:translateX(-50%);
   color:rgba(239,68,68,0.7);font-size:13px;letter-spacing:1px;font-weight:300;
   transition:opacity 0.5s ease;pointer-events:none;z-index:1010;opacity:0;
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;white-space:nowrap;
 }
 /* Menu dropdown */
-#aria-voice-menu{
+#jarvis-voice-menu{
   position:absolute;top:58px;right:16px;
   background:rgba(0,0,0,0.95);border:1px solid rgba(14,165,233,0.15);
   border-radius:8px;padding:4px;z-index:1010;backdrop-filter:blur(12px);display:none;
 }
-#aria-voice-menu button{
+#jarvis-voice-menu button{
   display:block;width:100%;padding:8px 16px;border:none;background:none;
   color:rgba(14,165,233,0.5);font-size:12px;letter-spacing:1px;
   text-align:left;cursor:pointer;border-radius:4px;transition:all 0.15s;
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
-#aria-voice-menu button:hover{background:rgba(14,165,233,0.1);color:rgba(14,165,233,0.8);}
+#jarvis-voice-menu button:hover{background:rgba(14,165,233,0.1);color:rgba(14,165,233,0.8);}
 /* transcript hidden — Jarvis design keeps overlay clean */
-.aria-voice-transcript{display:none}
-.aria-voice-hint{display:none}
-.aria-voice-ui{display:none}
+.jarvis-voice-transcript{display:none}
+.jarvis-voice-hint{display:none}
+.jarvis-voice-ui{display:none}
 
 /* ── HISTORY PANEL ── */
-.aria-history{flex-direction:column;gap:0;background:rgba(0,0,0,.95);border:1px solid var(--border-neon);border-radius:var(--radius);margin:0 4px 10px;max-height:260px;overflow-y:auto}
-.aria-history-head{font-size:9px;font-weight:700;color:var(--neon);padding:10px 14px 6px;letter-spacing:.16em;text-transform:uppercase;font-family:var(--font-mono)}
-.aria-history-list{display:flex;flex-direction:column}
-.aria-hist-item{display:flex;align-items:center;gap:8px;padding:9px 10px 9px 14px;border-top:1px solid var(--border);transition:background .12s}
-.aria-hist-item:hover{background:rgba(0,212,255,.06)}
-.aria-hist-open{flex:1;min-width:0;cursor:pointer}
-.aria-hist-title{font-size:12px;color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.02em}
-.aria-hist-meta{font-size:10px;color:var(--text3);margin-top:2px;font-family:var(--font-mono)}
-.aria-hist-del{flex-shrink:0;background:none;border:none;color:var(--text3);font-size:14px;cursor:pointer;padding:4px 6px;opacity:.4;transition:all .12s}
-.aria-hist-del:hover{opacity:1;color:var(--red)}
-.aria-hist-empty{padding:14px;font-size:11px;color:var(--text3);text-align:center;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em}
-.aria-archive-banner{
+.jarvis-history{flex-direction:column;gap:0;background:rgba(0,0,0,.95);border:1px solid var(--border-neon);border-radius:var(--radius);margin:0 4px 10px;max-height:260px;overflow-y:auto}
+.jarvis-history-head{font-size:9px;font-weight:700;color:var(--neon);padding:10px 14px 6px;letter-spacing:.16em;text-transform:uppercase;font-family:var(--font-mono)}
+.jarvis-history-list{display:flex;flex-direction:column}
+.jarvis-hist-item{display:flex;align-items:center;gap:8px;padding:9px 10px 9px 14px;border-top:1px solid var(--border);transition:background .12s}
+.jarvis-hist-item:hover{background:rgba(0,212,255,.06)}
+.jarvis-hist-open{flex:1;min-width:0;cursor:pointer}
+.jarvis-hist-title{font-size:12px;color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.02em}
+.jarvis-hist-meta{font-size:10px;color:var(--text3);margin-top:2px;font-family:var(--font-mono)}
+.jarvis-hist-del{flex-shrink:0;background:none;border:none;color:var(--text3);font-size:14px;cursor:pointer;padding:4px 6px;opacity:.4;transition:all .12s}
+.jarvis-hist-del:hover{opacity:1;color:var(--red)}
+.jarvis-hist-empty{padding:14px;font-size:11px;color:var(--text3);text-align:center;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em}
+.jarvis-archive-banner{
   background:rgba(0,212,255,.06);border:1px solid var(--border-neon);
   border-radius:var(--radius);padding:8px 13px;font-size:12px;color:var(--text2);margin-bottom:6px;
   font-family:var(--font-mono);letter-spacing:.04em;
 }
-.aria-archive-banner a{color:var(--neon)}
+.jarvis-archive-banner a{color:var(--neon)}
 
 /* ── OWNER DETAIL ── */
 .owner-detail-grid{display:flex;flex-direction:column;gap:10px}
@@ -1232,7 +1232,7 @@ nav{display:flex;gap:2px;flex:1}
     </div>
   </div>
   <nav>
-    <button class="nav-item nav-item-aria" data-view="aria">✦ Jarvis</button>
+    <button class="nav-item nav-item-jarvis" data-view="jarvis">✦ Jarvis</button>
     <button class="nav-item active" data-view="board">Board</button>
     <button class="nav-item" data-view="alerts">⚠️ Alerts <span class="nav-badge" id="alert-nav-badge" style="display:none"></span></button>
     <button class="nav-item" data-view="manager">🧭 Manager <span class="nav-badge" id="manager-nav-badge" style="display:none"></span></button>
@@ -1562,74 +1562,74 @@ nav{display:flex;gap:2px;flex:1}
     </div>
   </div>
 
-  <!-- ARIA — EXECUTIVE ASSISTANT VIEW -->
-  <div class="view" id="view-aria">
-    <div class="aria-shell">
-      <div class="aria-header">
-        <div class="aria-orb" id="aria-orb"></div>
-        <div class="aria-title-block">
-          <div class="aria-title">Jarvis</div>
-          <div class="aria-sub">Executive Assistant · full authority over every system, agent &amp; database</div>
+  <!-- JARVIS — EXECUTIVE ASSISTANT VIEW -->
+  <div class="view" id="view-jarvis">
+    <div class="jarvis-shell">
+      <div class="jarvis-header">
+        <div class="jarvis-orb" id="jarvis-orb"></div>
+        <div class="jarvis-title-block">
+          <div class="jarvis-title">Jarvis</div>
+          <div class="jarvis-sub">Executive Assistant · full authority over every system, agent &amp; database</div>
         </div>
         <div class="spacer"></div>
-        <span class="aria-status" id="aria-status">◌ connecting…</span>
-        <button class="btn" onclick="toggleAriaHistory()" title="Past conversations">🕘 History</button>
-        <button class="btn" onclick="newAriaSession()" title="Start a fresh conversation">＋ New</button>
+        <span class="jarvis-status" id="jarvis-status">◌ connecting…</span>
+        <button class="btn" onclick="toggleJarvisHistory()" title="Past conversations">🕘 History</button>
+        <button class="btn" onclick="newJarvisSession()" title="Start a fresh conversation">＋ New</button>
       </div>
-      <div class="aria-history" id="aria-history" style="display:none">
-        <div class="aria-history-head">Past conversations</div>
-        <div class="aria-history-list" id="aria-history-list"><div class="aria-hist-empty">Loading…</div></div>
+      <div class="jarvis-history" id="jarvis-history" style="display:none">
+        <div class="jarvis-history-head">Past conversations</div>
+        <div class="jarvis-history-list" id="jarvis-history-list"><div class="jarvis-hist-empty">Loading…</div></div>
       </div>
-      <div class="aria-log" id="aria-log">
-        <div class="aria-welcome">
-          <canvas class="aria-welcome-canvas" id="aria-mini-canvas"></canvas>
-          <div class="aria-welcome-title">Good to see you, Jordan.</div>
-          <div class="aria-welcome-text">I'm Jarvis — I can see and control everything you've built: the agents, the databases, the listings, the deals, the dashboard itself. Ask me anything, or hand me a job and I'll take care of it.</div>
-          <div class="aria-suggestions">
-            <button class="aria-chip" onclick="ariaSuggest(this)">Give me a full status of the operation</button>
-            <button class="aria-chip" onclick="ariaSuggest(this)">What needs my attention today?</button>
-            <button class="aria-chip" onclick="ariaSuggest(this)">Which owners are missing phone numbers?</button>
-            <button class="aria-chip" onclick="ariaSuggest(this)">Pause the marketing agent</button>
+      <div class="jarvis-log" id="jarvis-log">
+        <div class="jarvis-welcome">
+          <canvas class="jarvis-welcome-canvas" id="jarvis-mini-canvas"></canvas>
+          <div class="jarvis-welcome-title">Good to see you, Jordan.</div>
+          <div class="jarvis-welcome-text">I'm Jarvis — I can see and control everything you've built: the agents, the databases, the listings, the deals, the dashboard itself. Ask me anything, or hand me a job and I'll take care of it.</div>
+          <div class="jarvis-suggestions">
+            <button class="jarvis-chip" onclick="jarvisSuggest(this)">Give me a full status of the operation</button>
+            <button class="jarvis-chip" onclick="jarvisSuggest(this)">What needs my attention today?</button>
+            <button class="jarvis-chip" onclick="jarvisSuggest(this)">Which owners are missing phone numbers?</button>
+            <button class="jarvis-chip" onclick="jarvisSuggest(this)">Pause the marketing agent</button>
           </div>
         </div>
       </div>
-      <div class="aria-input-row">
-        <div class="aria-attach-bar" id="aria-attach-bar"></div>
-        <div class="aria-input-controls">
-          <button class="aria-mic" id="aria-mic" onclick="toggleAriaVoice()" title="Talk to ARIA (voice)">🎙️</button>
-          <button class="aria-attach-btn" onclick="ariaAttachMenu(event)" title="Attach files or folder">📎</button>
-          <input type="file" id="aria-file-input" multiple style="display:none" onchange="ariaFilesSelected(this)">
-          <input type="file" id="aria-folder-input" webkitdirectory multiple style="display:none" onchange="ariaFilesSelected(this)">
-          <textarea class="aria-input" id="aria-input" rows="1" placeholder="Message ARIA" onkeydown="ariaKeydown(event)"></textarea>
-          <button class="aria-send" id="aria-send" onclick="sendAria()">Send</button>
+      <div class="jarvis-input-row">
+        <div class="jarvis-attach-bar" id="jarvis-attach-bar"></div>
+        <div class="jarvis-input-controls">
+          <button class="jarvis-mic" id="jarvis-mic" onclick="toggleJarvisVoice()" title="Talk to JARVIS (voice)">🎙️</button>
+          <button class="jarvis-attach-btn" onclick="jarvisAttachMenu(event)" title="Attach files or folder">📎</button>
+          <input type="file" id="jarvis-file-input" multiple style="display:none" onchange="jarvisFilesSelected(this)">
+          <input type="file" id="jarvis-folder-input" webkitdirectory multiple style="display:none" onchange="jarvisFilesSelected(this)">
+          <textarea class="jarvis-input" id="jarvis-input" rows="1" placeholder="Message JARVIS" onkeydown="jarvisKeydown(event)"></textarea>
+          <button class="jarvis-send" id="jarvis-send" onclick="sendJarvis()">Send</button>
         </div>
       </div>
     </div>
 
     <!-- IMMERSIVE VOICE OVERLAY — Jarvis design -->
-    <div class="aria-voice-overlay" id="aria-voice-overlay">
-      <canvas id="aria-voice-canvas"></canvas>
+    <div class="jarvis-voice-overlay" id="jarvis-voice-overlay">
+      <canvas id="jarvis-voice-canvas"></canvas>
       <!-- top-right controls: mute + exit only -->
-      <div id="aria-voice-controls">
-        <button id="aria-voice-mic-toggle" title="Mute/Unmute" onclick="ariaVoiceMicToggle()">
+      <div id="jarvis-voice-controls">
+        <button id="jarvis-voice-mic-toggle" title="Mute/Unmute" onclick="jarvisVoiceMicToggle()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
             <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
             <line x1="12" y1="19" x2="12" y2="23"/>
           </svg>
         </button>
-        <button id="aria-voice-close-btn" title="Exit voice mode" onclick="closeAriaVoice()">
+        <button id="jarvis-voice-close-btn" title="Exit voice mode" onclick="closeJarvisVoice()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
       </div>
       <!-- status: bottom center -->
-      <div id="aria-voice-state"></div>
-      <!-- ARIA watermark -->
-      <div id="aria-voice-label">Jarvis</div>
+      <div id="jarvis-voice-state"></div>
+      <!-- JARVIS watermark -->
+      <div id="jarvis-voice-label">Jarvis</div>
       <!-- error text -->
-      <div id="aria-voice-error"></div>
+      <div id="jarvis-voice-error"></div>
     </div>
   </div>
 
@@ -2296,7 +2296,7 @@ function switchView(view){
     'exports':'view-exports','deals':'view-deals','tc':'view-tc',
     'alerts':'view-alerts','calendar':'view-calendar','analytics':'view-analytics',
     'templates':'view-templates','settings':'view-settings','listings':'view-listings',
-    'command':'view-command','manager':'view-manager','aria':'view-aria'
+    'command':'view-command','manager':'view-manager','jarvis':'view-jarvis'
   };
   const vid=mapping[view]||('view-'+view);
   const el=document.getElementById(vid);
@@ -2314,7 +2314,7 @@ function switchView(view){
   if(view==='listings')loadListings();
   if(view==='command')loadCommandConsole();
   if(view==='manager')loadManager();
-  if(view==='aria')loadAria();
+  if(view==='jarvis')loadJarvis();
 }
 document.querySelectorAll('.nav-item').forEach(btn=>{
   btn.addEventListener('click',()=>switchView(btn.dataset.view));
@@ -4468,26 +4468,26 @@ function confirmStopAll(){
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ARIA — EXECUTIVE ASSISTANT (Jarvis)
+// JARVIS — EXECUTIVE ASSISTANT (Jarvis)
 // ═══════════════════════════════════════════════════════════════════════════
-let ariaMessages=[];
-let ariaPollTimer=null;
-let ariaLastRendered=0;
-let ariaViewingArchive=false;
-function ariaKeydown(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAria();} }
-function ariaSuggest(el){ const i=document.getElementById('aria-input'); i.value=el.textContent; i.focus(); }
-async function loadAria(){
-  window._ariaWelcomeHTML=undefined;   // clear cached welcome so star doesn't restore
-  await loadAriaChat();
-  if(!ariaPollTimer){ ariaPollTimer=setInterval(loadAriaChat, 4000); }
+let jarvisMessages=[];
+let jarvisPollTimer=null;
+let jarvisLastRendered=0;
+let jarvisViewingArchive=false;
+function jarvisKeydown(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendJarvis();} }
+function jarvisSuggest(el){ const i=document.getElementById('jarvis-input'); i.value=el.textContent; i.focus(); }
+async function loadJarvis(){
+  window._jarvisWelcomeHTML=undefined;   // clear cached welcome so star doesn't restore
+  await loadJarvisChat();
+  if(!jarvisPollTimer){ jarvisPollTimer=setInterval(loadJarvisChat, 4000); }
   startMiniOrb();
 }
 
-// ── Mini ambient orb on the ARIA welcome screen (same particle system, scaled down) ──
+// ── Mini ambient orb on the JARVIS welcome screen (same particle system, scaled down) ──
 let _miniOrbRAF=null;
 function startMiniOrb(){
   cancelAnimationFrame(_miniOrbRAF);
-  const canvas=document.getElementById('aria-mini-canvas');
+  const canvas=document.getElementById('jarvis-mini-canvas');
   if(!canvas)return;
   if(!window.THREE){ setTimeout(startMiniOrb,200); return; }
 
@@ -4555,7 +4555,7 @@ function startMiniOrb(){
 
   function miniFrame(){
     _miniOrbRAF=requestAnimationFrame(miniFrame);
-    if(!document.getElementById('aria-mini-canvas')){
+    if(!document.getElementById('jarvis-mini-canvas')){
       cancelAnimationFrame(_miniOrbRAF); renderer.dispose(); return;
     }
     const t=clock.getElapsedTime();
@@ -4622,15 +4622,15 @@ function startMiniOrb(){
   }
   miniFrame();
 }
-// ── ARIA file/folder attachments ──────────────────────────────────────────
-let _ariaAttachments = [];   // [{name, size, content (string)}]
+// ── JARVIS file/folder attachments ──────────────────────────────────────────
+let _jarvisAttachments = [];   // [{name, size, content (string)}]
 
-function ariaAttachMenu(ev){
+function jarvisAttachMenu(ev){
   // Show a tiny inline menu: Files | Folder
-  const existing = document.getElementById('aria-attach-menu');
+  const existing = document.getElementById('jarvis-attach-menu');
   if(existing){ existing.remove(); return; }
   const menu = document.createElement('div');
-  menu.id = 'aria-attach-menu';
+  menu.id = 'jarvis-attach-menu';
   Object.assign(menu.style,{
     position:'absolute',zIndex:'999',
     background:'#111',border:'1px solid rgba(0,212,255,.3)',borderRadius:'3px',
@@ -4650,14 +4650,14 @@ function ariaAttachMenu(ev){
     return d;
   };
   menu.append(
-    mkItem('📄  Files',  ()=>document.getElementById('aria-file-input').click()),
-    mkItem('📁  Folder', ()=>document.getElementById('aria-folder-input').click())
+    mkItem('📄  Files',  ()=>document.getElementById('jarvis-file-input').click()),
+    mkItem('📁  Folder', ()=>document.getElementById('jarvis-folder-input').click())
   );
   document.body.appendChild(menu);
   setTimeout(()=>document.addEventListener('click', function h(){ menu.remove(); document.removeEventListener('click',h); }), 50);
 }
 
-async function ariaFilesSelected(input){
+async function jarvisFilesSelected(input){
   const MAX_TEXT = 120000;  // chars per file (safety cap)
   const MAX_FILES = 40;
   const files = Array.from(input.files||[]).slice(0, MAX_FILES);
@@ -4667,7 +4667,7 @@ async function ariaFilesSelected(input){
   const TEXT_TYPES = /\.(txt|md|markdown|csv|json|jsonl|yaml|yml|toml|xml|html|htm|css|js|ts|jsx|tsx|py|rb|go|rs|java|c|cpp|h|hpp|sh|bash|zsh|sql|r|swift|kt|dart|vue|svelte|env|ini|cfg|conf|log|gitignore|dockerfile)$/i;
   const SIZE_LIMIT = 4 * 1024 * 1024; // 4 MB hard limit per file
 
-  const bar = document.getElementById('aria-attach-bar');
+  const bar = document.getElementById('jarvis-attach-bar');
   for(const file of files){
     // Skip huge binaries silently
     if(file.size > SIZE_LIMIT){ showToast(`${file.name} too large (>${(SIZE_LIMIT/1024/1024).toFixed(0)} MB), skipped`,'error'); continue; }
@@ -4688,20 +4688,20 @@ async function ariaFilesSelected(input){
       if(content.length > MAX_TEXT) content = content.slice(0, MAX_TEXT) + '… [truncated]';
     }
     const att = { name: displayName, size: file.size, content };
-    _ariaAttachments.push(att);
+    _jarvisAttachments.push(att);
     // render pill
     const pill = document.createElement('div');
-    pill.className = 'aria-attach-pill';
+    pill.className = 'jarvis-attach-pill';
     pill.dataset.name = displayName;
-    pill.innerHTML = `<span class="aria-attach-pill-name" title="${esc(displayName)}">${esc(displayName)}</span>`
-      + `<span class="aria-attach-pill-size">${fmtBytes(file.size)}</span>`
-      + `<button class="aria-attach-remove" title="Remove" onclick="ariaRemoveAttachment('${CSS.escape(displayName)}',this.parentElement)">✕</button>`;
+    pill.innerHTML = `<span class="jarvis-attach-pill-name" title="${esc(displayName)}">${esc(displayName)}</span>`
+      + `<span class="jarvis-attach-pill-size">${fmtBytes(file.size)}</span>`
+      + `<button class="jarvis-attach-remove" title="Remove" onclick="jarvisRemoveAttachment('${CSS.escape(displayName)}',this.parentElement)">✕</button>`;
     bar.appendChild(pill);
   }
 }
 
-function ariaRemoveAttachment(name, pill){
-  _ariaAttachments = _ariaAttachments.filter(a=>a.name!==name);
+function jarvisRemoveAttachment(name, pill){
+  _jarvisAttachments = _jarvisAttachments.filter(a=>a.name!==name);
   pill.remove();
 }
 
@@ -4711,262 +4711,262 @@ function fmtBytes(b){
   return (b/1024/1024).toFixed(1)+'MB';
 }
 
-function ariaAttachmentBlock(){
+function jarvisAttachmentBlock(){
   // Builds the file-content prefix that rides in the message text
-  if(!_ariaAttachments.length) return '';
-  const parts = _ariaAttachments.map(a=>
+  if(!_jarvisAttachments.length) return '';
+  const parts = _jarvisAttachments.map(a=>
     `<file path="${a.name}" bytes="${a.size}">\n${a.content}\n</file>`
   );
   return `[ATTACHED FILES]\n${parts.join('\n')}\n[/ATTACHED FILES]\n\n`;
 }
 
-function ariaClearAttachments(){
-  _ariaAttachments = [];
-  const bar = document.getElementById('aria-attach-bar');
+function jarvisClearAttachments(){
+  _jarvisAttachments = [];
+  const bar = document.getElementById('jarvis-attach-bar');
   if(bar) bar.innerHTML = '';
 }
 
-async function sendAria(){
-  const input=document.getElementById('aria-input');
+async function sendJarvis(){
+  const input=document.getElementById('jarvis-input');
   const text=(input.value||'').trim();
-  const attachBlock = ariaAttachmentBlock();
+  const attachBlock = jarvisAttachmentBlock();
   if(!text && !attachBlock) return;
   const fullText = attachBlock + (text || '(see attached files)');
   input.value='';
-  ariaClearAttachments();
-  const btn=document.getElementById('aria-send');
+  jarvisClearAttachments();
+  const btn=document.getElementById('jarvis-send');
   if(btn)btn.disabled=true;
   // optimistic echo — show user text only (not the full attachment block)
-  const displayText = (attachBlock ? `📎 ${_ariaAttachments.length||''}files  ` : '') + text;
-  ariaMessages.push({id:'tmp-'+Date.now(),role:'user',text:text||(attachBlock?'[attached files]':''),status:'pending',ts:Date.now()});
-  renderAria(true);
+  const displayText = (attachBlock ? `📎 ${_jarvisAttachments.length||''}files  ` : '') + text;
+  jarvisMessages.push({id:'tmp-'+Date.now(),role:'user',text:text||(attachBlock?'[attached files]':''),status:'pending',ts:Date.now()});
+  renderJarvis(true);
   try{
-    const r=await api('/api/ea/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:fullText})});
+    const r=await api('/api/jarvis/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:fullText})});
     if(!r.ok)throw new Error((await r.json().catch(()=>({}))).detail||r.statusText);
-    await loadAriaChat();
-    startAriaPolling();
+    await loadJarvisChat();
+    startJarvisPolling();
   }catch(e){showToast('Jarvis send failed: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
 }
-async function loadAriaChat(){
-  if(ariaViewingArchive)return;   // don't clobber an archived view
+async function loadJarvisChat(){
+  if(jarvisViewingArchive)return;   // don't clobber an archived view
   try{
-    const r=await api('/api/ea/chat');
+    const r=await api('/api/jarvis/chat');
     if(!r.ok)return;
     const d=await r.json();
     // keep optimistic temp msgs only if server hasn't caught up
     const serverIds=new Set((d.messages||[]).map(m=>m.id));
-    const temps=ariaMessages.filter(m=>m.id.startsWith('tmp-')&&!(d.messages||[]).some(s=>s.role==='user'&&s.text===m.text));
-    ariaMessages=(d.messages||[]).concat(temps);
-    renderAria(false, d.worker_online);
-    ariaMaybeSpeakReply();   // if in voice mode + a new reply landed, speak it
+    const temps=jarvisMessages.filter(m=>m.id.startsWith('tmp-')&&!(d.messages||[]).some(s=>s.role==='user'&&s.text===m.text));
+    jarvisMessages=(d.messages||[]).concat(temps);
+    renderJarvis(false, d.worker_online);
+    jarvisMaybeSpeakReply();   // if in voice mode + a new reply landed, speak it
   }catch(e){}
 }
-function renderAria(force, workerOnline){
-  const log=document.getElementById('aria-log');
+function renderJarvis(force, workerOnline){
+  const log=document.getElementById('jarvis-log');
   if(!log)return;
-  if(window._ariaWelcomeHTML===undefined){const w=log.querySelector('.aria-welcome');window._ariaWelcomeHTML=w?w.outerHTML:'';}
-  const st=document.getElementById('aria-status');
-  const orb=document.getElementById('aria-orb');
-  const pending=ariaMessages.some(m=>m.role==='user'&&(m.status==='pending'||m.status==='processing'));
+  if(window._jarvisWelcomeHTML===undefined){const w=log.querySelector('.jarvis-welcome');window._jarvisWelcomeHTML=w?w.outerHTML:'';}
+  const st=document.getElementById('jarvis-status');
+  const orb=document.getElementById('jarvis-orb');
+  const pending=jarvisMessages.some(m=>m.role==='user'&&(m.status==='pending'||m.status==='processing'));
   if(st){
-    if(pending){st.textContent='✦ working…';st.className='aria-status online';}
-    else if(workerOnline!==false){st.textContent='✦ online';st.className='aria-status online';}
-    else{st.textContent='◌ offline';st.className='aria-status';}
+    if(pending){st.textContent='✦ working…';st.className='jarvis-status online';}
+    else if(workerOnline!==false){st.textContent='✦ online';st.className='jarvis-status online';}
+    else{st.textContent='◌ offline';st.className='jarvis-status';}
   }
   if(orb)orb.classList.toggle('thinking',pending);
-  if(!ariaMessages.length){
+  if(!jarvisMessages.length){
     // empty live chat → restore welcome (also clears any stale archive view)
-    if(!log.querySelector('.aria-welcome')&&window._ariaWelcomeHTML){log.innerHTML=window._ariaWelcomeHTML;ariaLastRendered=0;}
+    if(!log.querySelector('.jarvis-welcome')&&window._jarvisWelcomeHTML){log.innerHTML=window._jarvisWelcomeHTML;jarvisLastRendered=0;}
     return;
   }
-  if(!force && ariaMessages.length===ariaLastRendered && !pending)return;
-  ariaLastRendered=ariaMessages.length;
-  let html=ariaMessages.map(m=>{
+  if(!force && jarvisMessages.length===jarvisLastRendered && !pending)return;
+  jarvisLastRendered=jarvisMessages.length;
+  let html=jarvisMessages.map(m=>{
     const cls=m.role==='user'?'user':'assistant';
     const when=m.ts?timeAgo(m.ts):'';
     const meta=m.role==='user'?(m.status==='pending'||m.status==='processing'?'sending…':when):('Jarvis · '+when);
-    return `<div class="aria-msg ${cls}"><div class="aria-bubble">${esc(m.text)}</div><div class="aria-meta">${esc(meta)}</div></div>`;
+    return `<div class="jarvis-msg ${cls}"><div class="jarvis-bubble">${esc(m.text)}</div><div class="jarvis-meta">${esc(meta)}</div></div>`;
   }).join('');
-  if(pending)html+=`<div class="aria-typing">✦ Jarvis is on it — running the task…</div>`;
+  if(pending)html+=`<div class="jarvis-typing">✦ Jarvis is on it — running the task…</div>`;
   log.innerHTML=html;
   log.scrollTop=log.scrollHeight;
 }
-function startAriaPolling(){
-  if(ariaPollTimer)clearInterval(ariaPollTimer);
+function startJarvisPolling(){
+  if(jarvisPollTimer)clearInterval(jarvisPollTimer);
   let ticks=0;
-  ariaPollTimer=setInterval(async()=>{
+  jarvisPollTimer=setInterval(async()=>{
     ticks++;
-    await loadAriaChat();
-    const pending=ariaMessages.some(m=>m.role==='user'&&(m.status==='pending'||m.status==='processing'));
-    if((!pending&&ticks>2)||ticks>180){clearInterval(ariaPollTimer);ariaPollTimer=setInterval(loadAriaChat,4000);}
+    await loadJarvisChat();
+    const pending=jarvisMessages.some(m=>m.role==='user'&&(m.status==='pending'||m.status==='processing'));
+    if((!pending&&ticks>2)||ticks>180){clearInterval(jarvisPollTimer);jarvisPollTimer=setInterval(loadJarvisChat,4000);}
   },3000);
 }
-async function newAriaSession(){
-  // Instant: archive current thread + reset, no message sent to ARIA
+async function newJarvisSession(){
+  // Instant: archive current thread + reset, no message sent to JARVIS
   try{
-    await api('/api/ea/chat/new',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    await api('/api/jarvis/chat/new',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
   }catch(e){}
-  ariaMessages=[];ariaLastRendered=0;
-  if(ariaPollTimer){clearInterval(ariaPollTimer);ariaPollTimer=setInterval(loadAriaChat,4000);}
-  document.getElementById('aria-log').innerHTML='<div class="aria-welcome"><canvas class="aria-welcome-canvas" id="aria-mini-canvas"></canvas><div class="aria-welcome-title">Fresh start.</div><div class="aria-welcome-text">New conversation. What can I do for you, Jordan?</div></div>';
-  const st=document.getElementById('aria-status');if(st){st.textContent='✦ online';st.className='aria-status online';}
-  const orb=document.getElementById('aria-orb');if(orb)orb.classList.remove('thinking');
+  jarvisMessages=[];jarvisLastRendered=0;
+  if(jarvisPollTimer){clearInterval(jarvisPollTimer);jarvisPollTimer=setInterval(loadJarvisChat,4000);}
+  document.getElementById('jarvis-log').innerHTML='<div class="jarvis-welcome"><canvas class="jarvis-welcome-canvas" id="jarvis-mini-canvas"></canvas><div class="jarvis-welcome-title">Fresh start.</div><div class="jarvis-welcome-text">New conversation. What can I do for you, Jordan?</div></div>';
+  const st=document.getElementById('jarvis-status');if(st){st.textContent='✦ online';st.className='jarvis-status online';}
+  const orb=document.getElementById('jarvis-orb');if(orb)orb.classList.remove('thinking');
   showToast('New Jarvis conversation started','success');
-  loadAriaSessions();
+  loadJarvisSessions();
 }
-// ── ARIA session history ──
-async function loadAriaSessions(){
-  const box=document.getElementById('aria-history-list');
+// ── JARVIS session history ──
+async function loadJarvisSessions(){
+  const box=document.getElementById('jarvis-history-list');
   if(!box)return;
   try{
-    const r=await api('/api/ea/sessions');
+    const r=await api('/api/jarvis/sessions');
     const d=await r.json();
     const items=d.sessions||[];
-    if(!items.length){box.innerHTML='<div class="aria-hist-empty">No past conversations yet.</div>';return;}
-    box.innerHTML=items.map(s=>`<div class="aria-hist-item"><div class="aria-hist-open" onclick="openAriaSession('${s.id}')"><div class="aria-hist-title">${esc(s.title)}</div><div class="aria-hist-meta">${s.count} msgs · ${timeAgo(s.ended_at)}</div></div><button class="aria-hist-del" title="Delete conversation" onclick="deleteAriaSession(event,'${s.id}')">🗑</button></div>`).join('');
-  }catch(e){box.innerHTML='<div class="aria-hist-empty">Could not load history.</div>';}
+    if(!items.length){box.innerHTML='<div class="jarvis-hist-empty">No past conversations yet.</div>';return;}
+    box.innerHTML=items.map(s=>`<div class="jarvis-hist-item"><div class="jarvis-hist-open" onclick="openJarvisSession('${s.id}')"><div class="jarvis-hist-title">${esc(s.title)}</div><div class="jarvis-hist-meta">${s.count} msgs · ${timeAgo(s.ended_at)}</div></div><button class="jarvis-hist-del" title="Delete conversation" onclick="deleteJarvisSession(event,'${s.id}')">🗑</button></div>`).join('');
+  }catch(e){box.innerHTML='<div class="jarvis-hist-empty">Could not load history.</div>';}
 }
-function toggleAriaHistory(){
-  const panel=document.getElementById('aria-history');
+function toggleJarvisHistory(){
+  const panel=document.getElementById('jarvis-history');
   if(!panel)return;
   const show=panel.style.display==='none'||!panel.style.display;
   panel.style.display=show?'flex':'none';
-  if(show)loadAriaSessions();
+  if(show)loadJarvisSessions();
 }
-let ariaViewingArchiveDup;  // (declared above)
-async function openAriaSession(id){
+let jarvisViewingArchiveDup;  // (declared above)
+async function openJarvisSession(id){
   try{
-    const r=await api('/api/ea/sessions/'+id);
+    const r=await api('/api/jarvis/sessions/'+id);
     const d=await r.json();
     const s=d.session;
     if(!s)return;
-    ariaViewingArchive=true;
-    if(ariaPollTimer){clearInterval(ariaPollTimer);ariaPollTimer=null;}
-    const log=document.getElementById('aria-log');
-    let html='<div class="aria-archive-banner">📜 Viewing a past conversation — <a href="#" onclick="backToLiveAria(event)">back to current chat</a></div>';
+    jarvisViewingArchive=true;
+    if(jarvisPollTimer){clearInterval(jarvisPollTimer);jarvisPollTimer=null;}
+    const log=document.getElementById('jarvis-log');
+    let html='<div class="jarvis-archive-banner">📜 Viewing a past conversation — <a href="#" onclick="backToLiveJarvis(event)">back to current chat</a></div>';
     html+=(s.messages||[]).map(m=>{
       const cls=m.role==='user'?'user':'assistant';
       const meta=m.role==='user'?timeAgo(m.ts):('Jarvis · '+timeAgo(m.ts));
-      return `<div class="aria-msg ${cls}"><div class="aria-bubble">${esc(m.text)}</div><div class="aria-meta">${esc(meta)}</div></div>`;
+      return `<div class="jarvis-msg ${cls}"><div class="jarvis-bubble">${esc(m.text)}</div><div class="jarvis-meta">${esc(meta)}</div></div>`;
     }).join('');
     log.innerHTML=html;log.scrollTop=0;
-    const panel=document.getElementById('aria-history');if(panel)panel.style.display='none';
+    const panel=document.getElementById('jarvis-history');if(panel)panel.style.display='none';
   }catch(e){showToast('Could not open conversation','error');}
 }
-function backToLiveAria(ev){
+function backToLiveJarvis(ev){
   if(ev){ev.preventDefault();ev.stopPropagation();}
-  ariaViewingArchive=false;ariaLastRendered=-1;
-  const log=document.getElementById('aria-log');
-  if(log)log.innerHTML='<div class="aria-hist-empty" style="padding:40px">Loading current chat…</div>';
-  loadAria();
+  jarvisViewingArchive=false;jarvisLastRendered=-1;
+  const log=document.getElementById('jarvis-log');
+  if(log)log.innerHTML='<div class="jarvis-hist-empty" style="padding:40px">Loading current chat…</div>';
+  loadJarvis();
 }
-async function deleteAriaSession(ev,id){
+async function deleteJarvisSession(ev,id){
   if(ev){ev.preventDefault();ev.stopPropagation();}
   if(!confirm('Delete this conversation permanently?'))return;
   try{
-    const r=await api('/api/ea/sessions/'+id,{method:'DELETE'});
+    const r=await api('/api/jarvis/sessions/'+id,{method:'DELETE'});
     if(!r.ok)throw new Error();
-    loadAriaSessions();
+    loadJarvisSessions();
   }catch(e){showToast('Could not delete conversation','error');}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ARIA VOICE MODE — Perplexity-style 3D orb + speech in/out (all client-side)
+// JARVIS VOICE MODE — Perplexity-style 3D orb + speech in/out (all client-side)
 // ═══════════════════════════════════════════════════════════════════════════
-let ariaVoiceOn=false, ariaRec=null, ariaMicMuted=false, ariaVoiceState='idle';
-let ariaAudioCtx=null, ariaAnalyser=null, ariaMicStream=null, ariaFreq=null;
-let ariaThree=null, ariaRAF=null;
-let ariaSpeaking=false, ariaPendingRestart=false;
-let ariaVoiceReplyBaseline=0;   // track which assistant msgs already spoken
+let jarvisVoiceOn=false, jarvisRec=null, jarvisMicMuted=false, jarvisVoiceState='idle';
+let jarvisAudioCtx=null, jarvisAnalyser=null, jarvisMicStream=null, jarvisFreq=null;
+let jarvisThree=null, jarvisRAF=null;
+let jarvisSpeaking=false, jarvisPendingRestart=false;
+let jarvisVoiceReplyBaseline=0;   // track which assistant msgs already spoken
 
 const STT = window.SpeechRecognition || window.webkitSpeechRecognition;
 const TTS = window.speechSynthesis;
 
 // Fish Audio is primary TTS — only need STT (mic) support check
-function ariaVoiceSupported(){ return !!STT; }
+function jarvisVoiceSupported(){ return !!STT; }
 
-function toggleAriaVoice(){
-  if(!ariaVoiceSupported()){
+function toggleJarvisVoice(){
+  if(!jarvisVoiceSupported()){
     showToast('Voice needs Chrome, Edge, or Safari (Web Speech API).','error');
     return;
   }
-  ariaVoiceOn ? closeAriaVoice() : openAriaVoice();
+  jarvisVoiceOn ? closeJarvisVoice() : openJarvisVoice();
 }
 
-async function openAriaVoice(){
-  const ov=document.getElementById('aria-voice-overlay');
+async function openJarvisVoice(){
+  const ov=document.getElementById('jarvis-voice-overlay');
   ov.classList.add('open');
-  ariaVoiceOn=true;
+  jarvisVoiceOn=true;
   // baseline: only speak assistant replies that arrive AFTER we enter voice mode
-  ariaVoiceReplyBaseline=ariaMessages.filter(m=>m.role==='assistant').length;
+  jarvisVoiceReplyBaseline=jarvisMessages.filter(m=>m.role==='assistant').length;
   await initVoiceAudio();
   // Eagerly resume/create TTS AudioContext on this user gesture so
   // Comet (and other strict-autoplay browsers) unlock audio before TTS fires
-  try{ await _ariaAudioResume(); }catch(e){}
+  try{ await _jarvisAudioResume(); }catch(e){}
   initOrb();
   startOrbLoop();
   setVoiceState('listening');
-  if(ariaThree&&ariaThree.setOrbState) ariaThree.setOrbState('listening');
-  ariaGreet();
-  startAriaListening();
+  if(jarvisThree&&jarvisThree.setOrbState) jarvisThree.setOrbState('listening');
+  jarvisGreet();
+  startJarvisListening();
   // ensure we're polling for her async replies
-  if(!ariaPollTimer)ariaPollTimer=setInterval(loadAriaChat,3000);
+  if(!jarvisPollTimer)jarvisPollTimer=setInterval(loadJarvisChat,3000);
 }
 
-function closeAriaVoice(){
-  ariaVoiceOn=false;
-  const ov=document.getElementById('aria-voice-overlay');
+function closeJarvisVoice(){
+  jarvisVoiceOn=false;
+  const ov=document.getElementById('jarvis-voice-overlay');
   if(ov)ov.classList.remove('open');
-  try{ if(ariaRec)ariaRec.abort(); }catch(e){}
-  ariaRec=null;
+  try{ if(jarvisRec)jarvisRec.abort(); }catch(e){}
+  jarvisRec=null;
   // stop Fish Audio player
-  _ariaAudioStop();
+  _jarvisAudioStop();
   // stop browser TTS fallback
   try{ if(TTS)TTS.cancel(); }catch(e){}
   // reset orb to idle
-  if(ariaThree&&ariaThree.setOrbState) ariaThree.setOrbState('idle');
-  if(ariaRAF)cancelAnimationFrame(ariaRAF);ariaRAF=null;
-  if(ariaMicStream){ariaMicStream.getTracks().forEach(t=>t.stop());ariaMicStream=null;}
-  if(ariaAudioCtx){try{ariaAudioCtx.close();}catch(e){}ariaAudioCtx=null;}
-  ariaSpeaking=false;
+  if(jarvisThree&&jarvisThree.setOrbState) jarvisThree.setOrbState('idle');
+  if(jarvisRAF)cancelAnimationFrame(jarvisRAF);jarvisRAF=null;
+  if(jarvisMicStream){jarvisMicStream.getTracks().forEach(t=>t.stop());jarvisMicStream=null;}
+  if(jarvisAudioCtx){try{jarvisAudioCtx.close();}catch(e){}jarvisAudioCtx=null;}
+  jarvisSpeaking=false;
 }
 
-function pickAriaTtsVoice(){
+function pickJarvisTtsVoice(){
   const vs=(window.speechSynthesis&&window.speechSynthesis.getVoices())||[];
-  return vs.find(v=>/en-US/.test(v.lang)&&/(Samantha|Google US English|Zira|Aria|Jenny)/i.test(v.name))
+  return vs.find(v=>/en-US/.test(v.lang)&&/(Samantha|Google US English|Zira|Jarvis|Jenny)/i.test(v.name))
       || vs.find(v=>/en-US/.test(v.lang)) || vs.find(v=>/^en/.test(v.lang)) || vs[0] || null;
 }
 
 function setVoiceState(s){
-  ariaVoiceState=s;
-  const el=document.getElementById('aria-voice-state');
+  jarvisVoiceState=s;
+  const el=document.getElementById('jarvis-voice-state');
   if(!el)return;
   // Jarvis-style: lowercase, bottom center, faded
   const labels={listening:'listening...',thinking:'thinking...',speaking:'',idle:''};
   el.textContent=labels[s]||'';
   el.style.opacity=(s==='idle'||s==='speaking')?'0':'1';
   // keep Jarvis orb in sync
-  if(ariaThree&&ariaThree.setOrbState){
+  if(jarvisThree&&jarvisThree.setOrbState){
     const orbMap={listening:'listening',thinking:'thinking',speaking:'speaking'};
-    ariaThree.setOrbState(orbMap[s]||'idle');
+    jarvisThree.setOrbState(orbMap[s]||'idle');
   }
 }
-function ariaVoiceMenuToggle(e){
+function jarvisVoiceMenuToggle(e){
   e.stopPropagation();
-  const m=document.getElementById('aria-voice-menu');
+  const m=document.getElementById('jarvis-voice-menu');
   if(!m)return;
   m.style.display=m.style.display==='block'?'none':'block';
   setTimeout(()=>document.addEventListener('click',function h(){m.style.display='none';document.removeEventListener('click',h);}),50);
 }
-function ariaVoiceMenuClose(){
-  const m=document.getElementById('aria-voice-menu');
+function jarvisVoiceMenuClose(){
+  const m=document.getElementById('jarvis-voice-menu');
   if(m)m.style.display='none';
 }
-function ariaVoiceTextSend(){
+function jarvisVoiceTextSend(){
   // toggle text input row visibility when send btn clicked without text
-  const row=document.getElementById('aria-voice-text-row');
-  const inp=document.getElementById('aria-voice-text-input');
+  const row=document.getElementById('jarvis-voice-text-row');
+  const inp=document.getElementById('jarvis-voice-text-input');
   if(!row||!inp)return;
   const text=(inp.value||'').trim();
   if(!text){
@@ -4979,34 +4979,34 @@ function ariaVoiceTextSend(){
   // send the typed text
   inp.value='';
   row.style.display='none';
-  ariaMessages.push({id:'tmp-'+Date.now(),role:'user',text,status:'pending',ts:Date.now()});
-  renderAria(true);
+  jarvisMessages.push({id:'tmp-'+Date.now(),role:'user',text,status:'pending',ts:Date.now()});
+  renderJarvis(true);
   setVoiceState('thinking');
-  api('/api/ea/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+  api('/api/jarvis/chat',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({text})})
-    .then(r=>{ if(!r.ok)throw new Error(r.statusText); return loadAriaChat(); })
-    .then(()=>startAriaPolling())
-    .catch(e=>ariaVoiceShowError('Send failed: '+e.message));
+    .then(r=>{ if(!r.ok)throw new Error(r.statusText); return loadJarvisChat(); })
+    .then(()=>startJarvisPolling())
+    .catch(e=>jarvisVoiceShowError('Send failed: '+e.message));
 }
-function ariaVoiceShowError(msg){
-  const el=document.getElementById('aria-voice-error');
+function jarvisVoiceShowError(msg){
+  const el=document.getElementById('jarvis-voice-error');
   if(!el)return;
   el.textContent=msg;el.style.opacity='1';
   setTimeout(()=>{el.style.opacity='0';},5000);
 }
-function setVoiceTranscript(t){ const el=document.getElementById('aria-voice-transcript'); if(el)el.textContent=t||''; }
+function setVoiceTranscript(t){ const el=document.getElementById('jarvis-voice-transcript'); if(el)el.textContent=t||''; }
 
 // ── Speech recognition (mic → text) ──
-function startAriaListening(){
-  if(!ariaVoiceOn||ariaMicMuted||ariaSpeaking)return;
+function startJarvisListening(){
+  if(!jarvisVoiceOn||jarvisMicMuted||jarvisSpeaking)return;
   if(!STT)return;
   try{
-    ariaRec=new STT();
-    ariaRec.lang='en-US';
-    ariaRec.interimResults=true;
-    ariaRec.continuous=false;
+    jarvisRec=new STT();
+    jarvisRec.lang='en-US';
+    jarvisRec.interimResults=true;
+    jarvisRec.continuous=false;
     let finalText='';
-    ariaRec.onresult=(e)=>{
+    jarvisRec.onresult=(e)=>{
       let interim='';
       for(let i=e.resultIndex;i<e.results.length;i++){
         const tr=e.results[i];
@@ -5015,14 +5015,14 @@ function startAriaListening(){
       }
       setVoiceTranscript(finalText||interim);
     };
-    ariaRec.onerror=(e)=>{ /* no-match/aborted are normal */ };
-    ariaRec.onend=()=>{
+    jarvisRec.onerror=(e)=>{ /* no-match/aborted are normal */ };
+    jarvisRec.onend=()=>{
       const said=(finalText||'').trim();
-      if(said && ariaVoiceOn){ handleVoiceUtterance(said); }
-      else if(ariaVoiceOn && !ariaSpeaking && !ariaMicMuted){ setTimeout(startAriaListening,250); }
+      if(said && jarvisVoiceOn){ handleVoiceUtterance(said); }
+      else if(jarvisVoiceOn && !jarvisSpeaking && !jarvisMicMuted){ setTimeout(startJarvisListening,250); }
     };
-    ariaRec.start();
-  }catch(e){ setTimeout(startAriaListening,600); }
+    jarvisRec.start();
+  }catch(e){ setTimeout(startJarvisListening,600); }
 }
 
 function handleVoiceUtterance(text){
@@ -5030,19 +5030,19 @@ function handleVoiceUtterance(text){
   const low=text.toLowerCase();
   // voice command: new conversation
   if(/^(new conversation|new session|start over|reset)\b/.test(low)){
-    newAriaSession();
-    ariaSpeak("Fresh start. What can I do for you, Jordan?");
+    newJarvisSession();
+    jarvisSpeak("Fresh start. What can I do for you, Jordan?");
     return;
   }
   if(/^(exit|close|stop voice|goodbye|that's all)\b/.test(low)){
-    ariaSpeak("Standing by.", ()=>closeAriaVoice());
+    jarvisSpeak("Standing by.", ()=>closeJarvisVoice());
     return;
   }
   // Instant verbal acknowledgment, THEN dispatch the real task
   setVoiceState('thinking');
   const ack = pickAck();
-  ariaSpeak(ack);              // instant, client-side — the "instantaneous" feel
-  sendAriaVoice(text);         // fire the real agentic task in the background
+  jarvisSpeak(ack);              // instant, client-side — the "instantaneous" feel
+  sendJarvisVoice(text);         // fire the real agentic task in the background
 }
 
 function pickAck(){
@@ -5050,34 +5050,34 @@ function pickAck(){
   return acks[Math.floor(Math.random()*acks.length)];
 }
 
-// Send a voice message through the normal EA pipeline (background agentic work)
-async function sendAriaVoice(text){
-  ariaMessages.push({id:'tmp-'+Date.now(),role:'user',text,status:'pending',ts:Date.now()});
-  renderAria(true);
+// Send a voice message through the normal Jarvis pipeline (background agentic work)
+async function sendJarvisVoice(text){
+  jarvisMessages.push({id:'tmp-'+Date.now(),role:'user',text,status:'pending',ts:Date.now()});
+  renderJarvis(true);
   try{
-    const r=await api('/api/ea/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+    const r=await api('/api/jarvis/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
     if(!r.ok)throw new Error('send failed');
-    startAriaPolling();
-  }catch(e){ ariaSpeak("I couldn't reach the system to start that. Try again?"); setVoiceState('listening'); startAriaListening(); }
+    startJarvisPolling();
+  }catch(e){ jarvisSpeak("I couldn't reach the system to start that. Try again?"); setVoiceState('listening'); startJarvisListening(); }
 }
 
 // ── Fish Audio TTS + AudioContext player (Jarvis voice) ──────────────────
-let _ariaAudioCtx2=null;
-let _ariaAudioQueue=[];
-let _ariaAudioPlaying=false;
-let _ariaAudioSource=null;
-let _ariaAudioAnalyser=null;  // TTS-context analyser, always in _ariaAudioCtx2
+let _jarvisAudioCtx2=null;
+let _jarvisAudioQueue=[];
+let _jarvisAudioPlaying=false;
+let _jarvisAudioSource=null;
+let _jarvisAudioAnalyser=null;  // TTS-context analyser, always in _jarvisAudioCtx2
 
-function _ariaAudioCtxGet(){
-  if(!_ariaAudioCtx2||_ariaAudioCtx2.state==='closed'){
-    _ariaAudioCtx2=new (window.AudioContext||window.webkitAudioContext)();
-    _ariaAudioAnalyser=null; // reset analyser when context is recreated
+function _jarvisAudioCtxGet(){
+  if(!_jarvisAudioCtx2||_jarvisAudioCtx2.state==='closed'){
+    _jarvisAudioCtx2=new (window.AudioContext||window.webkitAudioContext)();
+    _jarvisAudioAnalyser=null; // reset analyser when context is recreated
   }
-  return _ariaAudioCtx2;
+  return _jarvisAudioCtx2;
 }
 
-async function _ariaAudioResume(){
-  const ctx=_ariaAudioCtxGet();
+async function _jarvisAudioResume(){
+  const ctx=_jarvisAudioCtxGet();
   // Some browsers (incl. Comet) suspend AudioContext until user gesture
   if(ctx.state==='suspended'||ctx.state==='interrupted'){
     try{ await ctx.resume(); }catch(e){ console.warn('[tts] resume failed',e); }
@@ -5085,103 +5085,103 @@ async function _ariaAudioResume(){
   return ctx;
 }
 
-function _ariaAudioGetAnalyser(){
-  const ctx=_ariaAudioCtxGet();
-  if(!_ariaAudioAnalyser){
-    _ariaAudioAnalyser=ctx.createAnalyser();
-    _ariaAudioAnalyser.fftSize=256;
-    _ariaAudioAnalyser.smoothingTimeConstant=0.8;
+function _jarvisAudioGetAnalyser(){
+  const ctx=_jarvisAudioCtxGet();
+  if(!_jarvisAudioAnalyser){
+    _jarvisAudioAnalyser=ctx.createAnalyser();
+    _jarvisAudioAnalyser.fftSize=256;
+    _jarvisAudioAnalyser.smoothingTimeConstant=0.8;
     // analyser → destination so audio actually plays out speakers
-    _ariaAudioAnalyser.connect(ctx.destination);
+    _jarvisAudioAnalyser.connect(ctx.destination);
   }
-  return _ariaAudioAnalyser;
+  return _jarvisAudioAnalyser;
 }
 
-function _ariaAudioPlayNext(){
-  if(_ariaAudioQueue.length===0){
-    _ariaAudioPlaying=false;
-    _ariaAudioSource=null;
-    _ariaAudioOnFinished();
+function _jarvisAudioPlayNext(){
+  if(_jarvisAudioQueue.length===0){
+    _jarvisAudioPlaying=false;
+    _jarvisAudioSource=null;
+    _jarvisAudioOnFinished();
     return;
   }
-  _ariaAudioPlaying=true;
-  const ctx=_ariaAudioCtxGet();
-  const an=_ariaAudioGetAnalyser();
-  const buf=_ariaAudioQueue.shift();
+  _jarvisAudioPlaying=true;
+  const ctx=_jarvisAudioCtxGet();
+  const an=_jarvisAudioGetAnalyser();
+  const buf=_jarvisAudioQueue.shift();
   const src=ctx.createBufferSource();
   src.buffer=buf;
   // source → analyser → destination (all in same TTS context — correct!)
   src.connect(an);
-  _ariaAudioSource=src;
-  src.onended=()=>{ if(_ariaAudioSource===src) _ariaAudioPlayNext(); };
+  _jarvisAudioSource=src;
+  src.onended=()=>{ if(_jarvisAudioSource===src) _jarvisAudioPlayNext(); };
   src.start(0);
 }
 
-async function _ariaAudioEnqueue(base64mp3){
-  const ctx=await _ariaAudioResume();
+async function _jarvisAudioEnqueue(base64mp3){
+  const ctx=await _jarvisAudioResume();
   try{
     const bin=atob(base64mp3);
     const bytes=new Uint8Array(bin.length);
     for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
     const buf=await ctx.decodeAudioData(bytes.buffer.slice(0));
-    _ariaAudioQueue.push(buf);
-    if(!_ariaAudioPlaying) _ariaAudioPlayNext();
+    _jarvisAudioQueue.push(buf);
+    if(!_jarvisAudioPlaying) _jarvisAudioPlayNext();
   }catch(e){
     console.warn('[tts] decode error',e);
-    if(!_ariaAudioPlaying&&_ariaAudioQueue.length>0) _ariaAudioPlayNext();
+    if(!_jarvisAudioPlaying&&_jarvisAudioQueue.length>0) _jarvisAudioPlayNext();
   }
 }
 
-function _ariaAudioStop(){
-  _ariaAudioQueue.length=0;
-  if(_ariaAudioSource){
-    try{ _ariaAudioSource.stop(); }catch(e){}
-    _ariaAudioSource=null;
+function _jarvisAudioStop(){
+  _jarvisAudioQueue.length=0;
+  if(_jarvisAudioSource){
+    try{ _jarvisAudioSource.stop(); }catch(e){}
+    _jarvisAudioSource=null;
   }
-  _ariaAudioPlaying=false;
+  _jarvisAudioPlaying=false;
 }
 
-function _ariaAudioOnFinished(){
-  ariaSpeaking=false;
+function _jarvisAudioOnFinished(){
+  jarvisSpeaking=false;
   // restore mic analyser so orb reacts to user input again
-  if(ariaAudioCtx&&ariaAudioCtx._micAnalyser){
-    ariaAnalyser=ariaAudioCtx._micAnalyser;
-    ariaFreq=new Uint8Array(ariaAnalyser.frequencyBinCount);
-    if(ariaThree&&ariaThree.setAnalyser) ariaThree.setAnalyser(ariaAnalyser);
+  if(jarvisAudioCtx&&jarvisAudioCtx._micAnalyser){
+    jarvisAnalyser=jarvisAudioCtx._micAnalyser;
+    jarvisFreq=new Uint8Array(jarvisAnalyser.frequencyBinCount);
+    if(jarvisThree&&jarvisThree.setAnalyser) jarvisThree.setAnalyser(jarvisAnalyser);
   }
-  if(ariaVoiceOn){
-    const stillWorking=ariaMessages.some(m=>m.role==='user'&&(m.status==='pending'||m.status==='processing'));
+  if(jarvisVoiceOn){
+    const stillWorking=jarvisMessages.some(m=>m.role==='user'&&(m.status==='pending'||m.status==='processing'));
     setVoiceState(stillWorking?'thinking':'listening');
     if(!stillWorking) setVoiceTranscript('');
-    if(!ariaMicMuted) setTimeout(startAriaListening,200);
+    if(!jarvisMicMuted) setTimeout(startJarvisListening,200);
   }
 }
 
-async function ariaSpeak(text, onDone){
+async function jarvisSpeak(text, onDone){
   if(!text){ if(onDone)onDone(); return; }
-  _ariaAudioStop();
-  ariaSpeaking=true;
-  try{ if(ariaRec)ariaRec.abort(); }catch(e){}
-  if(ariaVoiceOn){ setVoiceState('speaking'); setVoiceTranscript(text); }
-  if(ariaThree&&ariaThree.setOrbState) ariaThree.setOrbState('speaking');
+  _jarvisAudioStop();
+  jarvisSpeaking=true;
+  try{ if(jarvisRec)jarvisRec.abort(); }catch(e){}
+  if(jarvisVoiceOn){ setVoiceState('speaking'); setVoiceTranscript(text); }
+  if(jarvisThree&&jarvisThree.setOrbState) jarvisThree.setOrbState('speaking');
 
   try{
-    const r=await api('/api/ea/tts',{method:'POST',headers:{'Content-Type':'application/json'},
+    const r=await api('/api/jarvis/tts',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({text:text.slice(0,2000)})});
     if(!r.ok) throw new Error('TTS '+r.status);
     const d=await r.json();
     if(d.audio){
-      await _ariaAudioResume();
+      await _jarvisAudioResume();
       // point orb at TTS analyser (self-contained in TTS context)
-      const an=_ariaAudioGetAnalyser();
-      ariaAnalyser=an;
-      ariaFreq=new Uint8Array(an.frequencyBinCount);
-      if(ariaThree&&ariaThree.setAnalyser) ariaThree.setAnalyser(an);
-      await _ariaAudioEnqueue(d.audio);
+      const an=_jarvisAudioGetAnalyser();
+      jarvisAnalyser=an;
+      jarvisFreq=new Uint8Array(an.frequencyBinCount);
+      if(jarvisThree&&jarvisThree.setAnalyser) jarvisThree.setAnalyser(an);
+      await _jarvisAudioEnqueue(d.audio);
       if(onDone){
         // call onDone after queue drains
-        const orig=_ariaAudioOnFinished;
-        _ariaAudioOnFinished=function(){orig();onDone();_ariaAudioOnFinished=orig;};
+        const orig=_jarvisAudioOnFinished;
+        _jarvisAudioOnFinished=function(){orig();onDone();_jarvisAudioOnFinished=orig;};
       }
     } else throw new Error('no audio');
   }catch(e){
@@ -5189,70 +5189,70 @@ async function ariaSpeak(text, onDone){
     // show a toast if it's the credit issue so it's obvious
     if(String(e).includes('402')||String(e).includes('credit')||String(e).includes('402'))
       showToast('Fish Audio credit empty — using browser voice','error',6000);
-    ariaSpeaking=true;
+    jarvisSpeaking=true;
     const synth=window.speechSynthesis||window.webkitSpeechSynthesis;
     if(synth){
       const u=new SpeechSynthesisUtterance(text.slice(0,600));
-      const v=pickAriaTtsVoice(); if(v)u.voice=v;
+      const v=pickJarvisTtsVoice(); if(v)u.voice=v;
       u.rate=1.05; u.pitch=1.0;
-      u.onend=()=>{ ariaSpeaking=false; if(onDone)onDone(); _ariaAudioOnFinished(); };
-      u.onerror=()=>{ ariaSpeaking=false; if(onDone)onDone(); _ariaAudioOnFinished(); };
+      u.onend=()=>{ jarvisSpeaking=false; if(onDone)onDone(); _jarvisAudioOnFinished(); };
+      u.onerror=()=>{ jarvisSpeaking=false; if(onDone)onDone(); _jarvisAudioOnFinished(); };
       synth.speak(u);
     } else {
       // no TTS available at all — just continue
       console.warn('[tts] no browser TTS available');
-      ariaSpeaking=false; if(onDone)onDone(); _ariaAudioOnFinished();
+      jarvisSpeaking=false; if(onDone)onDone(); _jarvisAudioOnFinished();
     }
   }
 }
 
-function ariaGreet(){
+function jarvisGreet(){
   const hour=new Date().getHours();
   const g = hour<12?"Good morning":hour<18?"Good afternoon":"Good evening";
-  ariaSpeak(`${g}, Jordan. Jarvis online. What do you need?`);
+  jarvisSpeak(`${g}, Jordan. Jarvis online. What do you need?`);
 }
 
-function ariaVoiceMicToggle(){
-  ariaMicMuted=!ariaMicMuted;
-  const b=document.getElementById('aria-voice-mic-toggle');
-  if(b)b.classList.toggle('muted',ariaMicMuted);
+function jarvisVoiceMicToggle(){
+  jarvisMicMuted=!jarvisMicMuted;
+  const b=document.getElementById('jarvis-voice-mic-toggle');
+  if(b)b.classList.toggle('muted',jarvisMicMuted);
   // No status text — the orb just keeps animating. Only start/stop listening.
-  if(ariaMicMuted){ try{if(ariaRec)ariaRec.abort();}catch(e){} }
-  else { if(!ariaSpeaking)startAriaListening(); }
+  if(jarvisMicMuted){ try{if(jarvisRec)jarvisRec.abort();}catch(e){} }
+  else { if(!jarvisSpeaking)startJarvisListening(); }
 }
 
 // Hook: when a NEW assistant reply lands while in voice mode, speak it
-function ariaMaybeSpeakReply(){
-  if(!ariaVoiceOn)return;
-  const assistants=ariaMessages.filter(m=>m.role==='assistant');
-  if(assistants.length>ariaVoiceReplyBaseline){
+function jarvisMaybeSpeakReply(){
+  if(!jarvisVoiceOn)return;
+  const assistants=jarvisMessages.filter(m=>m.role==='assistant');
+  if(assistants.length>jarvisVoiceReplyBaseline){
     const latest=assistants[assistants.length-1];
-    ariaVoiceReplyBaseline=assistants.length;
-    ariaSpeak(latest.text);
+    jarvisVoiceReplyBaseline=assistants.length;
+    jarvisSpeak(latest.text);
   }
 }
 
 // ── Microphone audio analyser (drives orb reactivity) ──
 async function initVoiceAudio(){
   try{
-    ariaMicStream=await navigator.mediaDevices.getUserMedia({audio:true});
-    ariaAudioCtx=new (window.AudioContext||window.webkitAudioContext)();
-    const src=ariaAudioCtx.createMediaStreamSource(ariaMicStream);
+    jarvisMicStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    jarvisAudioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const src=jarvisAudioCtx.createMediaStreamSource(jarvisMicStream);
     // mic analyser — drives orb while user is speaking
-    const micAnalyser=ariaAudioCtx.createAnalyser();
+    const micAnalyser=jarvisAudioCtx.createAnalyser();
     micAnalyser.fftSize=128;
     src.connect(micAnalyser);
-    ariaAnalyser=micAnalyser;  // default: orb reacts to mic
-    ariaFreq=new Uint8Array(micAnalyser.frequencyBinCount);
-    // store mic analyser so ariaSpeak() can restore it after TTS
-    ariaAudioCtx._micAnalyser=micAnalyser;
+    jarvisAnalyser=micAnalyser;  // default: orb reacts to mic
+    jarvisFreq=new Uint8Array(micAnalyser.frequencyBinCount);
+    // store mic analyser so jarvisSpeak() can restore it after TTS
+    jarvisAudioCtx._micAnalyser=micAnalyser;
   }catch(e){ /* mic denied — orb still animates without audio reactivity */ }
 }
-function ariaAudioLevel(){
-  if(!ariaAnalyser||!ariaFreq)return 0;
-  ariaAnalyser.getByteFrequencyData(ariaFreq);
-  let s=0; for(let i=0;i<ariaFreq.length;i++)s+=ariaFreq[i];
-  return (s/ariaFreq.length)/255;   // 0..1
+function jarvisAudioLevel(){
+  if(!jarvisAnalyser||!jarvisFreq)return 0;
+  jarvisAnalyser.getByteFrequencyData(jarvisFreq);
+  let s=0; for(let i=0;i<jarvisFreq.length;i++)s+=jarvisFreq[i];
+  return (s/jarvisFreq.length)/255;   // 0..1
 }
 
 // ── JARVIS ORB (ported from github.com/ethanplusai/jarvis) ──────────────────
@@ -5261,8 +5261,8 @@ const _ORB_N=2000;       // particle count
 const _ORB_MAX_LINES=8000;  // max line segments
 const _ORB_MAX_ELECTRONS=200; // max simultaneous electrons
 function initOrb(){
-  if(ariaThree||!window.THREE)return;
-  const canvas=document.getElementById('aria-voice-canvas');
+  if(jarvisThree||!window.THREE)return;
+  const canvas=document.getElementById('jarvis-voice-canvas');
   const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
   const pr=Math.min(window.devicePixelRatio||1,3);
   renderer.setPixelRatio(pr);
@@ -5353,34 +5353,34 @@ function initOrb(){
 
   const clock=new THREE.Clock();
 
-  ariaThree={renderer,scene,camera,points,geo,mat,lines,lineGeo,lineMat,
+  jarvisThree={renderer,scene,camera,points,geo,mat,lines,lineGeo,lineMat,
     electrons,electronGeo,electronMat,activeElectrons,
     vel,phase,activeConnections,
     orbState,clock,fitZ:_orbFitZ,
     setOrbState(s){ orbState=s; },
-    setAnalyser(a){ ariaAnalyser=a; if(a)ariaFreq=new Uint8Array(a.frequencyBinCount); }
+    setAnalyser(a){ jarvisAnalyser=a; if(a)jarvisFreq=new Uint8Array(a.frequencyBinCount); }
   };
 
-  window.addEventListener('resize',ariaOrbResize);
+  window.addEventListener('resize',jarvisOrbResize);
   renderer.clear();
 }
 
-function ariaOrbResize(){
-  if(!ariaThree)return;
+function jarvisOrbResize(){
+  if(!jarvisThree)return;
   const w=window.innerWidth,h=window.innerHeight;
-  ariaThree.camera.aspect=w/h;
-  ariaThree.camera.updateProjectionMatrix();
-  ariaThree.renderer.setSize(w,h);
+  jarvisThree.camera.aspect=w/h;
+  jarvisThree.camera.updateProjectionMatrix();
+  jarvisThree.renderer.setSize(w,h);
   // keep orb fully in frame at any window size
-  if(ariaThree.fitZ) ariaThree.camera.position.z=ariaThree.fitZ();
+  if(jarvisThree.fitZ) jarvisThree.camera.position.z=jarvisThree.fitZ();
 }
 
 function startOrbLoop(){
-  if(!ariaThree)return;
-  if(ariaRAF)cancelAnimationFrame(ariaRAF);
+  if(!jarvisThree)return;
+  if(jarvisRAF)cancelAnimationFrame(jarvisRAF);
 
   // state variables in closure
-  let orbState=ariaThree.orbState||'idle';
+  let orbState=jarvisThree.orbState||'idle';
   let targetRadius=25,currentRadius=25;
   let targetSpeed=0.3,currentSpeed=0.3;
   let targetBright=0.6,currentBright=0.6;
@@ -5395,21 +5395,21 @@ function startOrbLoop(){
   let activeConnections=[];
 
   // expose setState so voice code can call it
-  ariaThree.setOrbState=function(s){orbState=s;};
+  jarvisThree.setOrbState=function(s){orbState=s;};
 
-  const T=ariaThree;
+  const T=jarvisThree;
 
   function frame(){
-    ariaRAF=requestAnimationFrame(frame);
+    jarvisRAF=requestAnimationFrame(frame);
     const t=T.clock.getElapsedTime();
 
     // Read audio
     let bass=0,mid=0;
-    if(ariaAnalyser&&ariaFreq){
-      ariaAnalyser.getByteFrequencyData(ariaFreq);
+    if(jarvisAnalyser&&jarvisFreq){
+      jarvisAnalyser.getByteFrequencyData(jarvisFreq);
       let bSum=0,mSum=0;
-      for(let i=0;i<8;i++)bSum+=ariaFreq[i];
-      for(let i=8;i<24;i++)mSum+=ariaFreq[i];
+      for(let i=0;i<8;i++)bSum+=jarvisFreq[i];
+      for(let i=8;i<24;i++)mSum+=jarvisFreq[i];
       bass=bSum/(8*255); mid=mSum/(16*255);
     }
 
@@ -5550,7 +5550,7 @@ function startOrbLoop(){
 
     T.renderer.render(T.scene,T.camera);
   }
-  ariaRAF=requestAnimationFrame(frame);
+  jarvisRAF=requestAnimationFrame(frame);
 }
 
 

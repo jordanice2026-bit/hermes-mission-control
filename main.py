@@ -615,10 +615,10 @@ _agent_state: dict = {               # last-known state pushed by the VPS worker
     "team_lessons": [],              # shared cross-agent lessons (org brain)
 }
 _manager_chat: list[dict] = []       # manager chat transcript (newest last)
-_ea_chat: list[dict] = []            # executive assistant (ARIA) chat transcript
-_ea_sessions: list[dict] = []        # archived ARIA conversations (history)
-_ea_control_queue: list[str] = []    # control markers for the worker (new_session, etc.)
-_ea_hermes_sid: str = ""             # current ARIA hermes session id (from runner)
+_jarvis_chat: list[dict] = []            # executive assistant (JARVIS) chat transcript
+_jarvis_sessions: list[dict] = []        # archived JARVIS conversations (history)
+_jarvis_control_queue: list[str] = []    # control markers for the worker (new_session, etc.)
+_jarvis_hermes_sid: str = ""             # current JARVIS hermes session id (from runner)
 _ALLOWED_COMMANDS = {"start_all", "stop_all", "pause_job", "resume_job", "run_job"}
 
 
@@ -690,19 +690,19 @@ async def manager_chat_post(request: Request, user: dict = Depends(require_user)
 
 
 # ---------------------------------------------------------------------------
-# Executive Assistant (ARIA / "Jarvis") chat — full-authority agent.
-# Browser POSTs a message; the VPS worker launches ea_runner.py (a full agentic
+# Executive Assistant (Jarvis) chat — full-authority agent.
+# Browser POSTs a message; the VPS worker launches jarvis_runner.py (a full agentic
 # Hermes session on the default profile) which posts the reply back via
-# /api/ea/chat/reply. Browser polls GET /api/ea/chat.
+# /api/jarvis/chat/reply. Browser polls GET /api/jarvis/chat.
 # ---------------------------------------------------------------------------
-@app.get("/api/ea/chat")
-async def ea_chat_get(request: Request, user: dict = Depends(require_user)):
-    return JSONResponse({"messages": _ea_chat[-100:],
+@app.get("/api/jarvis/chat")
+async def jarvis_chat_get(request: Request, user: dict = Depends(require_user)):
+    return JSONResponse({"messages": _jarvis_chat[-100:],
                          "worker_online": (time.time() - _agent_state.get("updated_at", 0)) < 90})
 
 
-@app.post("/api/ea/tts")
-async def ea_tts(request: Request, user: dict = Depends(require_user)):
+@app.post("/api/jarvis/tts")
+async def jarvis_tts(request: Request, user: dict = Depends(require_user)):
     """Convert text to speech using Fish Audio (Jarvis MCU voice).
     Body: {"text": "..."}
     Returns: {"audio": "<base64 mp3>"}
@@ -743,8 +743,8 @@ async def ea_tts(request: Request, user: dict = Depends(require_user)):
         raise HTTPException(502, f"TTS error: {e}")
 
 
-@app.post("/api/ea/chat")
-async def ea_chat_post(request: Request, user: dict = Depends(require_user)):
+@app.post("/api/jarvis/chat")
+async def jarvis_chat_post(request: Request, user: dict = Depends(require_user)):
     body = await request.json()
     text = (body.get("text") or "").strip()
     if not text:
@@ -759,85 +759,85 @@ async def ea_chat_post(request: Request, user: dict = Depends(require_user)):
         "ts": int(time.time() * 1000),
         "issued_by": user.get("email") or user.get("name") or "user",
     }
-    _ea_chat.append(msg)
-    del _ea_chat[:-200]
+    _jarvis_chat.append(msg)
+    del _jarvis_chat[:-200]
     return JSONResponse({"ok": True, "message": msg})
 
 
-@app.post("/api/ea/chat/new")
-async def ea_chat_new(request: Request, user: dict = Depends(require_user)):
-    """Instantly start a fresh ARIA conversation.
+@app.post("/api/jarvis/chat/new")
+async def jarvis_chat_new(request: Request, user: dict = Depends(require_user)):
+    """Instantly start a fresh JARVIS conversation.
 
     Archives the current transcript to history, clears the live chat, and queues
     a control marker so the worker resets the runner's session file. No message
-    is sent to ARIA — this returns immediately and the UI loads the empty thread.
+    is sent to JARVIS — this returns immediately and the UI loads the empty thread.
     """
-    global _ea_chat
+    global _jarvis_chat
     # Archive the current conversation if it has any real content
-    real = [m for m in _ea_chat if not m.get("control")]
+    real = [m for m in _jarvis_chat if not m.get("control")]
     if real:
         first_user = next((m["text"] for m in real if m["role"] == "user"), "")
         title = (first_user[:60] + "…") if len(first_user) > 60 else (first_user or "Conversation")
-        _ea_sessions.append({
+        _jarvis_sessions.append({
             "id": secrets.token_hex(8),
             "title": title,
             "messages": real,
             "started_at": real[0]["ts"],
             "ended_at": real[-1]["ts"],
             "count": len(real),
-            "hermes_sid": _ea_hermes_sid,
+            "hermes_sid": _jarvis_hermes_sid,
         })
-        del _ea_sessions[:-50]          # keep last 50 conversations
-    _ea_chat = []
-    _ea_control_queue.append("new_session")
+        del _jarvis_sessions[:-50]          # keep last 50 conversations
+    _jarvis_chat = []
+    _jarvis_control_queue.append("new_session")
     return JSONResponse({"ok": True})
 
 
-@app.get("/api/ea/sessions")
-async def ea_sessions_list(request: Request, user: dict = Depends(require_user)):
-    """List archived ARIA conversations (newest first)."""
+@app.get("/api/jarvis/sessions")
+async def jarvis_sessions_list(request: Request, user: dict = Depends(require_user)):
+    """List archived JARVIS conversations (newest first)."""
     items = [{"id": s["id"], "title": s["title"], "count": s["count"],
               "started_at": s["started_at"], "ended_at": s["ended_at"]}
-             for s in reversed(_ea_sessions)]
+             for s in reversed(_jarvis_sessions)]
     return JSONResponse({"sessions": items, "total": len(items)})
 
 
-@app.get("/api/ea/sessions/{session_id}")
-async def ea_session_get(session_id: str, request: Request, user: dict = Depends(require_user)):
-    """Return the full transcript of one archived ARIA conversation."""
-    for s in _ea_sessions:
+@app.get("/api/jarvis/sessions/{session_id}")
+async def jarvis_session_get(session_id: str, request: Request, user: dict = Depends(require_user)):
+    """Return the full transcript of one archived JARVIS conversation."""
+    for s in _jarvis_sessions:
         if s["id"] == session_id:
             return JSONResponse({"session": s})
     raise HTTPException(404, "session not found")
 
 
-@app.delete("/api/ea/sessions/{session_id}")
-async def ea_session_delete(session_id: str, request: Request, user: dict = Depends(require_user)):
-    """Delete one archived ARIA conversation."""
-    global _ea_sessions
-    before = len(_ea_sessions)
-    _ea_sessions = [s for s in _ea_sessions if s["id"] != session_id]
-    if len(_ea_sessions) == before:
+@app.delete("/api/jarvis/sessions/{session_id}")
+async def jarvis_session_delete(session_id: str, request: Request, user: dict = Depends(require_user)):
+    """Delete one archived JARVIS conversation."""
+    global _jarvis_sessions
+    before = len(_jarvis_sessions)
+    _jarvis_sessions = [s for s in _jarvis_sessions if s["id"] != session_id]
+    if len(_jarvis_sessions) == before:
         raise HTTPException(404, "session not found")
-    return JSONResponse({"ok": True, "deleted": session_id, "remaining": len(_ea_sessions)})
+    return JSONResponse({"ok": True, "deleted": session_id, "remaining": len(_jarvis_sessions)})
 
 
-@app.post("/api/ea/chat/reply")
-async def ea_chat_reply(request: Request, _=Depends(require_sync_token)):
-    """VPS EA runner posts the assistant's reply + marks the user msg done."""
-    global _ea_hermes_sid
+@app.post("/api/jarvis/chat/reply")
+async def jarvis_chat_reply(request: Request, _=Depends(require_sync_token)):
+    """VPS Jarvis runner posts the assistant's reply + marks the user msg done."""
+    global _jarvis_hermes_sid
     body = await request.json()
     if body.get("hermes_sid"):
-        _ea_hermes_sid = body["hermes_sid"]
+        _jarvis_hermes_sid = body["hermes_sid"]
     for upd in body.get("chat_updates", []):
         mid = upd.get("id")
-        for m in _ea_chat:
+        for m in _jarvis_chat:
             if m["id"] == mid and upd.get("status"):
                 m["status"] = upd["status"]
                 break
         reply = upd.get("reply")
         if reply:
-            _ea_chat.append({
+            _jarvis_chat.append({
                 "id": secrets.token_hex(8),
                 "role": "assistant",
                 "text": reply[:12000],
@@ -845,7 +845,7 @@ async def ea_chat_reply(request: Request, _=Depends(require_sync_token)):
                 "ts": int(time.time() * 1000),
                 "reply_to": mid,
             })
-    del _ea_chat[:-200]
+    del _jarvis_chat[:-200]
     return JSONResponse({"ok": True})
 
 
@@ -909,17 +909,17 @@ async def agent_control_poll(request: Request, _=Depends(require_sync_token)):
     # mark them processing so we don't hand them out twice
     for m in pending_chat:
         m["status"] = "processing"
-    # EA (ARIA) pending messages — handed to the worker to launch ea_runner
-    pending_ea = [m for m in _ea_chat if m["role"] == "user" and m.get("status") == "pending"]
-    for m in pending_ea:
+    # Jarvis pending messages — handed to the worker to launch jarvis_runner
+    pending_jarvis = [m for m in _jarvis_chat if m["role"] == "user" and m.get("status") == "pending"]
+    for m in pending_jarvis:
         m["status"] = "processing"
-    # EA control markers (new_session, etc.) — drain the queue to the worker
-    ea_control = list(_ea_control_queue)
-    _ea_control_queue.clear()
+    # Jarvis control markers (new_session, etc.) — drain the queue to the worker
+    jarvis_control = list(_jarvis_control_queue)
+    _jarvis_control_queue.clear()
     return JSONResponse({"commands": list(_command_queue),
                          "chat_messages": [{"id": m["id"], "text": m["text"]} for m in pending_chat],
-                         "ea_messages": [{"id": m["id"], "text": m["text"]} for m in pending_ea],
-                         "ea_control": ea_control})
+                         "jarvis_messages": [{"id": m["id"], "text": m["text"]} for m in pending_jarvis],
+                         "jarvis_control": jarvis_control})
 
 
 # ---------------------------------------------------------------------------

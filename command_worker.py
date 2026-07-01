@@ -196,38 +196,38 @@ def handle_chat_messages(chat_messages):
     return updates
 
 
-def handle_ea_control(ea_control):
-    """Process EA control markers (e.g. new_session -> reset the runner session)."""
-    for marker in ea_control or []:
+def handle_jarvis_control(jarvis_control):
+    """Process Jarvis control markers (e.g. new_session -> reset the runner session)."""
+    for marker in jarvis_control or []:
         if marker == 'new_session':
             try:
-                if os.path.exists('/opt/data/ea_session.json'):
-                    os.remove('/opt/data/ea_session.json')
-                print('EA session reset (new conversation)')
+                if os.path.exists('/opt/data/jarvis_session.json'):
+                    os.remove('/opt/data/jarvis_session.json')
+                print('Jarvis session reset (new conversation)')
             except Exception as e:
-                print(f'EA session reset failed: {e}')
+                print(f'Jarvis session reset failed: {e}')
 
 
-def launch_ea_messages(ea_messages):
-    """Launch the EA runner (full agentic session) as a DETACHED bg process per
+def launch_jarvis_messages(jarvis_messages):
+    """Launch the Jarvis runner (full agentic session) as a DETACHED bg process per
     message. It can take minutes, so we don't block the worker tick; the runner
-    posts its reply back to /api/ea/chat/reply when done."""
-    if not ea_messages:
+    posts its reply back to /api/jarvis/chat/reply when done."""
+    if not jarvis_messages:
         return 0
     import subprocess as _sp
     launched = 0
-    for m in ea_messages:
+    for m in jarvis_messages:
         try:
             _sp.Popen(
-                ['python3', '/opt/data/ea_runner.py',
+                ['python3', '/opt/data/jarvis_runner.py',
                  '--message-id', m['id'], '--text', m.get('text', '')],
                 stdout=_sp.DEVNULL, stderr=_sp.DEVNULL,
                 start_new_session=True, cwd='/opt/data', env=dict(os.environ),
             )
             launched += 1
-            print(f"EA runner launched for {m['id']}: {m.get('text','')[:50]}")
+            print(f"Jarvis runner launched for {m['id']}: {m.get('text','')[:50]}")
         except Exception as e:
-            print(f"EA launch failed for {m['id']}: {e}")
+            print(f"Jarvis launch failed for {m['id']}: {e}")
     return launched
 
 
@@ -252,19 +252,19 @@ def main():
     data = poll(jobs, status, [])
     commands = data.get('commands', [])
     chat_messages = data.get('chat_messages', [])
-    ea_messages = data.get('ea_messages', [])
-    ea_control = data.get('ea_control', [])
+    jarvis_messages = data.get('jarvis_messages', [])
+    jarvis_control = data.get('jarvis_control', [])
 
-    # Handle EA control markers first (e.g. reset session for a new conversation)
-    handle_ea_control(ea_control)
+    # Handle Jarvis control markers first (e.g. reset session for a new conversation)
+    handle_jarvis_control(jarvis_control)
 
     # Handle Manager chat messages (classify + dispatch tasks)
     chat_updates = handle_chat_messages(chat_messages)
 
-    # Launch the EA (ARIA) runner for any pending EA messages (detached; replies async)
-    ea_launched = launch_ea_messages(ea_messages)
+    # Launch the Jarvis runner for any pending Jarvis messages (detached; replies async)
+    jarvis_launched = launch_jarvis_messages(jarvis_messages)
 
-    if not commands and not chat_updates and not ea_launched and not ea_control:
+    if not commands and not chat_updates and not jarvis_launched and not jarvis_control:
         print(f'OK: {len(jobs)} jobs, status={status}, no commands/chat/ea')
         return
 
@@ -280,7 +280,7 @@ def main():
     status = system_status(jobs)
     poll(jobs, status, results, chat_updates)
     print(f'OK: executed {len(results)} command(s), {len(chat_updates)} chat reply(ies), '
-          f'{ea_launched} EA launch(es), status now {status}')
+          f'{jarvis_launched} Jarvis launch(es), status now {status}')
 
 
 if __name__ == '__main__':

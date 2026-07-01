@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-ea_runner.py — Executive Assistant ("Jarvis") runner.
+jarvis_runner.py — Executive Assistant ("Jarvis") runner.
 
 Runs a FULL agentic Hermes session using the `default` profile — the same
 agent (Claude Opus, all tools, all skills, terminal, full infra access) that
 built this whole system. Full autonomy (--yolo): executes anything immediately.
 
-Invoked by command_worker.py for each pending EA chat message. It:
-  1. Loads the persistent EA session id (for Jarvis-style memory across messages).
+Invoked by command_worker.py for each pending Jarvis chat message. It:
+  1. Loads the persistent Jarvis session id (for Jarvis-style memory across messages).
   2. Runs `hermes chat -q <message>` (resume if we have a session, else fresh).
   3. Persists the (possibly new) session id.
   4. POSTs the assistant's reply back to the dashboard — WITH RETRIES, so a
@@ -15,7 +15,7 @@ Invoked by command_worker.py for each pending EA chat message. It:
      forever with no trace of what happened.
 
 Usage:
-    python3 ea_runner.py --message-id <id> --text "<user message>"
+    python3 jarvis_runner.py --message-id <id> --text "<user message>"
 """
 import os
 import re
@@ -28,14 +28,14 @@ import urllib.request
 import urllib.error
 
 HERMES = '/opt/hermes/.venv/bin/hermes'
-SESSION_FILE = '/opt/data/ea_session.json'
-EA_SOUL = '/opt/data/ea_soul.md'
+SESSION_FILE = '/opt/data/jarvis_session.json'
+EA_SOUL = '/opt/data/jarvis_soul.md'
 DASHBOARD_URL = os.environ.get('MISSION_CONTROL_URL', 'https://hermes-mission-control.onrender.com').rstrip('/')
 SYNC_TOKEN = os.environ.get('MISSION_CONTROL_TOKEN', '') or os.environ.get('SYNC_TOKEN', '')
 MAX_TURNS = 40
 TIMEOUT = 600  # 10 min hard cap per message
 
-ERROR_LOG = '/opt/data/ea_runner_errors.log'   # persistent — command_worker.py DEVNULLs stdout/stderr
+ERROR_LOG = '/opt/data/jarvis_runner_errors.log'   # persistent — command_worker.py DEVNULLs stdout/stderr
 
 POST_RETRIES = 5
 POST_RETRY_BACKOFF = [2, 5, 10, 20, 30]  # seconds between attempts
@@ -139,13 +139,13 @@ def post_reply(message_id: str, reply: str, status: str = 'done', hermes_sid: st
     payload = json.dumps({'chat_updates': [{'id': message_id, 'status': status, 'reply': reply}],
                           'hermes_sid': hermes_sid,
                           'jobs': [], 'system_status': 'ea', 'results': [],
-                          'ea': True}).encode()
+                          'jarvis': True}).encode()
 
     last_err = None
     for attempt in range(1, POST_RETRIES + 1):
         try:
             req = urllib.request.Request(
-                f'{DASHBOARD_URL}/api/ea/chat/reply',
+                f'{DASHBOARD_URL}/api/jarvis/chat/reply',
                 data=payload,
                 headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {SYNC_TOKEN}'},
                 method='POST',
@@ -169,7 +169,7 @@ def post_reply(message_id: str, reply: str, status: str = 'done', hermes_sid: st
     log_error(f'POST_REPLY GAVE UP after {POST_RETRIES} attempts for {message_id}. '
               f'Last error: {last_err}. Reply was: {reply[:500]}')
     try:
-        with open('/opt/data/ea_lost_replies.jsonl', 'a') as f:
+        with open('/opt/data/jarvis_lost_replies.jsonl', 'a') as f:
             f.write(json.dumps({'message_id': message_id, 'reply': reply, 'sid': hermes_sid,
                                  'ts': int(time.time())}) + '\n')
     except Exception:
@@ -193,7 +193,7 @@ def main():
                       f"(internal error: {e}). Please try asking again.", load_session_id())
 
     ok = post_reply(args.message_id, reply, hermes_sid=sid)
-    status_word = 'delivered' if ok else 'FAILED TO DELIVER (see ea_runner_errors.log)'
+    status_word = 'delivered' if ok else 'FAILED TO DELIVER (see jarvis_runner_errors.log)'
     print(f'[ea] {status_word} reply for {args.message_id} (session {sid}): {reply[:80]}')
 
 
