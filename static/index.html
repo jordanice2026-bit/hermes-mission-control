@@ -5329,7 +5329,8 @@ function initOrb(){
   const orbBlend=isLight?THREE.NormalBlending:THREE.AdditiveBlending;
   const orbPointColor=isLight?0x0055dd:0xffffff;
   const orbLineColor=isLight?0x0055dd:0x4ca8e8;
-  const mat=new THREE.PointsMaterial({map:orbTex,size:0.22,transparent:true,opacity:0.6,
+  // 2026-07-01 brightness tweak: base opacity 0.6 -> 0.85 (revert to 0.6 if needed)
+  const mat=new THREE.PointsMaterial({map:orbTex,size:0.22,transparent:true,opacity:0.85,
     sizeAttenuation:true,blending:orbBlend,depthWrite:false,alphaTest:0.01,color:orbPointColor});
   const points=new THREE.Points(geo,mat);
   scene.add(points);
@@ -5435,11 +5436,12 @@ function startOrbLoop(){
     }
 
     // State targets
+    // 2026-07-01 brightness tweak: targetBright raised per state (revert values in comments)
     switch(orbState){
-      case 'idle':     targetRadius=28;targetSpeed=0.2;targetBright=0.5;targetSize=0.35;targetLineAmount=0.15;targetElectronRate=0;break;
-      case 'listening':targetRadius=22;targetSpeed=0.3;targetBright=0.65;targetSize=0.4;targetLineAmount=0.4;targetElectronRate=0;break;
-      case 'thinking': targetRadius=16;targetSpeed=0.5;targetBright=0.7;targetSize=0.3;targetLineAmount=1.0;targetElectronRate=0.015;break;
-      case 'speaking': targetRadius=18;targetSpeed=0.2;targetBright=0.7;targetSize=0.4;targetLineAmount=0.8;targetElectronRate=0;break;
+      case 'idle':     targetRadius=28;targetSpeed=0.2;targetBright=0.75;targetSize=0.35;targetLineAmount=0.15;targetElectronRate=0;break;   // was 0.5
+      case 'listening':targetRadius=22;targetSpeed=0.3;targetBright=0.9;targetSize=0.4;targetLineAmount=0.4;targetElectronRate=0;break;      // was 0.65
+      case 'thinking': targetRadius=16;targetSpeed=0.5;targetBright=0.95;targetSize=0.3;targetLineAmount=1.0;targetElectronRate=0.015;break; // was 0.7
+      case 'speaking': targetRadius=18;targetSpeed=0.2;targetBright=0.95;targetSize=0.4;targetLineAmount=0.8;targetElectronRate=0;break;     // was 0.7
     }
     currentRadius+=(targetRadius-currentRadius)*0.02;
     currentSpeed+=(targetSpeed-currentSpeed)*0.02;
@@ -5474,7 +5476,15 @@ function startOrbLoop(){
     const p=T.geo.getAttribute('position');
     const a=p.array;
     const vel=T.vel,phase=T.phase;
-    // ── Particle physics — soft containment, original behaviour ──
+    // ── Particle physics — soft containment ──
+    // Tunable constants (2026-07-01 tweak: shorter explode travel, more free
+    // drift before settling back to the sphere, brighter particles).
+    // Revert to originals if needed: CONTAINMENT_PULL_FACTOR=0.002,
+    // CONTAINMENT_MIN_PULL=0.0003, EXPLODE_STRENGTH=0.02, VELOCITY_DAMPING=0.992.
+    const CONTAINMENT_PULL_FACTOR=0.0007;   // was 0.002 — softer pull back toward the sphere radius
+    const CONTAINMENT_MIN_PULL=0.00009;     // was 0.0003 — less constant inward tug at rest
+    const EXPLODE_STRENGTH=0.011;           // was 0.02 — shorter outward travel on bass hits
+    const VELOCITY_DAMPING=0.9975;          // was 0.992 — particles coast longer, feel more natural
     for(let i=0;i<_ORB_N;i++){
       const i3=i*3;
       let x=a[i3],y=a[i3+1],z=a[i3+2];
@@ -5486,11 +5496,11 @@ function startOrbLoop(){
       vel[i3+1]+=Math.cos(t*0.025+px*1.7+z*0.1)*0.0008*currentSpeed;
       vel[i3+2]+=Math.sin(t*0.022+px*0.9+x*0.1)*0.0008*currentSpeed;
       const dist=Math.sqrt(x*x+y*y+z*z)||0.01;
-      const pull=Math.max(0,dist-currentRadius)*0.002+0.0003;
+      const pull=Math.max(0,dist-currentRadius)*CONTAINMENT_PULL_FACTOR+CONTAINMENT_MIN_PULL;
       vel[i3]-=(x/dist)*pull;vel[i3+1]-=(y/dist)*pull;vel[i3+2]-=(z/dist)*pull;
-      if(bass>0.05){vel[i3]+=(x/dist)*bass*0.02;vel[i3+1]+=(y/dist)*bass*0.02;vel[i3+2]+=(z/dist)*bass*0.02;}
+      if(bass>0.05){vel[i3]+=(x/dist)*bass*EXPLODE_STRENGTH;vel[i3+1]+=(y/dist)*bass*EXPLODE_STRENGTH;vel[i3+2]+=(z/dist)*bass*EXPLODE_STRENGTH;}
       if(orbState==='speaking'&&mid>0.1){const pulse=Math.sin(t*8+px);vel[i3]+=(x/dist)*mid*0.012*pulse;vel[i3+1]+=(y/dist)*mid*0.012*pulse;}
-      vel[i3]*=0.992;vel[i3+1]*=0.992;vel[i3+2]*=0.992;
+      vel[i3]*=VELOCITY_DAMPING;vel[i3+1]*=VELOCITY_DAMPING;vel[i3+2]*=VELOCITY_DAMPING;
       a[i3]+=vel[i3];a[i3+1]+=vel[i3+1];a[i3+2]+=vel[i3+2];
     }
     p.needsUpdate=true;
