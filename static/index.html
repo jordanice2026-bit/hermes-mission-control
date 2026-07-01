@@ -5274,7 +5274,9 @@ function jarvisAudioLevel(){
 
 // ── JARVIS ORB (ported from github.com/ethanplusai/jarvis) ──────────────────
 // Pure Three.js — particles + connection lines + electrons + tumble + depth Z
-const _ORB_N=2000;       // particle count
+// 2026-07-01 (round 4): more particles flowing through the sphere, fewer
+// connecting lines. Revert: _ORB_N back to 2000.
+const _ORB_N=3000;       // particle count — was 2000
 const _ORB_MAX_LINES=8000;  // max line segments
 const _ORB_MAX_ELECTRONS=200; // max simultaneous electrons
 // 2026-07-01 fluid-glow tweak: organic flowing brightness field, sampled at a
@@ -5438,7 +5440,7 @@ function startOrbLoop(){
   let targetSize=0.4,currentSize=0.4;
   let lineAmount=0,targetLineAmount=0;
   let coreGlow=0,targetCoreGlow=0;   // 2026-07-01: brighten lines toward sphere center, off during thinking/speaking
-  const lineDistance=6;   // 2026-07-01: was 8 — shorter connection radius = fewer lines, wavier/more open feel; cluster physics (containment pull) untouched
+  const lineDistance=4.5;   // 2026-07-01 (round 4): was 6 (originally 8) — even shorter connection radius = fewer lines despite more particles
   let electronSpawnRate=0,targetElectronRate=0,lastElectronSpawn=0;
   let spinX=0,spinY=0,spinZ=0;
   let transitionEnergy=0,lastOrbState='idle';
@@ -5469,11 +5471,13 @@ function startOrbLoop(){
     // 2026-07-01: coreGlow on for idle/listening (no sound detected), off for thinking/speaking
     // 2026-07-01 (round 2): targetBright raised further, targetLineAmount lowered — brighter
     // particles overall, fewer lines for a wavier/flowier feel. Cluster/flow-glow logic untouched.
+    // 2026-07-01 (round 4): targetLineAmount lowered again (more particles now flowing, want
+    // even fewer connecting lines relative to particle count).
     switch(orbState){
-      case 'idle':     targetRadius=28;targetSpeed=0.2;targetBright=0.68;targetSize=0.35;targetLineAmount=0.16;targetElectronRate=0;targetCoreGlow=1;break;   // was bright 0.5, lineAmount 0.3
-      case 'listening':targetRadius=22;targetSpeed=0.3;targetBright=0.8;targetSize=0.4;targetLineAmount=0.28;targetElectronRate=0;targetCoreGlow=1;break;      // was bright 0.65, lineAmount 0.55
-      case 'thinking': targetRadius=16;targetSpeed=0.5;targetBright=0.82;targetSize=0.3;targetLineAmount=0.7;targetElectronRate=0.015;targetCoreGlow=0;break;  // was bright 0.7, lineAmount 1.0
-      case 'speaking': targetRadius=18;targetSpeed=0.2;targetBright=0.82;targetSize=0.4;targetLineAmount=0.55;targetElectronRate=0;targetCoreGlow=0;break;     // was bright 0.7, lineAmount 0.8
+      case 'idle':     targetRadius=28;targetSpeed=0.2;targetBright=0.68;targetSize=0.35;targetLineAmount=0.08;targetElectronRate=0;targetCoreGlow=1;break;   // was lineAmount 0.16
+      case 'listening':targetRadius=22;targetSpeed=0.3;targetBright=0.8;targetSize=0.4;targetLineAmount=0.14;targetElectronRate=0;targetCoreGlow=1;break;      // was lineAmount 0.28
+      case 'thinking': targetRadius=16;targetSpeed=0.5;targetBright=0.82;targetSize=0.3;targetLineAmount=0.35;targetElectronRate=0.015;targetCoreGlow=0;break; // was lineAmount 0.7
+      case 'speaking': targetRadius=18;targetSpeed=0.2;targetBright=0.82;targetSize=0.4;targetLineAmount=0.28;targetElectronRate=0;targetCoreGlow=0;break;     // was lineAmount 0.55
     }
     currentRadius+=(targetRadius-currentRadius)*0.02;
     currentSpeed+=(targetSpeed-currentSpeed)*0.02;
