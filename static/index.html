@@ -1157,34 +1157,6 @@ nav{display:flex;gap:2px;flex:1}
 .aria-voice-transcript{display:none}
 .aria-voice-hint{display:none}
 .aria-voice-ui{display:none}
-/* bottom fallback button bar */
-#aria-voice-bottom{
-  position:fixed;bottom:72px;left:50%;transform:translateX(-50%);
-  display:flex;gap:10px;z-index:20;
-}
-#aria-voice-bottom button{
-  width:40px;height:40px;
-  border:1px solid rgba(14,165,233,0.2);border-radius:8px;
-  background:rgba(0,0,0,0.6);color:rgba(14,165,233,0.5);
-  cursor:pointer;display:flex;align-items:center;justify-content:center;
-  transition:all 0.2s;backdrop-filter:blur(8px);
-}
-#aria-voice-bottom button:hover{
-  background:rgba(14,165,233,0.12);color:rgba(14,165,233,0.8);
-  border-color:rgba(14,165,233,0.4);
-}
-#aria-voice-text-row{
-  position:fixed;bottom:120px;left:50%;transform:translateX(-50%);
-  width:400px;max-width:90vw;z-index:20;
-}
-#aria-voice-text-input{
-  width:100%;padding:10px 16px;
-  background:rgba(0,0,0,0.7);border:1px solid rgba(14,165,233,0.25);
-  border-radius:8px;color:#e8e8e8;font-size:13px;
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  letter-spacing:.02em;outline:none;backdrop-filter:blur(12px);
-}
-#aria-voice-text-input:focus{border-color:rgba(14,165,233,0.5);}
 
 /* ── HISTORY PANEL ── */
 .aria-history{flex-direction:column;gap:0;background:rgba(0,0,0,.95);border:1px solid var(--border-neon);border-radius:var(--radius);margin:0 4px 10px;max-height:260px;overflow-y:auto}
@@ -1634,7 +1606,7 @@ nav{display:flex;gap:2px;flex:1}
     <!-- IMMERSIVE VOICE OVERLAY — Jarvis design -->
     <div class="aria-voice-overlay" id="aria-voice-overlay">
       <canvas id="aria-voice-canvas"></canvas>
-      <!-- top-right controls: mute + menu -->
+      <!-- top-right controls: mute + exit only -->
       <div id="aria-voice-controls">
         <button id="aria-voice-mic-toggle" title="Mute/Unmute" onclick="ariaVoiceMicToggle()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -1643,38 +1615,11 @@ nav{display:flex;gap:2px;flex:1}
             <line x1="12" y1="19" x2="12" y2="23"/>
           </svg>
         </button>
-        <button id="aria-voice-menu-btn" title="Menu" onclick="ariaVoiceMenuToggle(event)">
+        <button id="aria-voice-close-btn" title="Exit voice mode" onclick="closeAriaVoice()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>
-          </svg>
-        </button>
-      </div>
-      <!-- bottom controls: always visible fallback buttons -->
-      <div id="aria-voice-bottom">
-        <button id="aria-voice-send-btn" onclick="ariaVoiceTextSend()" title="Type a message">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-          </svg>
-        </button>
-        <button id="aria-voice-new-btn" onclick="newAriaSession()" title="New conversation">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M12 5v14M5 12h14"/>
-          </svg>
-        </button>
-        <button id="aria-voice-close-btn" onclick="closeAriaVoice()" title="Close voice mode">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
-      </div>
-      <!-- hidden text input for non-voice fallback -->
-      <div id="aria-voice-text-row" style="display:none">
-        <input id="aria-voice-text-input" type="text" placeholder="Type a message..." onkeydown="if(event.key==='Enter')ariaVoiceTextSend()">
-      </div>
-      <!-- dropdown menu -->
-      <div id="aria-voice-menu">
-        <button onclick="closeAriaVoice();ariaVoiceMenuClose()">Exit Voice</button>
-        <button onclick="newAriaSession();ariaVoiceMenuClose()">New Conversation</button>
       </div>
       <!-- status: bottom center -->
       <div id="aria-voice-state"></div>
