@@ -4312,8 +4312,8 @@ function initOrb(){
   const group=new THREE.Group();
   scene.add(group);
 
-  // Fibonacci-sphere particle distribution
-  const N=340, R=1.35;
+  // Fibonacci-sphere particle distribution — dense + fine
+  const N=1100, R=1.35;
   const base=[];
   for(let i=0;i<N;i++){
     const y=1-(i/(N-1))*2;
@@ -4321,35 +4321,38 @@ function initOrb(){
     const theta=Math.PI*(3-Math.sqrt(5))*i;
     base.push(new THREE.Vector3(Math.cos(theta)*rad*R, y*R, Math.sin(theta)*rad*R));
   }
-  // points
+  // per-particle random phase for organic, non-uniform shimmer
+  const phase=new Float32Array(N);
+  for(let i=0;i<N;i++)phase[i]=Math.random()*Math.PI*2;
+  // points — small, soft, size-attenuated dots
   const pGeo=new THREE.BufferGeometry();
   const pPos=new Float32Array(N*3);
   base.forEach((v,i)=>{pPos[i*3]=v.x;pPos[i*3+1]=v.y;pPos[i*3+2]=v.z;});
   pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
-  const pMat=new THREE.PointsMaterial({color:0x66e0ff,size:0.045,transparent:true,opacity:0.95,blending:THREE.AdditiveBlending});
+  const pMat=new THREE.PointsMaterial({color:0x66e0ff,size:0.014,sizeAttenuation:true,transparent:true,opacity:0.9,depthWrite:false,blending:THREE.AdditiveBlending});
   const points=new THREE.Points(pGeo,pMat);
   group.add(points);
 
-  // interconnected lines between near neighbours
+  // interconnected lines between near neighbours (sparse, since denser sphere)
   const linePairs=[];
   for(let i=0;i<N;i++){
     for(let j=i+1;j<N;j++){
-      if(base[i].distanceTo(base[j])<0.42){ linePairs.push(i,j); }
+      if(base[i].distanceTo(base[j])<0.20){ linePairs.push(i,j); }
     }
   }
   const lGeo=new THREE.BufferGeometry();
   const lPos=new Float32Array(linePairs.length*3);
   lGeo.setAttribute('position',new THREE.BufferAttribute(lPos,3));
-  const lMat=new THREE.LineBasicMaterial({color:0x1e90ff,transparent:true,opacity:0.28,blending:THREE.AdditiveBlending});
+  const lMat=new THREE.LineBasicMaterial({color:0x1e90ff,transparent:true,opacity:0.12,depthWrite:false,blending:THREE.AdditiveBlending});
   const lines=new THREE.LineSegments(lGeo,lMat);
   group.add(lines);
 
   // inner glow core
   const coreGeo=new THREE.SphereGeometry(0.55,32,32);
-  const coreMat=new THREE.MeshBasicMaterial({color:0x0af,transparent:true,opacity:0.18,blending:THREE.AdditiveBlending});
+  const coreMat=new THREE.MeshBasicMaterial({color:0x0af,transparent:true,opacity:0.12,depthWrite:false,blending:THREE.AdditiveBlending});
   group.add(new THREE.Mesh(coreGeo,coreMat));
 
-  ariaThree={renderer,scene,camera,group,points,lines,base,linePairs,lGeo,pGeo,pPos,lPos,pMat,lMat,t:0};
+  ariaThree={renderer,scene,camera,group,points,lines,base,phase,linePairs,lGeo,pGeo,pPos,lPos,pMat,lMat,t:0};
   window.addEventListener('resize',ariaOrbResize);
 }
 function ariaOrbResize(){
@@ -4361,50 +4364,57 @@ function ariaOrbResize(){
 function startOrbLoop(){
   if(!ariaThree)return;
   const T=ariaThree;
-  let smooth=0;
-  // animated transition state (lerped toward targets each frame)
+  let smooth=0, wobble=0;
+  // animated transition state (critically-damped toward targets each frame)
   T.posY=0; T.scale=1; T.colR=0.80; T.colG=0.86; T.colB=0.92;
-  function lerp(a,b,t){return a+(b-a)*t;}
+  let last=performance.now();
+  // frame-rate-independent smoothing: converge ~63% over `tau` seconds
+  function damp(cur,tgt,tau,dt){return cur+(tgt-cur)*(1-Math.exp(-dt/tau));}
   function frame(){
     if(!ariaVoiceOn){return;}
-    T.t+=0.01;
+    const now=performance.now();
+    const dt=Math.min(0.05,(now-last)/1000)||0.016; last=now;
+    T.t+=dt;
     const lvl=ariaAudioLevel();
-    // when ARIA is speaking, drive motion with a synthetic pulse; else use mic
-    const drive = ariaSpeaking ? (0.30+0.30*Math.abs(Math.sin(T.t*5.5))) : lvl;
-    smooth += (drive-smooth)*0.15;
+    // when ARIA is speaking, drive motion with a soft synthetic pulse; else use mic
+    const drive = ariaSpeaking ? (0.28+0.22*Math.abs(Math.sin(T.t*4.2))+0.12*Math.sin(T.t*9.0)) : lvl;
+    // fast attack, slow release so it feels responsive but never jittery
+    smooth = damp(smooth, drive, drive>smooth?0.06:0.22, dt);
+    wobble += dt;
 
     // ── Perplexity two-state layout ──
-    // LISTENING (idle): large sphere, CENTER, white/gray particles.
-    // THINKING/SPEAKING: smaller orb, drops to BOTTOM, teal/cyan particles.
     const active = (ariaVoiceState==='thinking'||ariaVoiceState==='speaking');
-    const tgtPosY  = active ? -2.15 : 0.0;      // world-units downward
+    const tgtPosY  = active ? -2.15 : 0.0;
     const tgtScale = active ? 0.52  : 1.0;
-    // colors (0..1): idle=cool white-gray, active=teal/cyan
-    const tgtR = active ? 0.36 : 0.80;
-    const tgtG = active ? 0.92 : 0.86;
-    const tgtB = active ? 0.86 : 0.92;
-    T.posY  = lerp(T.posY,  tgtPosY,  0.08);
-    T.scale = lerp(T.scale, tgtScale, 0.08);
-    T.colR  = lerp(T.colR,  tgtR, 0.07);
-    T.colG  = lerp(T.colG,  tgtG, 0.07);
-    T.colB  = lerp(T.colB,  tgtB, 0.07);
+    const tgtR = active ? 0.34 : 0.82, tgtG = active ? 0.93 : 0.88, tgtB = active ? 0.90 : 0.95;
+    // smooth, springy state transition (~0.4s time-constant)
+    T.posY  = damp(T.posY,  tgtPosY,  0.40, dt);
+    T.scale = damp(T.scale, tgtScale, 0.40, dt);
+    T.colR  = damp(T.colR,  tgtR, 0.45, dt);
+    T.colG  = damp(T.colG,  tgtG, 0.45, dt);
+    T.colB  = damp(T.colB,  tgtB, 0.45, dt);
 
     T.group.position.y = T.posY;
     const s0 = T.scale;
     T.group.scale.set(s0,s0,s0);
     T.pMat.color.setRGB(T.colR,T.colG,T.colB);
     T.lMat.color.setRGB(T.colR*0.7,T.colG*0.8,T.colB*0.9);
-    T.lMat.opacity = 0.10 + smooth*0.35;
+    T.lMat.opacity = 0.07 + smooth*0.30;
 
-    // gentle continuous rotation + audio-driven breathing
-    T.group.rotation.y += 0.0022 + smooth*0.018;
-    T.group.rotation.x = Math.sin(T.t*0.3)*0.12;
-    const amp = 1 + smooth*0.55;
+    // gentle continuous rotation + subtle 3-axis drift for a living, dynamic feel
+    T.group.rotation.y += (0.10 + smooth*0.9)*dt;
+    T.group.rotation.x = Math.sin(T.t*0.35)*0.14 + Math.sin(T.t*0.11)*0.05;
+    T.group.rotation.z = Math.sin(T.t*0.23)*0.04;
+    const amp = 1 + smooth*0.42;
 
-    // displace particles radially by noise + audio (the "reacting to sound" ripple)
+    // per-particle organic displacement: multi-frequency noise keyed off each
+    // particle's random phase → flowing, non-uniform shimmer (not a rigid pulse)
+    const ph=T.phase;
     for(let i=0;i<T.base.length;i++){
-      const v=T.base[i];
-      const n=Math.sin(T.t*1.6 + i*0.35)*0.045 + smooth*0.30;
+      const v=T.base[i], p=ph[i];
+      const n = Math.sin(T.t*1.3 + p)*0.028
+              + Math.sin(T.t*2.7 + p*1.7)*0.016
+              + smooth*(0.16 + 0.20*Math.sin(T.t*3.1 + p));
       const s=amp+n;
       T.pPos[i*3]=v.x*s; T.pPos[i*3+1]=v.y*s; T.pPos[i*3+2]=v.z*s;
     }
@@ -4416,7 +4426,8 @@ function startOrbLoop(){
       T.lPos[o+3]=T.pPos[b*3];T.lPos[o+4]=T.pPos[b*3+1];T.lPos[o+5]=T.pPos[b*3+2];
     }
     T.lGeo.attributes.position.needsUpdate=true;
-    T.pMat.size=0.038+smooth*0.045;
+    // fine dots that swell only slightly with audio
+    T.pMat.size=0.013+smooth*0.018;
 
     T.renderer.render(T.scene,T.camera);
     ariaRAF=requestAnimationFrame(frame);
