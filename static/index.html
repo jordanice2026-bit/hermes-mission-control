@@ -4534,9 +4534,9 @@ function startMiniOrb(){
     phase[i]=Math.random()*1000;
   }
   geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
-  const mat=new THREE.PointsMaterial({map:miniTex,size:0.28,transparent:true,opacity:0.65,
+  const mat=new THREE.PointsMaterial({map:miniTex,size:0.36,transparent:true,opacity:0.9,
     sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false,alphaTest:0.01,
-    color:0x4ca8e8});
+    color:0x8fd6ff});
   scene.add(new THREE.Points(geo,mat));
 
   // connection lines
@@ -4545,7 +4545,7 @@ function startMiniOrb(){
   const lGeo=new THREE.BufferGeometry();
   lGeo.setAttribute('position',new THREE.BufferAttribute(lPos,3));
   lGeo.setDrawRange(0,0);
-  const lMat=new THREE.LineBasicMaterial({color:0x4ca8e8,transparent:true,opacity:0,
+  const lMat=new THREE.LineBasicMaterial({color:0x8fd6ff,transparent:true,opacity:0,
     blending:THREE.AdditiveBlending,depthWrite:false});
   scene.add(new THREE.LineSegments(lGeo,lMat));
 
@@ -4562,7 +4562,7 @@ function startMiniOrb(){
 
     // idle state targets
     curR+=(22-curR)*0.02; curSpd+=(0.18-curSpd)*0.02;
-    curBright+=(0.55-curBright)*0.02; lineAmt+=(0.12-lineAmt)*0.02;
+    curBright+=(0.85-curBright)*0.02; lineAmt+=(0.22-lineAmt)*0.02;
 
     // gentle tumble
     transE*=0.985;
@@ -4609,7 +4609,7 @@ function startMiniOrb(){
       }
       lGeo.setDrawRange(0,lc*2);
       lGeo.getAttribute('position').needsUpdate=true;
-      lMat.opacity=lineAmt*0.10;
+      lMat.opacity=lineAmt*0.22;
     }
 
     // apply rotation
