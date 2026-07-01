@@ -655,6 +655,16 @@ nav{display:flex;gap:2px;flex:1}
 .aria-send{background:linear-gradient(135deg,#00b4ff,#0066cc);color:#fff;border:none;border-radius:14px;padding:0 22px;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s}
 .aria-send:hover{box-shadow:0 0 18px rgba(0,180,255,.5)}
 .aria-send:disabled{opacity:.5;cursor:default;box-shadow:none}
+.aria-history{flex-direction:column;gap:0;background:var(--surface2);border:1px solid rgba(0,180,255,.25);border-radius:12px;margin:0 4px 10px;max-height:260px;overflow-y:auto}
+.aria-history-head{font-size:11px;font-weight:700;color:#00e0ff;padding:10px 14px 6px;letter-spacing:.06em;text-transform:uppercase}
+.aria-history-list{display:flex;flex-direction:column}
+.aria-hist-item{padding:9px 14px;border-top:1px solid var(--border);cursor:pointer;transition:background .12s}
+.aria-hist-item:hover{background:rgba(0,180,255,.08)}
+.aria-hist-title{font-size:13px;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aria-hist-meta{font-size:10px;color:var(--text3);margin-top:2px}
+.aria-hist-empty{padding:14px;font-size:12px;color:var(--text3);text-align:center}
+.aria-archive-banner{background:rgba(0,180,255,.1);border:1px solid rgba(0,180,255,.3);border-radius:10px;padding:8px 13px;font-size:12px;color:var(--text2);margin-bottom:6px}
+.aria-archive-banner a{color:#00e0ff}
 /* ── OWNER DETAIL ── */
 .owner-detail-grid{display:flex;flex-direction:column;gap:10px}
 .owner-props-section{margin-top:8px}
@@ -1049,7 +1059,12 @@ nav{display:flex;gap:2px;flex:1}
         </div>
         <div class="spacer"></div>
         <span class="aria-status" id="aria-status">◌ connecting…</span>
+        <button class="btn" onclick="toggleAriaHistory()" title="Past conversations">🕘 History</button>
         <button class="btn" onclick="newAriaSession()" title="Start a fresh conversation">＋ New</button>
+      </div>
+      <div class="aria-history" id="aria-history" style="display:none">
+        <div class="aria-history-head">Past conversations</div>
+        <div class="aria-history-list" id="aria-history-list"><div class="aria-hist-empty">Loading…</div></div>
       </div>
       <div class="aria-log" id="aria-log">
         <div class="aria-welcome">
@@ -3911,6 +3926,7 @@ function confirmStopAll(){
 let ariaMessages=[];
 let ariaPollTimer=null;
 let ariaLastRendered=0;
+let ariaViewingArchive=false;
 function ariaKeydown(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAria();} }
 function ariaSuggest(el){ const i=document.getElementById('aria-input'); i.value=el.textContent; i.focus(); }
 async function loadAria(){
@@ -3936,6 +3952,7 @@ async function sendAria(){
   finally{if(btn)btn.disabled=false;}
 }
 async function loadAriaChat(){
+  if(ariaViewingArchive)return;   // don't clobber an archived view
   try{
     const r=await api('/api/ea/chat');
     if(!r.ok)return;
@@ -3983,13 +4000,61 @@ function startAriaPolling(){
   },3000);
 }
 async function newAriaSession(){
-  if(!confirm('Start a fresh conversation with ARIA? She keeps full control — this just clears the current chat thread on the server side.'))return;
+  // Instant: archive current thread + reset, no message sent to ARIA
   try{
     await api('/api/ea/chat/new',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
   }catch(e){}
   ariaMessages=[];ariaLastRendered=0;
+  if(ariaPollTimer){clearInterval(ariaPollTimer);ariaPollTimer=setInterval(loadAriaChat,4000);}
   document.getElementById('aria-log').innerHTML='<div class="aria-welcome"><div class="aria-welcome-orb">✦</div><div class="aria-welcome-title">Fresh start.</div><div class="aria-welcome-text">New conversation. What can I do for you, Jordan?</div></div>';
+  const st=document.getElementById('aria-status');if(st){st.textContent='✦ online';st.className='aria-status online';}
+  const orb=document.getElementById('aria-orb');if(orb)orb.classList.remove('thinking');
   showToast('New ARIA conversation started','success');
+  loadAriaSessions();
+}
+// ── ARIA session history ──
+async function loadAriaSessions(){
+  const box=document.getElementById('aria-history-list');
+  if(!box)return;
+  try{
+    const r=await api('/api/ea/sessions');
+    const d=await r.json();
+    const items=d.sessions||[];
+    if(!items.length){box.innerHTML='<div class="aria-hist-empty">No past conversations yet.</div>';return;}
+    box.innerHTML=items.map(s=>`<div class="aria-hist-item" onclick="openAriaSession('${s.id}')"><div class="aria-hist-title">${esc(s.title)}</div><div class="aria-hist-meta">${s.count} msgs · ${timeAgo(s.ended_at)}</div></div>`).join('');
+  }catch(e){box.innerHTML='<div class="aria-hist-empty">Could not load history.</div>';}
+}
+function toggleAriaHistory(){
+  const panel=document.getElementById('aria-history');
+  if(!panel)return;
+  const show=panel.style.display==='none'||!panel.style.display;
+  panel.style.display=show?'flex':'none';
+  if(show)loadAriaSessions();
+}
+let ariaViewingArchiveDup;  // (declared above)
+async function openAriaSession(id){
+  try{
+    const r=await api('/api/ea/sessions/'+id);
+    const d=await r.json();
+    const s=d.session;
+    if(!s)return;
+    ariaViewingArchive=true;
+    if(ariaPollTimer){clearInterval(ariaPollTimer);ariaPollTimer=null;}
+    const log=document.getElementById('aria-log');
+    let html='<div class="aria-archive-banner">📜 Viewing a past conversation — <a href="#" onclick="backToLiveAria(event)">back to current chat</a></div>';
+    html+=(s.messages||[]).map(m=>{
+      const cls=m.role==='user'?'user':'assistant';
+      const meta=m.role==='user'?timeAgo(m.ts):('ARIA · '+timeAgo(m.ts));
+      return `<div class="aria-msg ${cls}"><div class="aria-bubble">${esc(m.text)}</div><div class="aria-meta">${esc(meta)}</div></div>`;
+    }).join('');
+    log.innerHTML=html;log.scrollTop=0;
+    const panel=document.getElementById('aria-history');if(panel)panel.style.display='none';
+  }catch(e){showToast('Could not open conversation','error');}
+}
+function backToLiveAria(ev){
+  if(ev)ev.preventDefault();
+  ariaViewingArchive=false;ariaLastRendered=0;
+  loadAria();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

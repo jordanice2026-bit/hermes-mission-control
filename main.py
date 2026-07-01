@@ -616,6 +616,9 @@ _agent_state: dict = {               # last-known state pushed by the VPS worker
 }
 _manager_chat: list[dict] = []       # manager chat transcript (newest last)
 _ea_chat: list[dict] = []            # executive assistant (ARIA) chat transcript
+_ea_sessions: list[dict] = []        # archived ARIA conversations (history)
+_ea_control_queue: list[str] = []    # control markers for the worker (new_session, etc.)
+_ea_hermes_sid: str = ""             # current ARIA hermes session id (from runner)
 _ALLOWED_COMMANDS = {"start_all", "stop_all", "pause_job", "resume_job", "run_job"}
 
 
@@ -721,25 +724,58 @@ async def ea_chat_post(request: Request, user: dict = Depends(require_user)):
 
 @app.post("/api/ea/chat/new")
 async def ea_chat_new(request: Request, user: dict = Depends(require_user)):
-    """Clear the EA transcript + signal the runner to start a fresh session."""
-    _ea_chat.clear()
-    # queue a control marker the worker forwards to reset the session file
-    _ea_chat.append({
-        "id": secrets.token_hex(8),
-        "role": "user",
-        "text": "__NEW_SESSION__",
-        "status": "pending",
-        "ts": int(time.time() * 1000),
-        "issued_by": user.get("email") or "user",
-        "control": "new_session",
-    })
+    """Instantly start a fresh ARIA conversation.
+
+    Archives the current transcript to history, clears the live chat, and queues
+    a control marker so the worker resets the runner's session file. No message
+    is sent to ARIA — this returns immediately and the UI loads the empty thread.
+    """
+    global _ea_chat
+    # Archive the current conversation if it has any real content
+    real = [m for m in _ea_chat if not m.get("control")]
+    if real:
+        first_user = next((m["text"] for m in real if m["role"] == "user"), "")
+        title = (first_user[:60] + "…") if len(first_user) > 60 else (first_user or "Conversation")
+        _ea_sessions.append({
+            "id": secrets.token_hex(8),
+            "title": title,
+            "messages": real,
+            "started_at": real[0]["ts"],
+            "ended_at": real[-1]["ts"],
+            "count": len(real),
+            "hermes_sid": _ea_hermes_sid,
+        })
+        del _ea_sessions[:-50]          # keep last 50 conversations
+    _ea_chat = []
+    _ea_control_queue.append("new_session")
     return JSONResponse({"ok": True})
+
+
+@app.get("/api/ea/sessions")
+async def ea_sessions_list(request: Request, user: dict = Depends(require_user)):
+    """List archived ARIA conversations (newest first)."""
+    items = [{"id": s["id"], "title": s["title"], "count": s["count"],
+              "started_at": s["started_at"], "ended_at": s["ended_at"]}
+             for s in reversed(_ea_sessions)]
+    return JSONResponse({"sessions": items, "total": len(items)})
+
+
+@app.get("/api/ea/sessions/{session_id}")
+async def ea_session_get(session_id: str, request: Request, user: dict = Depends(require_user)):
+    """Return the full transcript of one archived ARIA conversation."""
+    for s in _ea_sessions:
+        if s["id"] == session_id:
+            return JSONResponse({"session": s})
+    raise HTTPException(404, "session not found")
 
 
 @app.post("/api/ea/chat/reply")
 async def ea_chat_reply(request: Request, _=Depends(require_sync_token)):
     """VPS EA runner posts the assistant's reply + marks the user msg done."""
+    global _ea_hermes_sid
     body = await request.json()
+    if body.get("hermes_sid"):
+        _ea_hermes_sid = body["hermes_sid"]
     for upd in body.get("chat_updates", []):
         mid = upd.get("id")
         for m in _ea_chat:
@@ -824,9 +860,13 @@ async def agent_control_poll(request: Request, _=Depends(require_sync_token)):
     pending_ea = [m for m in _ea_chat if m["role"] == "user" and m.get("status") == "pending"]
     for m in pending_ea:
         m["status"] = "processing"
+    # EA control markers (new_session, etc.) — drain the queue to the worker
+    ea_control = list(_ea_control_queue)
+    _ea_control_queue.clear()
     return JSONResponse({"commands": list(_command_queue),
                          "chat_messages": [{"id": m["id"], "text": m["text"]} for m in pending_chat],
-                         "ea_messages": [{"id": m["id"], "text": m["text"]} for m in pending_ea]})
+                         "ea_messages": [{"id": m["id"], "text": m["text"]} for m in pending_ea],
+                         "ea_control": ea_control})
 
 
 # ---------------------------------------------------------------------------

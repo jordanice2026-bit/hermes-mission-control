@@ -98,12 +98,13 @@ def run_agent(text: str) -> tuple[str, str]:
     return (reply, new_sid)
 
 
-def post_reply(message_id: str, reply: str, status: str = 'done'):
+def post_reply(message_id: str, reply: str, status: str = 'done', hermes_sid: str = ''):
     if not SYNC_TOKEN:
         sys.stderr.write('no sync token; cannot post reply\n')
         print(reply)
         return
     payload = json.dumps({'chat_updates': [{'id': message_id, 'status': status, 'reply': reply}],
+                          'hermes_sid': hermes_sid,
                           'jobs': [], 'system_status': 'ea', 'results': [],
                           'ea': True}).encode()
     req = urllib.request.Request(
@@ -126,7 +127,7 @@ def main():
     args = ap.parse_args()
 
     reply, sid = run_agent(args.text)
-    post_reply(args.message_id, reply)
+    post_reply(args.message_id, reply, hermes_sid=sid)
     print(f'[ea] replied to {args.message_id} (session {sid}): {reply[:80]}')
 
 

@@ -196,6 +196,18 @@ def handle_chat_messages(chat_messages):
     return updates
 
 
+def handle_ea_control(ea_control):
+    """Process EA control markers (e.g. new_session -> reset the runner session)."""
+    for marker in ea_control or []:
+        if marker == 'new_session':
+            try:
+                if os.path.exists('/opt/data/ea_session.json'):
+                    os.remove('/opt/data/ea_session.json')
+                print('EA session reset (new conversation)')
+            except Exception as e:
+                print(f'EA session reset failed: {e}')
+
+
 def launch_ea_messages(ea_messages):
     """Launch the EA runner (full agentic session) as a DETACHED bg process per
     message. It can take minutes, so we don't block the worker tick; the runner
@@ -205,15 +217,6 @@ def launch_ea_messages(ea_messages):
     import subprocess as _sp
     launched = 0
     for m in ea_messages:
-        # control marker: reset the EA session (fresh Jarvis conversation)
-        if m.get('text') == '__NEW_SESSION__':
-            try:
-                if os.path.exists('/opt/data/ea_session.json'):
-                    os.remove('/opt/data/ea_session.json')
-                print('EA session reset (new conversation)')
-            except Exception as e:
-                print(f'EA session reset failed: {e}')
-            continue
         try:
             _sp.Popen(
                 ['python3', '/opt/data/ea_runner.py',
@@ -250,6 +253,10 @@ def main():
     commands = data.get('commands', [])
     chat_messages = data.get('chat_messages', [])
     ea_messages = data.get('ea_messages', [])
+    ea_control = data.get('ea_control', [])
+
+    # Handle EA control markers first (e.g. reset session for a new conversation)
+    handle_ea_control(ea_control)
 
     # Handle Manager chat messages (classify + dispatch tasks)
     chat_updates = handle_chat_messages(chat_messages)
@@ -257,7 +264,7 @@ def main():
     # Launch the EA (ARIA) runner for any pending EA messages (detached; replies async)
     ea_launched = launch_ea_messages(ea_messages)
 
-    if not commands and not chat_updates and not ea_launched:
+    if not commands and not chat_updates and not ea_launched and not ea_control:
         print(f'OK: {len(jobs)} jobs, status={status}, no commands/chat/ea')
         return
 
