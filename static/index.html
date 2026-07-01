@@ -2391,6 +2391,10 @@ function switchView(view){
   const vid=mapping[view]||('view-'+view);
   const el=document.getElementById(vid);
   if(el)el.classList.add('active');
+  // stagger cards in the newly active view (Jarvis UI enhancement)
+  if(typeof _staggerCards==='function'){
+    setTimeout(()=>{ if(el)_staggerCards(el); },50);
+  }
   if(view==='owners')loadOwners();
   if(view==='pipeline')loadPipeline();
   if(view==='departments')loadDepartments();
@@ -5048,21 +5052,10 @@ function _staggerCards(container, selector='.task-card,.dept-card,.kpi-card'){
   });
 }
 
-// Hook into switchView to stagger cards on tab change
-const _origSwitchView=switchView;
-function switchView(view){
-  _origSwitchView(view);
-  // stagger cards in the newly active view
-  setTimeout(()=>{
-    const mapping={
-      'board':'view-board','departments':'view-departments',
-      'listings':'view-listings','deals':'view-deals',
-      'manager':'view-manager','owners':'view-owners'
-    };
-    const vid=mapping[view];
-    if(vid){ _staggerCards(document.getElementById(vid)); }
-  },50);
-}
+// (switchView card-stagger enhancement is inlined directly into the
+// original switchView function below — do NOT redeclare switchView here,
+// duplicate function declarations hoist and silently overwrite each other,
+// causing infinite recursion the moment a tab is clicked)
 
 // ── 5. Pulse rings renderer ──
 let _pulseRingsRAF=null;
@@ -5155,16 +5148,8 @@ function _stopWaveform(){
   if(wc)wc.classList.remove('active');
 }
 
-// ── 7. Orb state color shifts + glitch on state text ──
-// Patch setVoiceState to add color classes and glitch
-const _origSetVoiceState=setVoiceState;
-function setVoiceState(s){
-  const el=document.getElementById('aria-voice-state');
-  if(el){ _glitchText(el); }
-  _origSetVoiceState(s);
-  // add color class
-  if(el){ el.className=''; el.classList.add(s); }
-}
+// (setVoiceState glitch/color enhancement is inlined directly into the
+// original setVoiceState function below — see the "same hoisting bug" note above)
 
 // ═══════════════════════════════════════════════════════════════════════════
 let ariaVoiceOn=false, ariaRec=null, ariaMicMuted=false, ariaVoiceState='idle';
@@ -5241,10 +5226,14 @@ function setVoiceState(s){
   ariaVoiceState=s;
   const el=document.getElementById('aria-voice-state');
   if(!el)return;
+  // glitch effect on every state change (Jarvis UI enhancement)
+  if(typeof _glitchText==='function') _glitchText(el);
   // Jarvis-style: lowercase, bottom center, faded
   const labels={listening:'listening...',thinking:'thinking...',speaking:'',idle:''};
   el.textContent=labels[s]||'';
   el.style.opacity=(s==='idle'||s==='speaking')?'0':'1';
+  // state color class (Jarvis UI enhancement)
+  el.className=s;
   // keep Jarvis orb in sync
   if(ariaThree&&ariaThree.setOrbState){
     const orbMap={listening:'listening',thinking:'thinking',speaking:'speaking'};
