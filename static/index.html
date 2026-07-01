@@ -1052,7 +1052,28 @@ nav{display:flex;gap:2px;flex:1}
 }
 .aria-meta{font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--font-mono)}
 .aria-typing{align-self:flex-start;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--neon);font-style:italic;padding:2px 6px;font-family:var(--font-mono);letter-spacing:.08em}
-.aria-input-row{display:flex;gap:10px;padding:12px 4px 16px;border-top:1px solid var(--border-neon)}
+.aria-input-row{display:flex;gap:10px;padding:12px 4px 16px;border-top:1px solid var(--border-neon);flex-direction:column}
+.aria-input-controls{display:flex;gap:10px;align-items:flex-end}
+.aria-attach-bar{display:flex;flex-wrap:wrap;gap:6px;padding:0 4px 2px}
+.aria-attach-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25);
+  border-radius:2px;padding:4px 8px;font-size:11px;
+  color:var(--neon);font-family:var(--font-mono);letter-spacing:.04em;
+  max-width:280px;
+}
+.aria-attach-pill-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.aria-attach-pill-size{color:var(--text3);font-size:10px;flex-shrink:0}
+.aria-attach-remove{background:none;border:none;color:var(--text3);cursor:pointer;padding:0 2px;font-size:13px;line-height:1;flex-shrink:0;transition:color .15s}
+.aria-attach-remove:hover{color:var(--red)}
+.aria-attach-btn{
+  background:rgba(0,0,0,.8);border:1px solid var(--border-neon);
+  border-radius:var(--radius-sm);padding:0 12px;font-size:15px;cursor:pointer;
+  transition:all .15s;flex-shrink:0;height:100%;min-height:44px;
+  display:flex;align-items:center;justify-content:center;
+  clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);
+}
+.aria-attach-btn:hover{border-color:var(--neon);box-shadow:0 0 12px rgba(0,212,255,.2)}
 .aria-input{
   flex:1;resize:none;
   background:rgba(8,8,8,.8);
@@ -1538,9 +1559,15 @@ nav{display:flex;gap:2px;flex:1}
         </div>
       </div>
       <div class="aria-input-row">
-        <button class="aria-mic" id="aria-mic" onclick="toggleAriaVoice()" title="Talk to ARIA (voice)">🎙️</button>
-        <textarea class="aria-input" id="aria-input" rows="1" placeholder="Message ARIA" onkeydown="ariaKeydown(event)"></textarea>
-        <button class="aria-send" id="aria-send" onclick="sendAria()">Send</button>
+        <div class="aria-attach-bar" id="aria-attach-bar"></div>
+        <div class="aria-input-controls">
+          <button class="aria-mic" id="aria-mic" onclick="toggleAriaVoice()" title="Talk to ARIA (voice)">🎙️</button>
+          <button class="aria-attach-btn" onclick="ariaAttachMenu(event)" title="Attach files or folder">📎</button>
+          <input type="file" id="aria-file-input" multiple style="display:none" onchange="ariaFilesSelected(this)">
+          <input type="file" id="aria-folder-input" webkitdirectory multiple style="display:none" onchange="ariaFilesSelected(this)">
+          <textarea class="aria-input" id="aria-input" rows="1" placeholder="Message ARIA" onkeydown="ariaKeydown(event)"></textarea>
+          <button class="aria-send" id="aria-send" onclick="sendAria()">Send</button>
+        </div>
       </div>
     </div>
 
@@ -4482,18 +4509,126 @@ function startMiniOrb(){
   }
   miniFrame();
 }
+// ── ARIA file/folder attachments ──────────────────────────────────────────
+let _ariaAttachments = [];   // [{name, size, content (string)}]
+
+function ariaAttachMenu(ev){
+  // Show a tiny inline menu: Files | Folder
+  const existing = document.getElementById('aria-attach-menu');
+  if(existing){ existing.remove(); return; }
+  const menu = document.createElement('div');
+  menu.id = 'aria-attach-menu';
+  Object.assign(menu.style,{
+    position:'absolute',zIndex:'999',
+    background:'#111',border:'1px solid rgba(0,212,255,.3)',borderRadius:'3px',
+    padding:'4px 0',fontFamily:"'Rajdhani',sans-serif",fontSize:'12px',letterSpacing:'.06em'
+  });
+  const btn = ev.currentTarget;
+  const r = btn.getBoundingClientRect();
+  menu.style.left = r.left+'px';
+  menu.style.top  = (r.top-72)+'px';
+  const mkItem = (label, fn) => {
+    const d = document.createElement('div');
+    d.textContent = label;
+    Object.assign(d.style,{padding:'7px 16px',cursor:'pointer',color:'#e8e8e8',textTransform:'uppercase',letterSpacing:'.1em'});
+    d.onmouseover = ()=>{ d.style.background='rgba(0,212,255,.12)'; d.style.color='#00d4ff'; };
+    d.onmouseout  = ()=>{ d.style.background=''; d.style.color='#e8e8e8'; };
+    d.onclick = ()=>{ menu.remove(); fn(); };
+    return d;
+  };
+  menu.append(
+    mkItem('📄  Files',  ()=>document.getElementById('aria-file-input').click()),
+    mkItem('📁  Folder', ()=>document.getElementById('aria-folder-input').click())
+  );
+  document.body.appendChild(menu);
+  setTimeout(()=>document.addEventListener('click', function h(){ menu.remove(); document.removeEventListener('click',h); }), 50);
+}
+
+async function ariaFilesSelected(input){
+  const MAX_TEXT = 120000;  // chars per file (safety cap)
+  const MAX_FILES = 40;
+  const files = Array.from(input.files||[]).slice(0, MAX_FILES);
+  input.value = '';          // reset so same folder can be re-selected
+  if(!files.length) return;
+
+  const TEXT_TYPES = /\.(txt|md|markdown|csv|json|jsonl|yaml|yml|toml|xml|html|htm|css|js|ts|jsx|tsx|py|rb|go|rs|java|c|cpp|h|hpp|sh|bash|zsh|sql|r|swift|kt|dart|vue|svelte|env|ini|cfg|conf|log|gitignore|dockerfile)$/i;
+  const SIZE_LIMIT = 4 * 1024 * 1024; // 4 MB hard limit per file
+
+  const bar = document.getElementById('aria-attach-bar');
+  for(const file of files){
+    // Skip huge binaries silently
+    if(file.size > SIZE_LIMIT){ showToast(`${file.name} too large (>${(SIZE_LIMIT/1024/1024).toFixed(0)} MB), skipped`,'error'); continue; }
+    // Relative path for folder uploads
+    const displayName = file.webkitRelativePath || file.name;
+    let content;
+    if(TEXT_TYPES.test(file.name)){
+      try{ content = await file.text(); }
+      catch{ content = '[unreadable]'; }
+      if(content.length > MAX_TEXT) content = content.slice(0, MAX_TEXT) + '\n… [truncated]';
+    } else {
+      // Binary — send as base64 data URI stub
+      content = await new Promise(res=>{
+        const fr = new FileReader();
+        fr.onload = ()=>res(fr.result);
+        fr.readAsDataURL(file);
+      });
+      if(content.length > MAX_TEXT) content = content.slice(0, MAX_TEXT) + '… [truncated]';
+    }
+    const att = { name: displayName, size: file.size, content };
+    _ariaAttachments.push(att);
+    // render pill
+    const pill = document.createElement('div');
+    pill.className = 'aria-attach-pill';
+    pill.dataset.name = displayName;
+    pill.innerHTML = `<span class="aria-attach-pill-name" title="${esc(displayName)}">${esc(displayName)}</span>`
+      + `<span class="aria-attach-pill-size">${fmtBytes(file.size)}</span>`
+      + `<button class="aria-attach-remove" title="Remove" onclick="ariaRemoveAttachment('${CSS.escape(displayName)}',this.parentElement)">✕</button>`;
+    bar.appendChild(pill);
+  }
+}
+
+function ariaRemoveAttachment(name, pill){
+  _ariaAttachments = _ariaAttachments.filter(a=>a.name!==name);
+  pill.remove();
+}
+
+function fmtBytes(b){
+  if(b<1024) return b+'B';
+  if(b<1024*1024) return (b/1024).toFixed(1)+'KB';
+  return (b/1024/1024).toFixed(1)+'MB';
+}
+
+function ariaAttachmentBlock(){
+  // Builds the file-content prefix that rides in the message text
+  if(!_ariaAttachments.length) return '';
+  const parts = _ariaAttachments.map(a=>
+    `<file path="${a.name}" bytes="${a.size}">\n${a.content}\n</file>`
+  );
+  return `[ATTACHED FILES]\n${parts.join('\n')}\n[/ATTACHED FILES]\n\n`;
+}
+
+function ariaClearAttachments(){
+  _ariaAttachments = [];
+  const bar = document.getElementById('aria-attach-bar');
+  if(bar) bar.innerHTML = '';
+}
+
 async function sendAria(){
   const input=document.getElementById('aria-input');
   const text=(input.value||'').trim();
-  if(!text)return;
+  const attachBlock = ariaAttachmentBlock();
+  if(!text && !attachBlock) return;
+  const fullText = attachBlock + (text || '(see attached files)');
   input.value='';
+  ariaClearAttachments();
   const btn=document.getElementById('aria-send');
   if(btn)btn.disabled=true;
-  // optimistic echo
-  ariaMessages.push({id:'tmp-'+Date.now(),role:'user',text,status:'pending',ts:Date.now()});
+  // optimistic echo — show user text only (not the full attachment block)
+  const displayText = (attachBlock ? `📎 ${_ariaAttachments.length||''}files  ` : '') + text;
+  ariaMessages.push({id:'tmp-'+Date.now(),role:'user',text:text||(attachBlock?'[attached files]':''),status:'pending',ts:Date.now()});
   renderAria(true);
   try{
-    const r=await api('/api/ea/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+    const r=await api('/api/ea/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:fullText})});
     if(!r.ok)throw new Error((await r.json().catch(()=>({}))).detail||r.statusText);
     await loadAriaChat();
     startAriaPolling();

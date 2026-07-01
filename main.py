@@ -707,8 +707,8 @@ async def ea_chat_post(request: Request, user: dict = Depends(require_user)):
     text = (body.get("text") or "").strip()
     if not text:
         raise HTTPException(400, "empty message")
-    if len(text) > 8000:
-        text = text[:8000]
+    if len(text) > 400000:
+        text = text[:400000]
     msg = {
         "id": secrets.token_hex(8),
         "role": "user",
