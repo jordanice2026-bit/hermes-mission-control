@@ -5247,10 +5247,11 @@ function initOrb(){
   function _orbFitZ(){
     const fovRad=camera.fov*Math.PI/180;
     const aspect=window.innerWidth/window.innerHeight;
-    const R=30; // max radius with breathing room
-    const zV=R/Math.tan(fovRad/2);      // vertical fit
-    const zH=R/(Math.tan(fovRad/2)*aspect); // horizontal fit
-    return Math.max(zV,zH)+5;           // take the tighter + small margin
+    // largest state radius is 28 (idle), add 8% margin
+    const R=28*1.08;
+    const zV=R/Math.tan(fovRad/2);
+    const zH=R/(Math.tan(fovRad/2)*aspect);
+    return Math.max(zV,zH)+2;
   }
   camera.position.z=_orbFitZ();
 
@@ -5407,23 +5408,19 @@ function startOrbLoop(){
       spinZ+=transitionEnergy*0.008*Math.cos(t*1.3);
     }
 
-    // Depth Z breathing
-    let zTarget=Math.sin(t*0.12)*8;
-    if(orbState==='thinking')zTarget=Math.sin(t*0.3)*15+Math.sin(t*0.9)*6;
-    else if(orbState==='speaking')zTarget=Math.sin(t*0.15)*6-bass*10;
-    cloudZVel+=(zTarget-cloudZ)*0.008;
-    cloudZVel*=0.94;
-    cloudZ+=cloudZVel;
-
+    // No cloud Z translation or camera orbit — keeps all particles in frustum
     T.points.rotation.x=spinX;T.points.rotation.y=spinY;T.points.rotation.z=spinZ;
-    T.points.position.z=cloudZ;
+    T.points.position.set(0,0,0);
     T.lines.rotation.x=spinX;T.lines.rotation.y=spinY;T.lines.rotation.z=spinZ;
-    T.lines.position.z=cloudZ;
+    T.lines.position.set(0,0,0);
 
     // Update particles
     const p=T.geo.getAttribute('position');
     const a=p.array;
     const vel=T.vel,phase=T.phase;
+    // ── Hard-clamp particles inside currentRadius — no escapes ──
+    // After velocity integration, any particle beyond currentRadius is
+    // snapped back to exactly the surface. This is the guaranteed containment.
     for(let i=0;i<_ORB_N;i++){
       const i3=i*3;
       let x=a[i3],y=a[i3+1],z=a[i3+2];
@@ -5435,12 +5432,21 @@ function startOrbLoop(){
       vel[i3+1]+=Math.cos(t*0.025+px*1.7+z*0.1)*0.0008*currentSpeed;
       vel[i3+2]+=Math.sin(t*0.022+px*0.9+x*0.1)*0.0008*currentSpeed;
       const dist=Math.sqrt(x*x+y*y+z*z)||0.01;
-      const pull=Math.max(0,dist-currentRadius)*0.002+0.0003;
-      vel[i3]-=(x/dist)*pull;vel[i3+1]-=(y/dist)*pull;vel[i3+2]-=(z/dist)*pull;
-      if(bass>0.05){vel[i3]+=(x/dist)*bass*0.02;vel[i3+1]+=(y/dist)*bass*0.02;vel[i3+2]+=(z/dist)*bass*0.02;}
-      if(orbState==='speaking'&&mid>0.1){const pulse=Math.sin(t*8+px);vel[i3]+=(x/dist)*mid*0.012*pulse;vel[i3+1]+=(y/dist)*mid*0.012*pulse;}
-      vel[i3]*=0.992;vel[i3+1]*=0.992;vel[i3+2]*=0.992;
-      a[i3]+=vel[i3];a[i3+1]+=vel[i3+1];a[i3+2]+=vel[i3+2];
+      // stronger inward pull the further outside the sphere
+      const excess=dist-currentRadius;
+      if(excess>0){
+        const pull=excess*0.06+0.001;
+        vel[i3]-=(x/dist)*pull;vel[i3+1]-=(y/dist)*pull;vel[i3+2]-=(z/dist)*pull;
+      }
+      if(bass>0.05){vel[i3]+=(x/dist)*bass*0.015;vel[i3+1]+=(y/dist)*bass*0.015;vel[i3+2]+=(z/dist)*bass*0.015;}
+      if(orbState==='speaking'&&mid>0.1){const pulse=Math.sin(t*8+px);vel[i3]+=(x/dist)*mid*0.008*pulse;vel[i3+1]+=(y/dist)*mid*0.008*pulse;}
+      vel[i3]*=0.988;vel[i3+1]*=0.988;vel[i3+2]*=0.988;
+      x=a[i3]+vel[i3]; y=a[i3+1]+vel[i3+1]; z=a[i3+2]+vel[i3+2];
+      // hard clamp: never exceed currentRadius
+      const nd=Math.sqrt(x*x+y*y+z*z)||0.01;
+      if(nd>currentRadius){ const k=currentRadius/nd; x*=k; y*=k; z*=k;
+        vel[i3]*=0.3;vel[i3+1]*=0.3;vel[i3+2]*=0.3; } // kill excess velocity on clamp
+      a[i3]=x; a[i3+1]=y; a[i3+2]=z;
     }
     p.needsUpdate=true;
 
@@ -5504,7 +5510,7 @@ function startOrbLoop(){
     T.electronGeo.setDrawRange(0,aliveCount);
     ep.needsUpdate=true;
     T.electrons.rotation.x=spinX;T.electrons.rotation.y=spinY;T.electrons.rotation.z=spinZ;
-    T.electrons.position.z=cloudZ;
+    T.electrons.position.set(0,0,0);
 
     // Material
     T.mat.opacity=currentBright+bass*0.08;
@@ -5513,10 +5519,9 @@ function startOrbLoop(){
     else if(orbState==='speaking'){T.mat.color.lerp(new THREE.Color(0x5ab8f0),0.015);T.lineMat.color.lerp(new THREE.Color(0x5ab8f0),0.015);}
     else{T.mat.color.lerp(new THREE.Color(0x4ca8e8),0.015);T.lineMat.color.lerp(new THREE.Color(0x4ca8e8),0.015);}
 
-    // Slow orbital camera drift
-    T.camera.position.x=Math.sin(t*0.02)*5;
-    T.camera.position.y=Math.cos(t*0.03)*3;
-    T.camera.lookAt(0,0,cloudZ*0.2);
+    // Camera fixed at center — no orbit drift that clips particles
+    T.camera.position.x=0; T.camera.position.y=0;
+    T.camera.lookAt(0,0,0);
 
     T.renderer.render(T.scene,T.camera);
   }
