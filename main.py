@@ -614,6 +614,7 @@ _agent_state: dict = {               # last-known state pushed by the VPS worker
     "worker_online": False,
     "team_lessons": [],              # shared cross-agent lessons (org brain)
 }
+_manager_chat: list[dict] = []       # manager chat transcript (newest last)
 _ALLOWED_COMMANDS = {"start_all", "stop_all", "pause_job", "resume_job", "run_job"}
 
 
@@ -651,6 +652,39 @@ async def agent_control_command(request: Request, user: dict = Depends(require_u
     return JSONResponse({"ok": True, "command": cmd})
 
 
+# ---------------------------------------------------------------------------
+# Manager chat — text the Manager agent from inside the dashboard.
+# Browser POSTs a message; the VPS worker (which has the LLM + kanban CLI)
+# picks up pending user messages on its next poll, classifies + dispatches the
+# task, and posts the reply back. Browser polls GET /api/manager/chat.
+# ---------------------------------------------------------------------------
+@app.get("/api/manager/chat")
+async def manager_chat_get(request: Request, user: dict = Depends(require_user)):
+    return JSONResponse({"messages": _manager_chat[-100:],
+                         "worker_online": (time.time() - _agent_state.get("updated_at", 0)) < 90})
+
+
+@app.post("/api/manager/chat")
+async def manager_chat_post(request: Request, user: dict = Depends(require_user)):
+    body = await request.json()
+    text = (body.get("text") or "").strip()
+    if not text:
+        raise HTTPException(400, "empty message")
+    if len(text) > 4000:
+        text = text[:4000]
+    msg = {
+        "id": secrets.token_hex(8),
+        "role": "user",
+        "text": text,
+        "status": "pending",          # pending -> processing -> done
+        "ts": int(time.time() * 1000),
+        "issued_by": user.get("email") or user.get("name") or "user",
+    }
+    _manager_chat.append(msg)
+    del _manager_chat[:-200]          # keep last 200
+    return JSONResponse({"ok": True, "message": msg})
+
+
 @app.post("/api/agent-control/poll")
 async def agent_control_poll(request: Request, _=Depends(require_sync_token)):
     """VPS worker: fetch queued commands + push current agent state.
@@ -686,8 +720,33 @@ async def agent_control_poll(request: Request, _=Depends(require_sync_token)):
     # trim log
     del _command_log[100:]
 
-    # 3. Hand back the still-queued commands for this tick
-    return JSONResponse({"commands": list(_command_queue)})
+    # 2b. Manager chat — accept status updates + assistant replies from the worker
+    for upd in body.get("chat_updates", []):
+        mid = upd.get("id")
+        for m in _manager_chat:
+            if m["id"] == mid:
+                if upd.get("status"):
+                    m["status"] = upd["status"]
+                break
+        reply = upd.get("reply")
+        if reply:
+            _manager_chat.append({
+                "id": secrets.token_hex(8),
+                "role": "assistant",
+                "text": reply[:4000],
+                "status": "done",
+                "ts": int(time.time() * 1000),
+                "reply_to": mid,
+            })
+    del _manager_chat[:-200]
+
+    # 3. Hand back the still-queued commands + any pending chat messages
+    pending_chat = [m for m in _manager_chat if m["role"] == "user" and m.get("status") == "pending"]
+    # mark them processing so we don't hand them out twice
+    for m in pending_chat:
+        m["status"] = "processing"
+    return JSONResponse({"commands": list(_command_queue),
+                         "chat_messages": [{"id": m["id"], "text": m["text"]} for m in pending_chat]})
 
 
 # ---------------------------------------------------------------------------

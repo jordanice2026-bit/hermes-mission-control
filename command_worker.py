@@ -137,11 +137,12 @@ def execute_command(cmd, jobs):
     return {'id': cid, 'status': 'done' if ok else 'error', 'output': out}
 
 
-def poll(jobs, status, results):
-    """POST state + results to Render; return the list of queued commands."""
+def poll(jobs, status, results, chat_updates=None):
+    """POST state + results to Render; return the full response dict
+    ({'commands': [...], 'chat_messages': [...]})."""
     if not DASHBOARD_URL or not SYNC_TOKEN:
         print('ERROR: MISSION_CONTROL_URL / MISSION_CONTROL_TOKEN not set')
-        return []
+        return {'commands': [], 'chat_messages': []}
     # include shared team lessons so the dashboard can display the org brain
     team_lessons = []
     try:
@@ -154,7 +155,8 @@ def poll(jobs, status, results):
     except Exception:
         pass
     payload = json.dumps({'jobs': jobs, 'system_status': status, 'results': results,
-                          'team_lessons': team_lessons}).encode()
+                          'team_lessons': team_lessons,
+                          'chat_updates': chat_updates or []}).encode()
     req = urllib.request.Request(
         f'{DASHBOARD_URL}/api/agent-control/poll',
         data=payload,
@@ -164,12 +166,34 @@ def poll(jobs, status, results):
     try:
         with urllib.request.urlopen(req, timeout=20) as resp:
             data = json.loads(resp.read().decode())
-            return data.get('commands', [])
+            return data
     except urllib.error.HTTPError as e:
         print(f'ERROR poll: HTTP {e.code} {e.read().decode()[:200]}')
     except Exception as e:
         print(f'ERROR poll: {e}')
-    return []
+    return {'commands': [], 'chat_messages': []}
+
+
+def handle_chat_messages(chat_messages):
+    """Process pending Manager chat messages -> classify + dispatch. Returns chat_updates."""
+    if not chat_messages:
+        return []
+    try:
+        import manager_chat_handler as MCH
+    except Exception as e:
+        return [{'id': m['id'], 'status': 'done',
+                 'reply': f'(chat handler unavailable: {e})'} for m in chat_messages]
+    updates = []
+    for m in chat_messages:
+        try:
+            result = MCH.handle(m.get('text', ''))
+            updates.append({'id': m['id'], 'status': 'done',
+                            'reply': result.get('reply', 'Done.')})
+            print(f"Chat handled: {m.get('text','')[:50]} -> {result.get('reply','')[:60]}")
+        except Exception as e:
+            updates.append({'id': m['id'], 'status': 'done',
+                            'reply': f'Sorry, that failed: {str(e)[:200]}'})
+    return updates
 
 
 def main():
@@ -189,11 +213,16 @@ def main():
     except Exception as e:
         print(f'proposal applier skipped: {e}')
 
-    # First poll: push state, get queued commands (report no results yet)
-    commands = poll(jobs, status, [])
+    # First poll: push state, get queued commands + pending chat messages
+    data = poll(jobs, status, [])
+    commands = data.get('commands', [])
+    chat_messages = data.get('chat_messages', [])
 
-    if not commands:
-        print(f'OK: {len(jobs)} jobs, status={status}, no commands')
+    # Handle Manager chat messages (classify + dispatch tasks)
+    chat_updates = handle_chat_messages(chat_messages)
+
+    if not commands and not chat_updates:
+        print(f'OK: {len(jobs)} jobs, status={status}, no commands/chat')
         return
 
     # Execute queued commands
@@ -203,11 +232,11 @@ def main():
         results.append(res)
         print(f"Executed {cmd.get('action')} {cmd.get('job_id') or ''} -> {res['status']}")
 
-    # Re-read jobs (state changed) and report results back
+    # Re-read jobs (state changed) and report results + chat replies back
     jobs, _ = load_jobs()
     status = system_status(jobs)
-    poll(jobs, status, results)
-    print(f'OK: executed {len(results)} command(s), status now {status}')
+    poll(jobs, status, results, chat_updates)
+    print(f'OK: executed {len(results)} command(s), {len(chat_updates)} chat reply(ies), status now {status}')
 
 
 if __name__ == '__main__':

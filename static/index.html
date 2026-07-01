@@ -601,6 +601,25 @@ nav{display:flex;gap:2px;flex:1}
 .mgr-run-summary{color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mgr-run-time{color:var(--text3);font-size:11px;white-space:nowrap}
 .mgr-empty{text-align:center;padding:30px;color:var(--text3);font-size:13px}
+/* ── MANAGER CHAT ── */
+.mgr-chat{margin:0 20px 4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);display:flex;flex-direction:column;max-width:1000px}
+.mgr-chat-head{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.mgr-chat-hint{font-weight:400;color:var(--text3);font-size:11px}
+.mgr-chat-status{margin-left:auto;font-size:11px;font-weight:400;color:var(--text3)}
+.mgr-chat-log{max-height:280px;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.mgr-chat-empty{color:var(--text3);font-size:12px;text-align:center;padding:12px}
+.mgr-msg{display:flex;flex-direction:column;max-width:80%}
+.mgr-msg.user{align-self:flex-end;align-items:flex-end}
+.mgr-msg.assistant{align-self:flex-start;align-items:flex-start}
+.mgr-msg-bubble{padding:9px 13px;border-radius:14px;font-size:13px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+.mgr-msg.user .mgr-msg-bubble{background:var(--accent2);color:#fff;border-bottom-right-radius:4px}
+.mgr-msg.assistant .mgr-msg-bubble{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px}
+.mgr-msg-meta{font-size:10px;color:var(--text3);margin-top:3px}
+.mgr-msg.pending .mgr-msg-bubble,.mgr-msg.processing .mgr-msg-bubble{opacity:.7}
+.mgr-typing{align-self:flex-start;font-size:12px;color:var(--text3);font-style:italic;padding:4px 8px}
+.mgr-chat-input-row{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border)}
+.mgr-chat-input{flex:1;resize:none;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-md);padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;max-height:120px}
+.mgr-chat-input:focus{outline:none;border-color:var(--accent2)}
 /* ── OWNER DETAIL ── */
 .owner-detail-grid{display:flex;flex-direction:column;gap:10px}
 .owner-props-section{margin-top:8px}
@@ -1002,6 +1021,20 @@ nav{display:flex;gap:2px;flex:1}
       <button class="btn" onclick="loadManager()">🔄 Refresh</button>
       <div class="spacer"></div>
       <span class="record-count" id="manager-summary"></span>
+    </div>
+    <!-- Chat with the Manager: assign tasks/projects in natural language -->
+    <div class="mgr-chat" id="mgr-chat">
+      <div class="mgr-chat-head">
+        💬 Message the Manager <span class="mgr-chat-hint">— describe a task and it'll assign + start the right agent</span>
+        <span class="mgr-chat-status" id="mgr-chat-status"></span>
+      </div>
+      <div class="mgr-chat-log" id="mgr-chat-log">
+        <div class="mgr-chat-empty">Try: “Get recent comps for 1200 N Alabama St, Indianapolis” or “Draft a listing description for the Anderson fourplex.”</div>
+      </div>
+      <div class="mgr-chat-input-row">
+        <textarea class="mgr-chat-input" id="mgr-chat-input" rows="1" placeholder="Assign a task or ask a question…" onkeydown="mgrChatKeydown(event)"></textarea>
+        <button class="btn btn-primary" id="mgr-chat-send" onclick="sendManagerChat()">Send</button>
+      </div>
     </div>
     <div class="manager-wrap" id="manager-wrap">
       <div class="loading"><div class="spinner"></div> Loading…</div>
@@ -3517,9 +3550,81 @@ function confirmStopAll(){
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// MANAGER CHAT (assign tasks in natural language, in-dashboard)
+// ═══════════════════════════════════════════════════════════════════════════
+let mgrChatMessages=[];
+let mgrChatPollTimer=null;
+let mgrChatLastCount=0;
+function mgrChatKeydown(e){
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendManagerChat();}
+}
+async function sendManagerChat(){
+  const input=document.getElementById('mgr-chat-input');
+  const text=(input.value||'').trim();
+  if(!text)return;
+  input.value='';
+  const btn=document.getElementById('mgr-chat-send');
+  if(btn)btn.disabled=true;
+  try{
+    const r=await api('/api/manager/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+    if(!r.ok)throw new Error((await r.json().catch(()=>({}))).detail||r.statusText);
+    await loadManagerChat();       // show the message immediately
+    startMgrChatPolling();          // poll for the reply
+  }catch(e){showToast('Send failed: '+e.message,'error');}
+  finally{if(btn)btn.disabled=false;}
+}
+async function loadManagerChat(){
+  try{
+    const r=await api('/api/manager/chat');
+    if(!r.ok)return;
+    const d=await r.json();
+    mgrChatMessages=d.messages||[];
+    renderManagerChat(d.worker_online);
+  }catch(e){/* silent */}
+}
+function renderManagerChat(workerOnline){
+  const log=document.getElementById('mgr-chat-log');
+  if(!log)return;
+  const st=document.getElementById('mgr-chat-status');
+  if(st)st.textContent=workerOnline?'🟢 Manager online':'🔴 Manager offline (worker not polling)';
+  if(!mgrChatMessages.length){
+    log.innerHTML='<div class="mgr-chat-empty">Try: “Get recent comps for 1200 N Alabama St, Indianapolis” or “Draft a listing description for the Anderson fourplex.”</div>';
+    return;
+  }
+  const pendingUser=mgrChatMessages.some(m=>m.role==='user'&&(m.status==='pending'||m.status==='processing'));
+  let html=mgrChatMessages.map(m=>{
+    const cls=m.role==='user'?'user '+(m.status||''):'assistant';
+    const when=m.ts?timeAgo(m.ts):'';
+    const meta=m.role==='user'
+      ? (m.status==='pending'?'queued…':m.status==='processing'?'manager is working…':when)
+      : when;
+    return `<div class="mgr-msg ${cls}"><div class="mgr-msg-bubble">${esc(m.text)}</div><div class="mgr-msg-meta">${esc(meta)}</div></div>`;
+  }).join('');
+  if(pendingUser)html+=`<div class="mgr-typing" id="mgr-typing">🧭 Manager is thinking… (assigns + starts the agent, ~1 min)</div>`;
+  log.innerHTML=html;
+  log.scrollTop=log.scrollHeight;
+  // Stop polling once everything settled
+  if(!pendingUser&&mgrChatPollTimer&&mgrChatMessages.length===mgrChatLastCount){
+    // one extra settle check
+  }
+  mgrChatLastCount=mgrChatMessages.length;
+}
+function startMgrChatPolling(){
+  if(mgrChatPollTimer)clearInterval(mgrChatPollTimer);
+  let ticks=0;
+  mgrChatPollTimer=setInterval(async()=>{
+    ticks++;
+    await loadManagerChat();
+    const stillPending=mgrChatMessages.some(m=>m.role==='user'&&(m.status==='pending'||m.status==='processing'));
+    if(!stillPending||ticks>40){clearInterval(mgrChatPollTimer);mgrChatPollTimer=null;}
+  },5000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // MANAGER CONSOLE
 // ═══════════════════════════════════════════════════════════════════════════
 async function loadManager(){
+  loadManagerChat();
   const wrap=document.getElementById('manager-wrap');
   wrap.innerHTML='<div class="loading"><div class="spinner"></div> Loading…</div>';
   try{
