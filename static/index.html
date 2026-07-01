@@ -1232,7 +1232,7 @@ nav{display:flex;gap:2px;flex:1}
     </div>
   </div>
   <nav>
-    <button class="nav-item nav-item-aria" data-view="aria">✦ ARIA</button>
+    <button class="nav-item nav-item-aria" data-view="aria">✦ Jarvis</button>
     <button class="nav-item active" data-view="board">Board</button>
     <button class="nav-item" data-view="alerts">⚠️ Alerts <span class="nav-badge" id="alert-nav-badge" style="display:none"></span></button>
     <button class="nav-item" data-view="manager">🧭 Manager <span class="nav-badge" id="manager-nav-badge" style="display:none"></span></button>
@@ -1568,7 +1568,7 @@ nav{display:flex;gap:2px;flex:1}
       <div class="aria-header">
         <div class="aria-orb" id="aria-orb"></div>
         <div class="aria-title-block">
-          <div class="aria-title">ARIA</div>
+          <div class="aria-title">Jarvis</div>
           <div class="aria-sub">Executive Assistant · full authority over every system, agent &amp; database</div>
         </div>
         <div class="spacer"></div>
@@ -1584,7 +1584,7 @@ nav{display:flex;gap:2px;flex:1}
         <div class="aria-welcome">
           <canvas class="aria-welcome-canvas" id="aria-mini-canvas"></canvas>
           <div class="aria-welcome-title">Good to see you, Jordan.</div>
-          <div class="aria-welcome-text">I'm ARIA — I can see and control everything you've built: the agents, the databases, the listings, the deals, the dashboard itself. Ask me anything, or hand me a job and I'll take care of it.</div>
+          <div class="aria-welcome-text">I'm Jarvis — I can see and control everything you've built: the agents, the databases, the listings, the deals, the dashboard itself. Ask me anything, or hand me a job and I'll take care of it.</div>
           <div class="aria-suggestions">
             <button class="aria-chip" onclick="ariaSuggest(this)">Give me a full status of the operation</button>
             <button class="aria-chip" onclick="ariaSuggest(this)">What needs my attention today?</button>
@@ -1627,7 +1627,7 @@ nav{display:flex;gap:2px;flex:1}
       <!-- status: bottom center -->
       <div id="aria-voice-state"></div>
       <!-- ARIA watermark -->
-      <div id="aria-voice-label">ARIA</div>
+      <div id="aria-voice-label">Jarvis</div>
       <!-- error text -->
       <div id="aria-voice-error"></div>
     </div>
@@ -4745,7 +4745,7 @@ async function sendAria(){
     if(!r.ok)throw new Error((await r.json().catch(()=>({}))).detail||r.statusText);
     await loadAriaChat();
     startAriaPolling();
-  }catch(e){showToast('ARIA send failed: '+e.message,'error');}
+  }catch(e){showToast('Jarvis send failed: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
 }
 async function loadAriaChat(){
@@ -4785,10 +4785,10 @@ function renderAria(force, workerOnline){
   let html=ariaMessages.map(m=>{
     const cls=m.role==='user'?'user':'assistant';
     const when=m.ts?timeAgo(m.ts):'';
-    const meta=m.role==='user'?(m.status==='pending'||m.status==='processing'?'sending…':when):('ARIA · '+when);
+    const meta=m.role==='user'?(m.status==='pending'||m.status==='processing'?'sending…':when):('Jarvis · '+when);
     return `<div class="aria-msg ${cls}"><div class="aria-bubble">${esc(m.text)}</div><div class="aria-meta">${esc(meta)}</div></div>`;
   }).join('');
-  if(pending)html+=`<div class="aria-typing">✦ ARIA is on it — running the task…</div>`;
+  if(pending)html+=`<div class="aria-typing">✦ Jarvis is on it — running the task…</div>`;
   log.innerHTML=html;
   log.scrollTop=log.scrollHeight;
 }
@@ -4812,7 +4812,7 @@ async function newAriaSession(){
   document.getElementById('aria-log').innerHTML='<div class="aria-welcome"><canvas class="aria-welcome-canvas" id="aria-mini-canvas"></canvas><div class="aria-welcome-title">Fresh start.</div><div class="aria-welcome-text">New conversation. What can I do for you, Jordan?</div></div>';
   const st=document.getElementById('aria-status');if(st){st.textContent='✦ online';st.className='aria-status online';}
   const orb=document.getElementById('aria-orb');if(orb)orb.classList.remove('thinking');
-  showToast('New ARIA conversation started','success');
+  showToast('New Jarvis conversation started','success');
   loadAriaSessions();
 }
 // ── ARIA session history ──
@@ -4847,7 +4847,7 @@ async function openAriaSession(id){
     let html='<div class="aria-archive-banner">📜 Viewing a past conversation — <a href="#" onclick="backToLiveAria(event)">back to current chat</a></div>';
     html+=(s.messages||[]).map(m=>{
       const cls=m.role==='user'?'user':'assistant';
-      const meta=m.role==='user'?timeAgo(m.ts):('ARIA · '+timeAgo(m.ts));
+      const meta=m.role==='user'?timeAgo(m.ts):('Jarvis · '+timeAgo(m.ts));
       return `<div class="aria-msg ${cls}"><div class="aria-bubble">${esc(m.text)}</div><div class="aria-meta">${esc(meta)}</div></div>`;
     }).join('');
     log.innerHTML=html;log.scrollTop=0;
@@ -5209,7 +5209,7 @@ async function ariaSpeak(text, onDone){
 function ariaGreet(){
   const hour=new Date().getHours();
   const g = hour<12?"Good morning":hour<18?"Good afternoon":"Good evening";
-  ariaSpeak(`${g}, Jordan. ARIA online. What do you need?`);
+  ariaSpeak(`${g}, Jordan. Jarvis online. What do you need?`);
 }
 
 function ariaVoiceMicToggle(){
