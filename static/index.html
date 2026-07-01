@@ -4519,7 +4519,7 @@ function startMiniOrb(){
   const miniTex=new THREE.CanvasTexture(sc);
 
   // same N/particle setup as main orb
-  const MN=600; // fewer particles for the small canvas
+  const MN=1300; // more particles — denser cloud
   const geo=new THREE.BufferGeometry();
   const pos=new Float32Array(MN*3);
   const vel=new Float32Array(MN*3);
@@ -4540,7 +4540,7 @@ function startMiniOrb(){
   scene.add(new THREE.Points(geo,mat));
 
   // connection lines
-  const ML=1500;
+  const ML=5000;
   const lPos=new Float32Array(ML*6);
   const lGeo=new THREE.BufferGeometry();
   lGeo.setAttribute('position',new THREE.BufferAttribute(lPos,3));
@@ -4566,8 +4566,8 @@ function startMiniOrb(){
 
     // gentle tumble
     transE*=0.985;
-    spinX+=transE*0.01*Math.sin(t*1.7);
-    spinY+=0.008; // constant slow rotation
+    spinX+=transE*0.005*Math.sin(t*1.7);
+    spinY+=0.003; // slower constant rotation
 
     // depth breathing
     cloudZVel+=(Math.sin(t*0.12)*4-cloudZ)*0.008;
@@ -4593,8 +4593,8 @@ function startMiniOrb(){
 
     // lines
     if(lineAmt>0.01){
-      const la=lPos; let lc=0; const md=8,mdSq=md*md;
-      const step=Math.max(1,Math.floor(MN/200));
+      const la=lPos; let lc=0; const md=10,mdSq=md*md;
+      const step=Math.max(1,Math.floor(MN/380));
       for(let i=0;i<MN&&lc<ML;i+=step){
         const i3=i*3, x1=a[i3],y1=a[i3+1],z1=a[i3+2];
         for(let j=i+step;j<MN&&lc<ML;j+=step){
