@@ -5517,13 +5517,6 @@ function startOrbLoop(){
     // varies. Revert: set LOW_BASE=1 (or delete the pca[] writes below) to
     // go back to flat, undimmed particles.
     const LOW_BASE=0.55;
-    // 2026-07-01 (round 3): stronger, faster pull-together toward the
-    // sphere's center. CONTAINMENT_MIN_PULL applies to EVERY particle at
-    // all times (even inside the radius) so the whole cloud — including
-    // clusters — coalesces toward center noticeably faster. Revert: set
-    // both back to 0.002 / 0.0003.
-    const CONTAINMENT_PULL_FACTOR=0.0045;   // was 0.002 — snaps stragglers back in faster
-    const CONTAINMENT_MIN_PULL=0.0009;      // was 0.0003 — constant inward tug is 3x stronger
     // ── Particle physics — soft containment, original behaviour ──
     for(let i=0;i<_ORB_N;i++){
       const i3=i*3;
@@ -5536,7 +5529,7 @@ function startOrbLoop(){
       vel[i3+1]+=Math.cos(t*0.025+px*1.7+z*0.1)*0.0008*currentSpeed;
       vel[i3+2]+=Math.sin(t*0.022+px*0.9+x*0.1)*0.0008*currentSpeed;
       const dist=Math.sqrt(x*x+y*y+z*z)||0.01;
-      const pull=Math.max(0,dist-currentRadius)*CONTAINMENT_PULL_FACTOR+CONTAINMENT_MIN_PULL;
+      const pull=Math.max(0,dist-currentRadius)*0.002+0.0003;
       vel[i3]-=(x/dist)*pull;vel[i3+1]-=(y/dist)*pull;vel[i3+2]-=(z/dist)*pull;
       if(bass>0.05){vel[i3]+=(x/dist)*bass*0.02;vel[i3+1]+=(y/dist)*bass*0.02;vel[i3+2]+=(z/dist)*bass*0.02;}
       if(orbState==='speaking'&&mid>0.1){const pulse=Math.sin(t*8+px);vel[i3]+=(x/dist)*mid*0.012*pulse;vel[i3+1]+=(y/dist)*mid*0.012*pulse;}
@@ -5669,15 +5662,8 @@ function startOrbLoop(){
     T.electrons.position.z=cloudZ;
 
     // Material
-    // 2026-07-01 (round 3): particles doubled in both size and brightness.
-    // Opacity is clamped to 1.0 (that's the material's ceiling) so "2x
-    // bright" is approximated by doubling the value pre-clamp — combined
-    // with additive blending and 2x point size, overlapping particles (i.e.
-    // clusters) stack and read noticeably brighter, not just individually.
-    // Revert: remove the *2 on both lines (back to plain currentBright+bass*0.08
-    // and currentSize*0.55+bass*0.04).
-    T.mat.opacity=Math.min(1,(currentBright+bass*0.08)*2);
-    T.mat.size=(currentSize*0.55+bass*0.04)*2;
+    T.mat.opacity=currentBright+bass*0.08;
+    T.mat.size=currentSize*0.55+bass*0.04;
     if(orbState==='thinking'){T.mat.color.lerp(new THREE.Color(0x6ec4ff),0.015);T.lineMat.color.lerp(new THREE.Color(0x6ec4ff),0.015);}
     else if(orbState==='speaking'){T.mat.color.lerp(new THREE.Color(0x5ab8f0),0.015);T.lineMat.color.lerp(new THREE.Color(0x5ab8f0),0.015);}
     else{T.mat.color.lerp(new THREE.Color(0x4ca8e8),0.015);T.lineMat.color.lerp(new THREE.Color(0x4ca8e8),0.015);}
