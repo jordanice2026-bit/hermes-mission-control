@@ -701,6 +701,48 @@ async def ea_chat_get(request: Request, user: dict = Depends(require_user)):
                          "worker_online": (time.time() - _agent_state.get("updated_at", 0)) < 90})
 
 
+@app.post("/api/ea/tts")
+async def ea_tts(request: Request, user: dict = Depends(require_user)):
+    """Convert text to speech using Fish Audio (Jarvis MCU voice).
+    Body: {"text": "..."}
+    Returns: {"audio": "<base64 mp3>"}
+    """
+    FISH_API_KEY = "fde9375e8b6d4660a96092425f52121c"
+    FISH_VOICE_ID = "612b878b113047d9a770c069c8b4fdfe"  # JARVIS (MCU)
+    FISH_API_URL = "https://api.fish.audio/v1/tts"
+
+    body = await request.json()
+    text = (body.get("text") or "").strip()
+    if not text:
+        raise HTTPException(400, "empty text")
+    text = text[:2000]  # Fish Audio cap
+
+    try:
+        import httpx as _httpx
+        payload = {
+            "text": text,
+            "reference_id": FISH_VOICE_ID,
+            "format": "mp3",
+            "mp3_bitrate": 128,
+            "latency": "normal",
+        }
+        headers = {
+            "Authorization": f"Bearer {FISH_API_KEY}",
+            "Content-Type": "application/json",
+        }
+        async with _httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(FISH_API_URL, json=payload, headers=headers)
+        if resp.status_code != 200:
+            raise HTTPException(502, f"Fish Audio error {resp.status_code}: {resp.text[:200]}")
+        import base64 as _b64
+        audio_b64 = _b64.b64encode(resp.content).decode()
+        return JSONResponse({"audio": audio_b64})
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(502, f"TTS error: {e}")
+
+
 @app.post("/api/ea/chat")
 async def ea_chat_post(request: Request, user: dict = Depends(require_user)):
     body = await request.json()

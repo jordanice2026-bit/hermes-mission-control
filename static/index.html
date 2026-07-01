@@ -4785,6 +4785,7 @@ async function openAriaVoice(){
   initOrb();
   startOrbLoop();
   setVoiceState('listening');
+  if(ariaThree&&ariaThree.setOrbState) ariaThree.setOrbState('listening');
   ariaGreet();
   startAriaListening();
   // ensure we're polling for her async replies
@@ -4804,12 +4805,23 @@ function closeAriaVoice(){
   ariaSpeaking=false;
 }
 
+function pickAriaTtsVoice(){
+  const vs=(window.speechSynthesis&&window.speechSynthesis.getVoices())||[];
+  return vs.find(v=>/en-US/.test(v.lang)&&/(Samantha|Google US English|Zira|Aria|Jenny)/i.test(v.name))
+      || vs.find(v=>/en-US/.test(v.lang)) || vs.find(v=>/^en/.test(v.lang)) || vs[0] || null;
+}
+
 function setVoiceState(s){
   ariaVoiceState=s;
   const el=document.getElementById('aria-voice-state');
   if(!el)return;
   el.className='aria-voice-state '+s;
   el.textContent = s==='listening'?'Listening…' : s==='thinking'?'Working…' : s==='speaking'?'ARIA' : '…';
+  // keep Jarvis orb in sync
+  if(ariaThree&&ariaThree.setOrbState){
+    const orbMap={listening:'listening',thinking:'thinking',speaking:'speaking'};
+    ariaThree.setOrbState(orbMap[s]||'idle');
+  }
 }
 function setVoiceTranscript(t){ const el=document.getElementById('aria-voice-transcript'); if(el)el.textContent=t||''; }
 
@@ -4878,40 +4890,118 @@ async function sendAriaVoice(text){
   }catch(e){ ariaSpeak("I couldn't reach the system to start that. Try again?"); setVoiceState('listening'); startAriaListening(); }
 }
 
-// ── Text-to-speech (ARIA speaks) ──
-let ariaVoicePick=null;
-function pickAriaTtsVoice(){
-  if(ariaVoicePick)return ariaVoicePick;
-  const vs=TTS.getVoices()||[];
-  // prefer a natural english voice
-  ariaVoicePick = vs.find(v=>/en-US/.test(v.lang)&&/(Samantha|Google US English|Zira|Aria|Jenny)/i.test(v.name))
-              || vs.find(v=>/en-US/.test(v.lang)) || vs.find(v=>/^en/.test(v.lang)) || vs[0] || null;
-  return ariaVoicePick;
-}
-if(TTS){ TTS.onvoiceschanged=()=>{ariaVoicePick=null;pickAriaTtsVoice();}; }
+// ── Fish Audio TTS + AudioContext player (Jarvis voice) ──────────────────
+let _ariaAudioCtx2=null;    // dedicated playback AudioContext
+let _ariaAudioQueue=[];     // queued AudioBuffers
+let _ariaAudioPlaying=false;
+let _ariaAudioSource=null;
 
-function ariaSpeak(text, onDone){
-  if(!TTS||!text){ if(onDone)onDone(); return; }
-  try{ TTS.cancel(); }catch(e){}
-  // stop listening while speaking so we don't hear ourselves
+function _ariaAudioCtxGet(){
+  if(!_ariaAudioCtx2||_ariaAudioCtx2.state==='closed')
+    _ariaAudioCtx2=new AudioContext();
+  return _ariaAudioCtx2;
+}
+
+async function _ariaAudioResume(){
+  const ctx=_ariaAudioCtxGet();
+  if(ctx.state==='suspended') await ctx.resume();
+  return ctx;
+}
+
+function _ariaAudioPlayNext(){
+  if(_ariaAudioQueue.length===0){
+    _ariaAudioPlaying=false;
+    _ariaAudioSource=null;
+    _ariaAudioOnFinished();
+    return;
+  }
+  _ariaAudioPlaying=true;
+  const ctx=_ariaAudioCtxGet();
+  const buf=_ariaAudioQueue.shift();
+  const src=ctx.createBufferSource();
+  src.buffer=buf;
+  // feed into analyser so orb reacts to voice
+  if(ariaAnalyser) src.connect(ariaAnalyser);
+  else src.connect(ctx.destination);
+  _ariaAudioSource=src;
+  src.onended=()=>{ if(_ariaAudioSource===src) _ariaAudioPlayNext(); };
+  src.start();
+}
+
+async function _ariaAudioEnqueue(base64mp3){
+  const ctx=await _ariaAudioResume();
+  try{
+    const bin=atob(base64mp3);
+    const bytes=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+    const buf=await ctx.decodeAudioData(bytes.buffer.slice(0));
+    _ariaAudioQueue.push(buf);
+    if(!_ariaAudioPlaying) _ariaAudioPlayNext();
+  }catch(e){ console.warn('[tts] decode error',e); if(!_ariaAudioPlaying&&_ariaAudioQueue.length>0) _ariaAudioPlayNext(); }
+}
+
+function _ariaAudioStop(){
+  _ariaAudioQueue.length=0;
+  if(_ariaAudioSource){
+    try{ _ariaAudioSource.stop(); }catch(e){}
+    _ariaAudioSource=null;
+  }
+  _ariaAudioPlaying=false;
+}
+
+function _ariaAudioOnFinished(){
+  ariaSpeaking=false;
+  if(ariaVoiceOn){
+    const stillWorking=ariaMessages.some(m=>m.role==='user'&&(m.status==='pending'||m.status==='processing'));
+    setVoiceState(stillWorking?'thinking':'listening');
+    if(!stillWorking) setVoiceTranscript('');
+    if(!ariaMicMuted) setTimeout(startAriaListening,200);
+  }
+}
+
+async function ariaSpeak(text, onDone){
+  if(!text){ if(onDone)onDone(); return; }
+  _ariaAudioStop();
   ariaSpeaking=true;
   try{ if(ariaRec)ariaRec.abort(); }catch(e){}
   if(ariaVoiceOn){ setVoiceState('speaking'); setVoiceTranscript(text); }
-  const u=new SpeechSynthesisUtterance(text.slice(0,600));
-  const v=pickAriaTtsVoice(); if(v)u.voice=v;
-  u.rate=1.05; u.pitch=1.0;
-  u.onend=()=>{
-    ariaSpeaking=false;
-    if(onDone)onDone();
-    if(ariaVoiceOn){
-      const stillWorking=ariaMessages.some(m=>m.role==='user'&&(m.status==='pending'||m.status==='processing'));
-      setVoiceState(stillWorking?'thinking':'listening');
-      if(!stillWorking)setVoiceTranscript('');   // clear so listening view is clean
-      if(!ariaMicMuted)setTimeout(startAriaListening,200);
-    }
-  };
-  u.onerror=()=>{ ariaSpeaking=false; if(onDone)onDone(); if(ariaVoiceOn&&!ariaMicMuted)setTimeout(startAriaListening,300); };
-  TTS.speak(u);
+  if(ariaThree&&ariaThree.setOrbState) ariaThree.setOrbState('speaking');
+
+  try{
+    const r=await api('/api/ea/tts',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:text.slice(0,2000)})});
+    if(!r.ok) throw new Error('TTS '+r.status);
+    const d=await r.json();
+    if(d.audio){
+      await _ariaAudioResume();
+      // set up analyser feed into AudioContext
+      const ctx=_ariaAudioCtxGet();
+      if(!ariaAnalyser){
+        const an=ctx.createAnalyser();
+        an.fftSize=256; an.smoothingTimeConstant=0.8;
+        an.connect(ctx.destination);
+        ariaAnalyser=an;
+        ariaFreq=new Uint8Array(an.frequencyBinCount);
+        if(ariaThree&&ariaThree.setAnalyser) ariaThree.setAnalyser(an);
+      }
+      _ariaAudioEnqueue(d.audio);
+      if(onDone){
+        // call onDone after queue drains
+        const orig=_ariaAudioOnFinished;
+        _ariaAudioOnFinished=function(){orig();onDone();_ariaAudioOnFinished=orig;};
+      }
+    } else throw new Error('no audio');
+  }catch(e){
+    console.warn('[tts] Fish Audio failed, falling back to browser TTS:',e);
+    // graceful fallback to browser TTS
+    ariaSpeaking=true;
+    const u=new SpeechSynthesisUtterance(text.slice(0,600));
+    const v=pickAriaTtsVoice(); if(v)u.voice=v;
+    u.rate=1.05; u.pitch=1.0;
+    u.onend=()=>{ ariaSpeaking=false; if(onDone)onDone(); _ariaAudioOnFinished(); };
+    u.onerror=()=>{ ariaSpeaking=false; if(onDone)onDone(); _ariaAudioOnFinished(); };
+    window.speechSynthesis.speak(u);
+  }
 }
 
 function ariaGreet(){
@@ -4959,284 +5049,279 @@ function ariaAudioLevel(){
   return (s/ariaFreq.length)/255;   // 0..1
 }
 
-// ── The 3D orb: holographic particle system (Three.js) ──
-// Single source of truth for render resolution. On a 5K/Retina display
-// devicePixelRatio is typically 2; we allow up to 3 so the orb renders at full
-// native res (and lightly supersamples) for maximum crispness, capped to keep
-// the GPU happy. Lower the cap here if any device struggles.
-function ariaPixelRatio(){ return Math.min(window.devicePixelRatio||1, 3); }
-function _ariaGlowTexture(){
-  // Crisp solid dot at 512px — sharp anti-aliased circle, no soft halo.
-  // High res so it stays clean at large sizes on 5K displays.
-  const s=512,c=document.createElement('canvas');c.width=c.height=s;
-  const x=c.getContext('2d');
-  x.clearRect(0,0,s,s);
-  // tiny sub-pixel anti-alias ring for smooth edges without blurring
-  const g=x.createRadialGradient(s/2,s/2,s*0.36,s/2,s/2,s*0.44);
-  g.addColorStop(0,'rgba(255,255,255,1)');
-  g.addColorStop(1,'rgba(255,255,255,0)');
-  x.fillStyle='rgba(255,255,255,1)';
-  x.beginPath(); x.arc(s/2,s/2,s*0.38,0,Math.PI*2); x.fill();
-  x.fillStyle=g; x.fillRect(0,0,s,s);
-  const tex=new THREE.CanvasTexture(c);
-  tex.minFilter=THREE.LinearMipmapLinearFilter;
-  tex.magFilter=THREE.LinearFilter;
-  tex.generateMipmaps=true;
-  tex.anisotropy=16;
-  tex.needsUpdate=true;
-  return tex;
-}
-function _ariaSphereShell(N,R,glow,opts){
-  // Fibonacci sphere with a height-based cyan gradient baked into vertex colors
-  const base=[],phase=new Float32Array(N);
-  const pos=new Float32Array(N*3),col=new Float32Array(N*3);
-  const cLo=new THREE.Color(opts.lo),cHi=new THREE.Color(opts.hi);
-  for(let i=0;i<N;i++){
-    const y=1-(i/(N-1))*2,rad=Math.sqrt(Math.max(0,1-y*y)),th=Math.PI*(3-Math.sqrt(5))*i;
-    const v=new THREE.Vector3(Math.cos(th)*rad*R,y*R,Math.sin(th)*rad*R);
-    base.push(v);phase[i]=Math.random()*Math.PI*2;
-    pos[i*3]=v.x;pos[i*3+1]=v.y;pos[i*3+2]=v.z;
-    const cc=cLo.clone().lerp(cHi,(y+1)/2);
-    col[i*3]=cc.r;col[i*3+1]=cc.g;col[i*3+2]=cc.b;
-  }
-  const geo=new THREE.BufferGeometry();
-  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
-  geo.setAttribute('color',new THREE.BufferAttribute(col,3));
-  const mat=new THREE.PointsMaterial({map:glow,size:opts.size,sizeAttenuation:true,vertexColors:true,
-    transparent:true,opacity:opts.opacity,depthWrite:false,alphaTest:0.5,blending:THREE.NormalBlending,fog:true});
-  return {base,phase,pos,geo,mat,points:new THREE.Points(geo,mat),basecol:col.slice(0),col};
-}
-function _ariaDust(N,glow){
-  const pos=new Float32Array(N*3);
-  for(let i=0;i<N;i++){
-    const r=2.2+Math.random()*2.0,th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);
-    pos[i*3]=r*Math.sin(ph)*Math.cos(th);pos[i*3+1]=r*Math.sin(ph)*Math.sin(th);pos[i*3+2]=r*Math.cos(ph);
-  }
-  const geo=new THREE.BufferGeometry();
-  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
-  const mat=new THREE.PointsMaterial({map:glow,color:0x999999,size:0.004,sizeAttenuation:true,
-    transparent:true,opacity:0.12,depthWrite:false,alphaTest:0.5,blending:THREE.NormalBlending,fog:true});
-  return new THREE.Points(geo,mat);}
+// ── JARVIS ORB (ported from github.com/ethanplusai/jarvis) ──────────────────
+// Pure Three.js — particles + connection lines + electrons + tumble + depth Z
 function initOrb(){
   if(ariaThree||!window.THREE)return;
   const canvas=document.getElementById('aria-voice-canvas');
   const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
-  // alpha:false + explicit black clear → no transparent-buffer flicker on open
+  const pr=Math.min(window.devicePixelRatio||1,3);
+  renderer.setPixelRatio(pr);
+  renderer.setSize(window.innerWidth,window.innerHeight);
   renderer.setClearColor(0x000000,1);
-  renderer.setPixelRatio(ariaPixelRatio());
-  renderer.outputEncoding=THREE.sRGBEncoding;
-  const w=window.innerWidth,h=window.innerHeight;
-  renderer.setSize(w,h);
-  const scene=new THREE.Scene();
-  // volumetric depth: far particles fade into black → true 3D read
-  scene.fog=new THREE.FogExp2(0x000000,0.26);
-  const camera=new THREE.PerspectiveCamera(60,w/h,0.1,100);
-  camera.position.z=3.4;
-
-  const group=new THREE.Group();            // master: state transitions (pos/scale/rot)
-  scene.add(group);
-  const glow=_ariaGlowTexture();
-
-  // three concentric shells at different radii + rotation speeds → parallax depth
-  const gMain=new THREE.Group(),gInner=new THREE.Group(),gHalo=new THREE.Group();
-  group.add(gMain);group.add(gInner);group.add(gHalo);
-  const mainShell=_ariaSphereShell(3000,1.35,glow,{lo:0xa0a0a0,hi:0xffffff,size:0.018,opacity:1.0});
-  const innerShell=_ariaSphereShell(1000,0.85,glow,{lo:0xc0c0c0,hi:0xffffff,size:0.020,opacity:1.0});
-  const haloShell=_ariaSphereShell(820,1.78,glow,{lo:0x888888,hi:0xe0e0e0,size:0.015,opacity:0.8});
-  gMain.add(mainShell.points);gInner.add(innerShell.points);gHalo.add(haloShell.points);
-
-  // ambient floating dust in the surrounding space (depth of field)
-  const dust=_ariaDust(640,glow);
-  const gDust=new THREE.Group();gDust.add(dust);scene.add(gDust);
-
-  // #6 density variation — per-particle max radius so a few dots drift slightly
-  // beyond the sphere for a softer, less rigid boundary.
-  const shells=[
-    {shell:mainShell,grp:gMain,rot:{x:0.02,y:0.10,z:0.01},animate:true},
-    {shell:innerShell,grp:gInner,rot:{x:-0.05,y:-0.14,z:0.02},animate:false},
-    {shell:haloShell,grp:gHalo,rot:{x:0.03,y:0.06,z:-0.03},animate:false},
-  ];
-
-  // #6 density variation — per-particle max radius so a few dots drift slightly
-  // beyond the sphere for a softer, less rigid boundary.
-  const Nmain=mainShell.base.length;
-  const rmax=new Float32Array(Nmain);
-  // max 8% outside the sphere — enough for a soft boundary, no stray flickers
-  for(let i=0;i<Nmain;i++){ rmax[i]=1.35*(1.0 + (Math.random()>0.85 ? Math.random()*0.08 : 0)); }
-
-  // #1 selective bloom + #3 speech trails — re-enabled, tuned so ONLY the bright
-  // particle cores bloom faintly (crisp dots stay sharp), and trails appear only
-  // when energised. Defensive: falls back to direct render if modules missing.
-  let composer=null, bloomPass=null, afterPass=null;
-  try{
-    if(THREE.EffectComposer && THREE.RenderPass && THREE.UnrealBloomPass){
-      composer=new THREE.EffectComposer(renderer);
-      composer.addPass(new THREE.RenderPass(scene,camera));
-      // AfterimagePass removed — caused flickering ghost artifacts
-      // strength, radius, HIGH threshold → only bright cores glow, dots stay crisp
-      bloomPass=new THREE.UnrealBloomPass(new THREE.Vector2(w,h),0.35,0.4,0.82);
-      composer.addPass(bloomPass);
-      composer.setPixelRatio(ariaPixelRatio());
-      composer.setSize(w,h);
-    }
-  }catch(e){ composer=null; console.warn('[ARIA] bloom composer unavailable, using direct render',e); }
-
-  ariaThree={renderer,scene,camera,group,shells,gDust,glow,composer,bloomPass,afterPass,rmax,
-             gHalo,haloScale:1.0,
-             mainBaseCol:mainShell.basecol,mainCol:mainShell.col,
-             base:mainShell.base,phase:mainShell.phase,pPos:mainShell.pos,
-             pGeo:mainShell.geo,pMat:mainShell.mat,t:0,camZ:6,dolly:1.18};
-  window.addEventListener('resize',ariaOrbResize);
-  ariaFitCamera();
-  // pre-clear to solid black immediately so canvas never shows GPU garbage
   renderer.clear();
-  renderer.render(scene,camera);
+
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,1,1000);
+  camera.position.z=80;
+
+  const N=2000;
+  const geo=new THREE.BufferGeometry();
+  const pos=new Float32Array(N*3);
+  const vel=new Float32Array(N*3);
+  const phase=new Float32Array(N);
+  for(let i=0;i<N;i++){
+    const theta=Math.random()*Math.PI*2;
+    const phi=Math.acos(2*Math.random()-1);
+    const r=Math.pow(Math.random(),0.5)*25;
+    pos[i*3]=r*Math.sin(phi)*Math.cos(theta);
+    pos[i*3+1]=r*Math.sin(phi)*Math.sin(theta);
+    pos[i*3+2]=r*Math.cos(phi);
+    phase[i]=Math.random()*1000;
+  }
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const mat=new THREE.PointsMaterial({color:0x4ca8e8,size:0.4,transparent:true,opacity:0.6,
+    sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false});
+  const points=new THREE.Points(geo,mat);
+  scene.add(points);
+
+  // Connection lines
+  const MAX_LINES=8000;
+  const linePos=new Float32Array(MAX_LINES*6);
+  const lineGeo=new THREE.BufferGeometry();
+  lineGeo.setAttribute('position',new THREE.BufferAttribute(linePos,3));
+  lineGeo.setDrawRange(0,0);
+  const lineMat=new THREE.LineBasicMaterial({color:0x4ca8e8,transparent:true,opacity:0.0,
+    blending:THREE.AdditiveBlending,depthWrite:false});
+  const lines=new THREE.LineSegments(lineGeo,lineMat);
+  scene.add(lines);
+
+  // Electrons
+  const MAX_ELECTRONS=200;
+  const electronGeo=new THREE.BufferGeometry();
+  const electronPos=new Float32Array(MAX_ELECTRONS*3);
+  electronGeo.setAttribute('position',new THREE.BufferAttribute(electronPos,3));
+  electronGeo.setDrawRange(0,0);
+  const electronMat=new THREE.PointsMaterial({color:0xffffff,size:0.8,transparent:true,opacity:1.0,
+    sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false});
+  const electrons=new THREE.Points(electronGeo,electronMat);
+  scene.add(electrons);
+
+  const activeElectrons=[];
+  let electronSpawnRate=0,targetElectronRate=0,lastElectronSpawn=0;
+  let activeConnections=[];
+
+  // State
+  let orbState='idle';
+  let targetRadius=25,currentRadius=25;
+  let targetSpeed=0.3,currentSpeed=0.3;
+  let targetBright=0.6,currentBright=0.6;
+  let targetSize=0.4,currentSize=0.4;
+  let lineAmount=0,targetLineAmount=0;
+  const lineDistance=8;
+  let spinX=0,spinY=0,spinZ=0;
+  let transitionEnergy=0,lastOrbState='idle';
+  let cloudZ=0,cloudZVel=0;
+
+  const clock=new THREE.Clock();
+
+  ariaThree={renderer,scene,camera,points,geo,mat,lines,lineGeo,lineMat,
+    electrons,electronGeo,electronMat,activeElectrons,
+    vel,phase,activeConnections,
+    orbState,clock,
+    setOrbState(s){ orbState=s; },
+    setAnalyser(a){ ariaAnalyser=a; if(a)ariaFreq=new Uint8Array(a.frequencyBinCount); }
+  };
+
+  window.addEventListener('resize',ariaOrbResize);
+  renderer.clear();
 }
-// Pull the camera back just far enough that the full orb fits in BOTH axes.
-// On narrow/portrait windows the horizontal FOV is the limiting one, so we fit
-// to whichever half-angle is smaller. R = orb radius (halo shell) + padding.
-function ariaFitCamera(){
-  if(!ariaThree)return;
-  const cam=ariaThree.camera;
-  const R=2.2;                                   // halo radius 1.78 + breath/glow headroom
-  const vHalf=(cam.fov*Math.PI/180)/2;           // vertical half-FOV
-  const hHalf=Math.atan(Math.tan(vHalf)*cam.aspect); // horizontal half-FOV
-  const half=Math.min(vHalf,hHalf);
-  ariaThree.camZ = R/Math.sin(half);             // fitted distance (base for dolly)
-  cam.position.z = ariaThree.camZ*(ariaThree.dolly||1);
-  cam.updateProjectionMatrix();
-}
+
 function ariaOrbResize(){
   if(!ariaThree)return;
   const w=window.innerWidth,h=window.innerHeight;
-  const pr=ariaPixelRatio();
   ariaThree.camera.aspect=w/h;
-  ariaFitCamera();
-  ariaThree.renderer.setPixelRatio(pr);
+  ariaThree.camera.updateProjectionMatrix();
   ariaThree.renderer.setSize(w,h);
-  if(ariaThree.composer){ariaThree.composer.setPixelRatio(pr);ariaThree.composer.setSize(w,h);}
-  if(ariaThree.bloomPass)ariaThree.bloomPass.setSize(w,h);
 }
+
 function startOrbLoop(){
   if(!ariaThree)return;
+  if(ariaRAF)cancelAnimationFrame(ariaRAF);
+
+  // state variables in closure
+  let orbState=ariaThree.orbState||'idle';
+  let targetRadius=25,currentRadius=25;
+  let targetSpeed=0.3,currentSpeed=0.3;
+  let targetBright=0.6,currentBright=0.6;
+  let targetSize=0.4,currentSize=0.4;
+  let lineAmount=0,targetLineAmount=0;
+  let electronSpawnRate=0,targetElectronRate=0,lastElectronSpawn=0;
+  let spinX=0,spinY=0,spinZ=0;
+  let transitionEnergy=0,lastOrbState='idle';
+  let cloudZ=0,cloudZVel=0;
+  const lineDistance=8;
+  const activeElectrons=[];
+  let activeConnections=[];
+
+  // expose setState so voice code can call it
+  ariaThree.setOrbState=function(s){orbState=s;};
+
   const T=ariaThree;
-  let smooth=0, wobble=0;
-  // animated transition state (critically-damped toward targets each frame)
-  T.posY=0; T.scale=1; T.colR=0.80; T.colG=0.86; T.colB=0.92;
-  let last=performance.now();
-  // frame-rate-independent smoothing: converge ~63% over `tau` seconds
-  function damp(cur,tgt,tau,dt){return cur+(tgt-cur)*(1-Math.exp(-dt/tau));}
+
   function frame(){
-    if(!ariaVoiceOn){return;}
-    const now=performance.now();
-    const dt=Math.min(0.05,(now-last)/1000)||0.016; last=now;
-    T.t+=dt;
-    const lvl=ariaAudioLevel();
-    // when ARIA is speaking, drive motion with a soft synthetic pulse; else use mic
-    const drive = ariaSpeaking ? (0.28+0.22*Math.abs(Math.sin(T.t*4.2))+0.12*Math.sin(T.t*9.0)) : lvl;
-    // fast attack, slow release so it feels responsive but never jittery
-    smooth = damp(smooth, drive, drive>smooth?0.06:0.22, dt);
-    wobble += dt;
-
-    // ── Two-state layout: stay centered, just scale down when active ──
-    // (no Y translation — moving the group off-screen caused it to drop out of view)
-    const active = (ariaVoiceState==='thinking'||ariaVoiceState==='speaking');
-    const tgtPosY  = 0.0;                          // always centered
-    const tgtScale = active ? 0.62 : 1.0;          // shrink when thinking/speaking
-    const tgtR = active ? 0.55 : 1.0, tgtG = active ? 1.0 : 1.0, tgtB = active ? 0.98 : 1.0;
-    // smooth, springy state transition (~0.4s time-constant)
-    T.posY  = damp(T.posY,  tgtPosY,  0.40, dt);
-    T.scale = damp(T.scale, tgtScale, 0.40, dt);
-    T.colR  = damp(T.colR,  tgtR, 0.45, dt);
-    T.colG  = damp(T.colG,  tgtG, 0.45, dt);
-    T.colB  = damp(T.colB,  tgtB, 0.45, dt);
-
-    T.group.position.y = T.posY;
-    const s0 = T.scale;
-    T.group.scale.set(s0,s0,s0);
-
-    // grayscale tint: bright white at rest, slightly dimmer when active
-    const tgtL = active ? 0.80 : 0.95;
-    const tintCol=new THREE.Color().setHSL(0, 0, tgtL + Math.sin(T.t*0.06)*0.02);
-    T.colR=damp(T.colR,tintCol.r,0.5,dt); T.colG=damp(T.colG,tintCol.g,0.5,dt); T.colB=damp(T.colB,tintCol.b,0.5,dt);
-    const tint=new THREE.Color(T.colR,T.colG,T.colB);
-    T.shells.forEach(s=>{ s.shell.mat.color.copy(tint); });
-    T.gDust.children[0].material.opacity = 0.10;  // near-invisible, no audio boost
-
-    // master gentle drift (state transitions live here)
-    T.group.rotation.x = Math.sin(T.t*0.11)*0.05;
-    // each shell rotates on its own axes/speed → parallax = real 3D depth
-    T.shells.forEach(s=>{
-      s.grp.rotation.y += (s.rot.y + smooth*0.6)*dt;
-      s.grp.rotation.x += s.rot.x*dt;
-      s.grp.rotation.z += s.rot.z*dt;
-    });
-    T.gDust.rotation.y += 0.001*dt;   // extremely slow drift
-    T.gDust.rotation.x += 0.0005*dt;
-
-    // ── Outer halo contracts toward inner sphere — non-linear, volume-driven ──
-    // smooth² gives a soft response at low volume and aggressive snap at high volume.
-    // At peak loud: scale drops to ~0.60 (close to the main shell at 1.35/1.78≈0.76).
-    // Fast-attack / slow-release so it punches on transients and breathes back.
-    const haloWobble = 1.0 + Math.sin(T.t*2.8)*0.018 + Math.sin(T.t*1.3)*0.010;
-    const sv=smooth*smooth;                             // squared → non-linear curve
-    const tgtHalo = (1.0 - sv*0.42) * haloWobble;     // more aggressive contraction
-    T.haloScale = damp(T.haloScale, tgtHalo, smooth>0.05 ? 0.06 : 0.30, dt);
-    T.gHalo.scale.setScalar(T.haloScale);
-
-    const amp = 1 + smooth*0.42;
-
-    // #6 eased cinematic dolly: pull slightly closer while active, ease back at rest
-    const tgtDolly = active ? 1.0 : 1.18;
-    T.dolly = damp(T.dolly, tgtDolly, 0.6, dt);
-    T.camera.position.z = T.camZ*T.dolly;
-
-    // ── Perplexity-style volumetric swirl (+ #2 depth brightness, #3 trails) ──
-    const ph=T.phase, tt=T.t;
-    const R=1.35, rmin=R*0.28;                 // main-shell radius / inner bound
-    const speed=(0.05 + smooth*0.95);          // world-units/sec; talking = fast
-    function sn(a){return Math.sin(a);}
-    // true world-space Z (accounts for shell + group rotation/scale) for depth fade
-    const mainPts=T.shells[0].shell.points; mainPts.updateWorldMatrix(true,false);
-    const me=mainPts.matrixWorld.elements;
-    const m2=me[2],m6=me[6],m10=me[10],m14=me[14];
-    const camZ=T.camera.position.z;
-    const near=-R-0.4, far=R+0.4, span=far-near; // world-Z range of the orb
-    const bc=T.mainBaseCol, cc=T.mainCol;
-    for(let i=0;i<T.base.length;i++){
-      let px=T.pPos[i*3], py=T.pPos[i*3+1], pz=T.pPos[i*3+2];
-      const p=ph[i];
-      const vx = sn(py*1.7 + tt*0.7 + p) - sn(pz*1.5 - tt*0.6);
-      const vy = sn(pz*1.8 - tt*0.6 + p) - sn(px*1.6 + tt*0.7);
-      const vz = sn(px*1.7 + tt*0.7 + p) - sn(py*1.5 - tt*0.6);
-      px += vx*speed*dt; py += vy*speed*dt; pz += vz*speed*dt;
-      // #6 soft containment with per-particle max radius (some drift outside)
-      const rM=T.rmax[i]||R;
-      let r=Math.sqrt(px*px+py*py+pz*pz)||1e-4;
-      if(r>rM){ const k=rM/r; px*=k;py*=k;pz*=k; }
-      else if(r<rmin){ const k=rmin/r; px*=k;py*=k;pz*=k; }
-      T.pPos[i*3]=px; T.pPos[i*3+1]=py; T.pPos[i*3+2]=pz;
-      // #2 depth-based brightness: front (toward camera) bright, back dim →
-      // the cloud reads as a lit 3D volume. Uses real world-Z so it tracks rotation.
-      const wz = m2*px + m6*py + m10*pz + m14;
-      const front = Math.min(1,Math.max(0,(wz-near)/span)); // 1 = nearest camera
-      const b = 0.42 + 0.58*front;
-      cc[i*3]=bc[i*3]*b; cc[i*3+1]=bc[i*3+1]*b; cc[i*3+2]=bc[i*3+2]*b;
-    }
-    T.pGeo.attributes.position.needsUpdate=true;
-    T.pGeo.attributes.color.needsUpdate=true;
-    // fine crisp dots — tiny swell with audio
-    T.pMat.size=0.016+smooth*0.008;
-
-    // #1 selective bloom: only bright cores glow, subtle surge with voice
-    if(T.bloomPass){ T.bloomPass.strength = 0.30 + smooth*0.55; }
-
-    if(T.composer){ T.composer.render(); }
-    else { T.renderer.render(T.scene,T.camera); }
     ariaRAF=requestAnimationFrame(frame);
+    const t=T.clock.getElapsedTime();
+
+    // Read audio
+    let bass=0,mid=0;
+    if(ariaAnalyser&&ariaFreq){
+      ariaAnalyser.getByteFrequencyData(ariaFreq);
+      let bSum=0,mSum=0;
+      for(let i=0;i<8;i++)bSum+=ariaFreq[i];
+      for(let i=8;i<24;i++)mSum+=ariaFreq[i];
+      bass=bSum/(8*255); mid=mSum/(16*255);
+    }
+
+    // State targets
+    switch(orbState){
+      case 'idle':     targetRadius=28;targetSpeed=0.2;targetBright=0.5;targetSize=0.35;targetLineAmount=0.15;targetElectronRate=0;break;
+      case 'listening':targetRadius=22;targetSpeed=0.3;targetBright=0.65;targetSize=0.4;targetLineAmount=0.4;targetElectronRate=0;break;
+      case 'thinking': targetRadius=16;targetSpeed=0.5;targetBright=0.7;targetSize=0.3;targetLineAmount=1.0;targetElectronRate=0.015;break;
+      case 'speaking': targetRadius=18;targetSpeed=0.2;targetBright=0.7;targetSize=0.4;targetLineAmount=0.8;targetElectronRate=0;break;
+    }
+    currentRadius+=(targetRadius-currentRadius)*0.02;
+    currentSpeed+=(targetSpeed-currentSpeed)*0.02;
+    currentBright+=(targetBright-currentBright)*0.02;
+    currentSize+=(targetSize-currentSize)*0.02;
+    lineAmount+=(targetLineAmount-lineAmount)*0.02;
+    electronSpawnRate+=(targetElectronRate-electronSpawnRate)*0.02;
+
+    // Transition tumble
+    if(orbState!==lastOrbState){transitionEnergy=1.0;lastOrbState=orbState;}
+    transitionEnergy*=0.985;
+    if(transitionEnergy>0.05){
+      spinX+=transitionEnergy*0.012*Math.sin(t*1.7);
+      spinY+=transitionEnergy*0.015;
+      spinZ+=transitionEnergy*0.008*Math.cos(t*1.3);
+    }
+
+    // Depth Z breathing
+    let zTarget=Math.sin(t*0.12)*8;
+    if(orbState==='thinking')zTarget=Math.sin(t*0.3)*15+Math.sin(t*0.9)*6;
+    else if(orbState==='speaking')zTarget=Math.sin(t*0.15)*6-bass*10;
+    cloudZVel+=(zTarget-cloudZ)*0.008;
+    cloudZVel*=0.94;
+    cloudZ+=cloudZVel;
+
+    T.points.rotation.x=spinX;T.points.rotation.y=spinY;T.points.rotation.z=spinZ;
+    T.points.position.z=cloudZ;
+    T.lines.rotation.x=spinX;T.lines.rotation.y=spinY;T.lines.rotation.z=spinZ;
+    T.lines.position.z=cloudZ;
+
+    // Update particles
+    const p=T.geo.getAttribute('position');
+    const a=p.array;
+    const vel=T.vel,phase=T.phase;
+    for(let i=0;i<N;i++){
+      const i3=i*3;
+      let x=a[i3],y=a[i3+1],z=a[i3+2];
+      const px=phase[i];
+      vel[i3]  +=Math.sin(t*0.05+px)*0.001*currentSpeed;
+      vel[i3+1]+=Math.cos(t*0.06+px*1.3)*0.001*currentSpeed;
+      vel[i3+2]+=Math.sin(t*0.055+px*0.7)*0.001*currentSpeed;
+      vel[i3]  +=Math.sin(t*0.02+px*2.1+y*0.1)*0.0008*currentSpeed;
+      vel[i3+1]+=Math.cos(t*0.025+px*1.7+z*0.1)*0.0008*currentSpeed;
+      vel[i3+2]+=Math.sin(t*0.022+px*0.9+x*0.1)*0.0008*currentSpeed;
+      const dist=Math.sqrt(x*x+y*y+z*z)||0.01;
+      const pull=Math.max(0,dist-currentRadius)*0.002+0.0003;
+      vel[i3]-=(x/dist)*pull;vel[i3+1]-=(y/dist)*pull;vel[i3+2]-=(z/dist)*pull;
+      if(bass>0.05){vel[i3]+=(x/dist)*bass*0.02;vel[i3+1]+=(y/dist)*bass*0.02;vel[i3+2]+=(z/dist)*bass*0.02;}
+      if(orbState==='speaking'&&mid>0.1){const pulse=Math.sin(t*8+px);vel[i3]+=(x/dist)*mid*0.012*pulse;vel[i3+1]+=(y/dist)*mid*0.012*pulse;}
+      vel[i3]*=0.992;vel[i3+1]*=0.992;vel[i3+2]*=0.992;
+      a[i3]+=vel[i3];a[i3+1]+=vel[i3+1];a[i3+2]+=vel[i3+2];
+    }
+    p.needsUpdate=true;
+
+    // Connection lines
+    if(lineAmount>0.01){
+      const lp=T.lineGeo.getAttribute('position');
+      const la=lp.array;
+      let lineCount=0;
+      const maxDist=lineDistance*(1+bass*0.5);
+      const maxDistSq=maxDist*maxDist;
+      const step=Math.max(1,Math.floor(N/600));
+      for(let i=0;i<N&&lineCount<MAX_LINES;i+=step){
+        const i3=i*3;
+        const x1=a[i3],y1=a[i3+1],z1=a[i3+2];
+        for(let j=i+step;j<N&&lineCount<MAX_LINES;j+=step){
+          const j3=j*3;
+          const dx=a[j3]-x1,dy=a[j3+1]-y1,dz=a[j3+2]-z1;
+          if(dx*dx+dy*dy+dz*dz<maxDistSq){
+            const idx=lineCount*6;
+            la[idx]=x1;la[idx+1]=y1;la[idx+2]=z1;
+            la[idx+3]=a[j3];la[idx+4]=a[j3+1];la[idx+5]=a[j3+2];
+            lineCount++;
+          }
+        }
+      }
+      T.lineGeo.setDrawRange(0,lineCount*2);
+      lp.needsUpdate=true;
+      T.lineMat.opacity=lineAmount*0.12;
+      activeConnections=[];
+      for(let c=0;c<Math.min(lineCount,500);c++){
+        const ci=c*6;
+        activeConnections.push({x1:la[ci],y1:la[ci+1],z1:la[ci+2],x2:la[ci+3],y2:la[ci+4],z2:la[ci+5]});
+      }
+    } else {
+      T.lineGeo.setDrawRange(0,0);
+      activeConnections=[];
+    }
+
+    // Electrons (thinking state only)
+    if(activeConnections.length>0&&electronSpawnRate>0.005){
+      if(activeElectrons.length<3&&(t-lastElectronSpawn)>1.0){
+        const conn=activeConnections[Math.floor(Math.random()*activeConnections.length)];
+        activeElectrons.push({sx:conn.x1,sy:conn.y1,sz:conn.z1,ex:conn.x2,ey:conn.y2,ez:conn.z2,
+          t:0,speed:0.003+Math.random()*0.003});
+        lastElectronSpawn=t;
+      }
+    }
+    const ep=T.electronGeo.getAttribute('position');
+    const ea=ep.array;
+    let aliveCount=0;
+    for(let e=activeElectrons.length-1;e>=0;e--){
+      const el=activeElectrons[e];
+      el.t+=el.speed;
+      if(el.t>=1){activeElectrons.splice(e,1);continue;}
+      const ei=aliveCount*3;
+      ea[ei]=el.sx+(el.ex-el.sx)*el.t;
+      ea[ei+1]=el.sy+(el.ey-el.sy)*el.t;
+      ea[ei+2]=el.sz+(el.ez-el.sz)*el.t;
+      aliveCount++;
+    }
+    T.electronGeo.setDrawRange(0,aliveCount);
+    ep.needsUpdate=true;
+    T.electrons.rotation.x=spinX;T.electrons.rotation.y=spinY;T.electrons.rotation.z=spinZ;
+    T.electrons.position.z=cloudZ;
+
+    // Material
+    T.mat.opacity=currentBright+bass*0.08;
+    T.mat.size=currentSize+bass*0.05;
+    if(orbState==='thinking'){T.mat.color.lerp(new THREE.Color(0x6ec4ff),0.015);T.lineMat.color.lerp(new THREE.Color(0x6ec4ff),0.015);}
+    else if(orbState==='speaking'){T.mat.color.lerp(new THREE.Color(0x5ab8f0),0.015);T.lineMat.color.lerp(new THREE.Color(0x5ab8f0),0.015);}
+    else{T.mat.color.lerp(new THREE.Color(0x4ca8e8),0.015);T.lineMat.color.lerp(new THREE.Color(0x4ca8e8),0.015);}
+
+    // Slow orbital camera drift
+    T.camera.position.x=Math.sin(t*0.02)*5;
+    T.camera.position.y=Math.cos(t*0.03)*3;
+    T.camera.lookAt(0,0,cloudZ*0.2);
+
+    T.renderer.render(T.scene,T.camera);
   }
   ariaRAF=requestAnimationFrame(frame);
 }
+
 
 
 // ═══════════════════════════════════════════════════════════════════════════
