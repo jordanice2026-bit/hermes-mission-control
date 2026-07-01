@@ -1689,6 +1689,8 @@ nav{display:flex;gap:2px;flex:1}
           <input type="range" data-tune-key="lineBrightness" min="0.1" max="2.5" step="0.05" oninput="jarvisTuneInput('lineBrightness',this)"></div>
         <div class="jt-row"><label>Cluster brightness <span class="jt-val" id="jt-val-clusterBrightness">1.00</span></label>
           <input type="range" data-tune-key="clusterBrightness" min="0" max="3" step="0.05" oninput="jarvisTuneInput('clusterBrightness',this)"></div>
+        <div class="jt-row"><label>Cluster density <span class="jt-val" id="jt-val-clusterDensity">0.00</span></label>
+          <input type="range" data-tune-key="clusterDensity" min="0" max="3" step="0.05" oninput="jarvisTuneInput('clusterDensity',this)"></div>
         <div class="jt-row"><label>Particle count <span class="jt-val" id="jt-val-particleCount">3000</span></label>
           <input type="range" data-tune-key="particleCount" min="500" max="8000" step="100" oninput="jarvisTuneInput('particleCount',this)"></div>
         <div class="jt-row"><label>Line density <span class="jt-val" id="jt-val-lineDensity">1.00</span></label>
@@ -5355,6 +5357,7 @@ const JARVIS_TUNE_DEFAULTS={
   particleBrightness:1.0, // multiplier on particle opacity
   lineBrightness:1.0,     // multiplier on line opacity
   clusterBrightness:1.0,  // multiplier on how much brighter clusters/flow-veins get vs baseline
+  clusterDensity:0,       // NEW: extra cohesion force pulling particles into denser local clumps (0 = original spread)
   gravityPull:1.0,        // multiplier on containment pull-to-center force
   speedMult:1.0,          // multiplier on ambient particle drift speed
   orbitAmount:0,          // continuous orbit/rotation speed of the whole cloud (0 = none, matches original)
@@ -5535,6 +5538,96 @@ function initOrb(){
   const electrons=new THREE.Points(electronGeo,electronMat);
   scene.add(electrons);
 
+  // ── JARVIS_RINGS: concentric rings + radiating spokes + core glow ──
+  // 2026-07-01: visual restructure to match the reference JARVIS design
+  // (turbulent concentric rings converging on a bright core, with jagged
+  // radiating traces), layered purely as decoration on TOP of the existing
+  // particle-cloud animation system above — none of the physics, breathing,
+  // audio-reactivity, or state-transition logic changes. Color always
+  // follows the same JARVIS_TUNE hue as the rest of the orb (kept blue by
+  // default, per the 205° hue default). Safe to delete: this whole block,
+  // its frame()-loop counterpart (search "JARVIS_RINGS" in startOrbLoop),
+  // and the ringsGroup/spokes/coreGlowSprite entries in the jarvisThree
+  // object below, to fully revert to the plain particle+line orb.
+  const ringsGroup=new THREE.Group();
+  const _ringMats=[];
+  const RING_COUNT=8;
+  for(let r=0;r<RING_COUNT;r++){
+    const baseR=6+r*(23/(RING_COUNT-1));   // 6..29, evenly spaced
+    const SEG=96;
+    const rpos=new Float32Array(SEG*2*3);  // LineSegments pairs around the loop
+    // smooth low-frequency wobble (a few sine harmonics with random phase/
+    // frequency per ring) so each ring reads as a flowing, torn band —
+    // matching the reference image's wavy-but-continuous rings — rather
+    // than a sharp zigzag polygon.
+    const h1f=2+Math.floor(Math.random()*3), h2f=5+Math.floor(Math.random()*4);
+    const h1p=Math.random()*Math.PI*2, h2p=Math.random()*Math.PI*2;
+    const h1a=0.06+Math.random()*0.05, h2a=0.03+Math.random()*0.03;
+    function _ringR(ang){
+      return baseR*(1+h1a*Math.sin(ang*h1f+h1p)+h2a*Math.sin(ang*h2f+h2p));
+    }
+    for(let s=0;s<SEG;s++){
+      const a0=(s/SEG)*Math.PI*2, a1=((s+1)/SEG)*Math.PI*2;
+      const r0=_ringR(a0), r1=_ringR(a1);
+      const idx=s*6;
+      rpos[idx]=Math.cos(a0)*r0; rpos[idx+1]=Math.sin(a0)*r0; rpos[idx+2]=0;
+      rpos[idx+3]=Math.cos(a1)*r1; rpos[idx+4]=Math.sin(a1)*r1; rpos[idx+5]=0;
+    }
+    const rgeo=new THREE.BufferGeometry();
+    rgeo.setAttribute('position',new THREE.BufferAttribute(rpos,3));
+    const rmat=new THREE.LineBasicMaterial({color:orbLineColor,transparent:true,opacity:0,blending:orbBlend,depthWrite:false});
+    const ringLine=new THREE.LineSegments(rgeo,rmat);
+    // small random static tilt per ring so the stack doesn't read as flat
+    // parallel discs — matches the turbulent, non-uniform rings in the
+    // reference image
+    ringLine.rotation.x=(Math.random()-0.5)*0.35;
+    ringLine.rotation.y=(Math.random()-0.5)*0.35;
+    ringLine.rotation.z=Math.random()*Math.PI*2;
+    ringLine.userData.spinRate=(Math.random()-0.5)*0.0018;
+    ringsGroup.add(ringLine);
+    _ringMats.push(rmat);
+  }
+  scene.add(ringsGroup);
+
+  // Radiating jagged spokes — short lightning-like traces from near-center
+  // out toward mid-sphere (kept well inside the outer ring boundary so they
+  // read as internal texture, like the reference image's traces, rather
+  // than a spiky starburst silhouette poking past the cloud's edge)
+  const SPOKE_COUNT=40, SPOKE_PTS=5;
+  const spokePos=new Float32Array(SPOKE_COUNT*(SPOKE_PTS-1)*2*3);
+  let sIdx=0;
+  for(let k=0;k<SPOKE_COUNT;k++){
+    const theta=Math.random()*Math.PI*2, phi=Math.acos(2*Math.random()-1);
+    const dx=Math.sin(phi)*Math.cos(theta), dy=Math.sin(phi)*Math.sin(theta), dz=Math.cos(phi);
+    // perpendicular basis for lateral jitter
+    let px=dy*0-dz*1, py=dz*0-dx*0, pz=dx*1-dy*0;
+    const pl=Math.sqrt(px*px+py*py+pz*pz)||1; px/=pl;py/=pl;pz/=pl;
+    const r0=3+Math.random()*3, r1=13+Math.random()*7;
+    let prevx=dx*r0,prevy=dy*r0,prevz=dz*r0;
+    for(let p=1;p<SPOKE_PTS;p++){
+      const rr=r0+((r1-r0)*p/(SPOKE_PTS-1));
+      const jitterAmt=(Math.random()-0.5)*1.1;
+      const nx=dx*rr+px*jitterAmt, ny=dy*rr+py*jitterAmt, nz=dz*rr+pz*jitterAmt;
+      spokePos[sIdx++]=prevx;spokePos[sIdx++]=prevy;spokePos[sIdx++]=prevz;
+      spokePos[sIdx++]=nx;spokePos[sIdx++]=ny;spokePos[sIdx++]=nz;
+      prevx=nx;prevy=ny;prevz=nz;
+    }
+  }
+  const spokeGeo=new THREE.BufferGeometry();
+  spokeGeo.setAttribute('position',new THREE.BufferAttribute(spokePos,3));
+  const spokeMat=new THREE.LineBasicMaterial({color:orbLineColor,transparent:true,opacity:0,blending:orbBlend,depthWrite:false});
+  const spokes=new THREE.LineSegments(spokeGeo,spokeMat);
+  scene.add(spokes);
+
+  // Bright converging core glow — a single additive sprite at dead-center so
+  // the middle of the orb always reads as the brightest point, echoing the
+  // reference image's glowing "eye" nucleus
+  const coreMat=new THREE.SpriteMaterial({map:orbTex,color:orbPointColor,transparent:true,opacity:0,
+    blending:orbBlend,depthWrite:false});
+  const coreGlowSprite=new THREE.Sprite(coreMat);
+  coreGlowSprite.scale.set(9,9,1);
+  scene.add(coreGlowSprite);
+
   const activeElectrons=[];
   let electronSpawnRate=0,targetElectronRate=0,lastElectronSpawn=0;
   let activeConnections=[];
@@ -5555,6 +5648,7 @@ function initOrb(){
 
   jarvisThree={renderer,scene,camera,points,geo,mat,lines,lineGeo,lineMat,
     electrons,electronGeo,electronMat,activeElectrons,
+    ringsGroup,_ringMats,spokes,spokeMat,coreGlowSprite,
     vel,phase,activeConnections,
     orbState,clock,fitZ:_orbFitZ,
     setOrbState(s){ orbState=s; },
@@ -5675,6 +5769,28 @@ function startOrbLoop(){
     // JARVIS_TUNE.speedMult / gravityPull: multipliers on ambient drift speed
     // and containment pull-to-center force (1.0 = original in both cases).
     const _tuneSpeed=JARVIS_TUNE.speedMult, _tuneGravity=JARVIS_TUNE.gravityPull;
+    // JARVIS_TUNE.clusterDensity: NEW slider — extra local cohesion force
+    // that pulls each particle gently toward the centroid of nearby
+    // particles (using the same cheap spatial-hash approach as the existing
+    // cluster-glow brightness pass below), so higher values visibly clump
+    // particles into denser knots/strands instead of an even spread. 0 =
+    // no cohesion at all (original behavior, untouched). Built as a
+    // pre-pass BEFORE the physics loop so the loop can read each particle's
+    // local-cluster centroid the same frame it moves.
+    const _tuneClusterDensity=JARVIS_TUNE.clusterDensity;
+    const COHESION_CELL=4.5;
+    let _cohesionCells=null;
+    if(_tuneClusterDensity>0.001){
+      _cohesionCells=new Map();
+      for(let i=0;i<_ORB_N;i++){
+        const i3=i*3;
+        const cx=Math.round(a[i3]/COHESION_CELL),cy=Math.round(a[i3+1]/COHESION_CELL),cz=Math.round(a[i3+2]/COHESION_CELL);
+        const key=cx+','+cy+','+cz;
+        let cell=_cohesionCells.get(key);
+        if(!cell){cell={sx:0,sy:0,sz:0,n:0};_cohesionCells.set(key,cell);}
+        cell.sx+=a[i3];cell.sy+=a[i3+1];cell.sz+=a[i3+2];cell.n++;
+      }
+    }
     // ── Particle physics — soft containment, original behaviour ──
     for(let i=0;i<_ORB_N;i++){
       const i3=i*3;
@@ -5689,6 +5805,16 @@ function startOrbLoop(){
       const dist=Math.sqrt(x*x+y*y+z*z)||0.01;
       const pull=(Math.max(0,dist-currentRadius)*0.002+0.0003)*_tuneGravity;
       vel[i3]-=(x/dist)*pull;vel[i3+1]-=(y/dist)*pull;vel[i3+2]-=(z/dist)*pull;
+      if(_cohesionCells){
+        const cx=Math.round(x/COHESION_CELL),cy=Math.round(y/COHESION_CELL),cz=Math.round(z/COHESION_CELL);
+        const cell=_cohesionCells.get(cx+','+cy+','+cz);
+        if(cell&&cell.n>1){
+          const mx=cell.sx/cell.n,my=cell.sy/cell.n,mz=cell.sz/cell.n;
+          vel[i3]+=(mx-x)*0.0015*_tuneClusterDensity;
+          vel[i3+1]+=(my-y)*0.0015*_tuneClusterDensity;
+          vel[i3+2]+=(mz-z)*0.0015*_tuneClusterDensity;
+        }
+      }
       if(bass>0.05){vel[i3]+=(x/dist)*bass*0.02;vel[i3+1]+=(y/dist)*bass*0.02;vel[i3+2]+=(z/dist)*bass*0.02;}
       if(orbState==='speaking'&&mid>0.1){const pulse=Math.sin(t*8+px);vel[i3]+=(x/dist)*mid*0.012*pulse;vel[i3+1]+=(y/dist)*mid*0.012*pulse;}
       vel[i3]*=0.992;vel[i3+1]*=0.992;vel[i3+2]*=0.992;
@@ -5840,6 +5966,38 @@ function startOrbLoop(){
     else if(orbState==='speaking'){T.mat.color.copy(_pBase).lerp(new THREE.Color(0x5ab8f0),0.5);T.lineMat.color.copy(_lBase).lerp(new THREE.Color(0x5ab8f0),0.5);}
     else{T.mat.color.lerp(_pBase,0.08);T.lineMat.color.lerp(_lBase,0.08);}
     T.lineMat.opacity=lineAmount*0.12*JARVIS_TUNE.lineBrightness;
+
+    // JARVIS_RINGS: concentric rings + spokes + core glow — visual layer on
+    // top of the particle cloud, echoing the reference image's turbulent
+    // rings converging on a bright core. Scales with currentRadius so it
+    // breathes in/out exactly in sync with the particle cloud's own
+    // idle/listening/thinking/speaking radius changes; opacity follows
+    // coreGlow (bright during idle/listening — "no sound detected" — faded
+    // during thinking/speaking) so it reads as an extension of the existing
+    // glow behavior, not a separate always-on effect.
+    {
+      const ringScale=currentRadius/25;
+      const ringBaseOp=(0.22+coreGlow*0.32)*JARVIS_TUNE.lineBrightness;
+      T.ringsGroup.scale.setScalar(ringScale);
+      T.ringsGroup.rotation.y=spinY*0.6;
+      T.ringsGroup.rotation.x=spinX*0.6;
+      const rings=T.ringsGroup.children;
+      for(let r=0;r<rings.length;r++){
+        rings[r].rotation.z+=rings[r].userData.spinRate*(1+bass*2);
+        rings[r].material.color.copy(T.lineMat.color);
+        rings[r].material.opacity=ringBaseOp*(0.7+0.3*Math.sin(t*0.15+r*1.7));
+      }
+      T.spokes.scale.setScalar(ringScale);
+      T.spokes.rotation.y=spinY*0.6;
+      T.spokes.rotation.x=spinX*0.6;
+      T.spokes.material.color.copy(T.lineMat.color);
+      T.spokes.material.opacity=ringBaseOp*0.32;
+      // core glow — brightest point at dead-center, pulses gently with bass
+      T.coreGlowSprite.material.color.copy(T.mat.color);
+      T.coreGlowSprite.material.opacity=Math.min(1,(0.5+coreGlow*0.45+bass*0.3)*JARVIS_TUNE.clusterBrightness*JARVIS_TUNE.particleBrightness);
+      T.coreGlowSprite.scale.setScalar((7+bass*4)*ringScale*0.45);
+      T.coreGlowSprite.position.z=cloudZ;
+    }
 
     // Slow orbital camera drift
     T.camera.position.x=Math.sin(t*0.02)*5;
