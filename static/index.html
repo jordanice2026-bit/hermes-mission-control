@@ -4430,11 +4430,26 @@ function initOrb(){
              base:mainShell.base,phase:mainShell.phase,pPos:mainShell.pos,
              pGeo:mainShell.geo,pMat:mainShell.mat,t:0};
   window.addEventListener('resize',ariaOrbResize);
+  ariaFitCamera();
+}
+// Pull the camera back just far enough that the full orb fits in BOTH axes.
+// On narrow/portrait windows the horizontal FOV is the limiting one, so we fit
+// to whichever half-angle is smaller. R = orb radius (halo shell) + padding.
+function ariaFitCamera(){
+  if(!ariaThree)return;
+  const cam=ariaThree.camera;
+  const R=2.2;                                   // halo radius 1.78 + breath/glow headroom
+  const vHalf=(cam.fov*Math.PI/180)/2;           // vertical half-FOV
+  const hHalf=Math.atan(Math.tan(vHalf)*cam.aspect); // horizontal half-FOV
+  const half=Math.min(vHalf,hHalf);
+  cam.position.z = R/Math.sin(half);
+  cam.updateProjectionMatrix();
 }
 function ariaOrbResize(){
   if(!ariaThree)return;
   const w=window.innerWidth,h=window.innerHeight;
-  ariaThree.camera.aspect=w/h;ariaThree.camera.updateProjectionMatrix();
+  ariaThree.camera.aspect=w/h;
+  ariaFitCamera();
   ariaThree.renderer.setSize(w,h);
   if(ariaThree.composer)ariaThree.composer.setSize(w,h);
   if(ariaThree.bloomPass)ariaThree.bloomPass.setSize(w,h);
