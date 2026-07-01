@@ -4330,15 +4330,24 @@ function ariaAudioLevel(){
 
 // ── The 3D orb: holographic particle system (Three.js) ──
 function _ariaGlowTexture(){
-  const s=64,c=document.createElement('canvas');c.width=c.height=s;
+  const s=256,c=document.createElement('canvas');c.width=c.height=s;
   const x=c.getContext('2d');
   const g=x.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
-  g.addColorStop(0,'rgba(255,255,255,1)');
-  g.addColorStop(0.22,'rgba(255,255,255,0.85)');
-  g.addColorStop(0.5,'rgba(255,255,255,0.32)');
-  g.addColorStop(1,'rgba(255,255,255,0)');
+  // smooth multi-stop falloff → soft round glow with no hard edge / banding
+  g.addColorStop(0.00,'rgba(255,255,255,1)');
+  g.addColorStop(0.12,'rgba(255,255,255,0.95)');
+  g.addColorStop(0.30,'rgba(255,255,255,0.55)');
+  g.addColorStop(0.55,'rgba(255,255,255,0.18)');
+  g.addColorStop(0.80,'rgba(255,255,255,0.04)');
+  g.addColorStop(1.00,'rgba(255,255,255,0)');
   x.fillStyle=g;x.fillRect(0,0,s,s);
-  return new THREE.CanvasTexture(c);
+  const tex=new THREE.CanvasTexture(c);
+  tex.minFilter=THREE.LinearMipmapLinearFilter;
+  tex.magFilter=THREE.LinearFilter;
+  tex.generateMipmaps=true;
+  tex.anisotropy=8;
+  tex.needsUpdate=true;
+  return tex;
 }
 function _ariaSphereShell(N,R,glow,opts){
   // Fibonacci sphere with a height-based cyan gradient baked into vertex colors
