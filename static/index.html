@@ -1067,11 +1067,16 @@ nav{display:flex;gap:2px;flex:1}
     <div class="pl-modal-body">
       <input type="hidden" id="listing-id">
       <div class="form-group">
-        <label class="form-label">Property Address *</label>
-        <input class="form-input" id="listing-address" placeholder="123 Main St, Indianapolis, IN 46201">
+        <label class="form-label">Property * <span style="color:var(--text3);font-weight:400">(select a property already in the system)</span></label>
+        <select class="form-input" id="listing-property" onchange="onListingPropertySelect()"><option value="">Loading properties…</option></select>
       </div>
       <div class="form-group">
-        <label class="form-label">Owner * <span style="color:var(--text3);font-weight:400">(required — every listing needs an owner)</span></label>
+        <label class="form-label">Property Address *</label>
+        <input class="form-input" id="listing-address" placeholder="Auto-filled from the selected property" readonly style="opacity:.85">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Pick a property above to fill this. <a href="#" onclick="enableManualListingAddress(event)" style="color:var(--accent2)">Enter manually instead</a></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Owner * <span style="color:var(--text3);font-weight:400">(auto-selected from the property; change if needed)</span></label>
         <select class="form-input" id="listing-owner"><option value="">Loading owners…</option></select>
       </div>
       <div class="deal-row-2">
@@ -3156,6 +3161,14 @@ function gotoSearchResult(view,type,id){
 // ═══════════════════════════════════════════════════════════════════════════
 let listings=[];
 let listingOwners=[];
+let listingProperties=[];
+async function ensureProperties(){
+  if(listingProperties.length)return;
+  try{
+    const r=await api('/api/properties');
+    listingProperties=(await r.json()).properties||[];
+  }catch(e){listingProperties=[];}
+}
 
 async function loadListings(){
   const board=document.getElementById('listings-board');
@@ -3215,14 +3228,25 @@ async function ensureOwners(){
 }
 async function openListingModal(editId){
   await ensureOwners();
+  await ensureProperties();
   const sel=document.getElementById('listing-owner');
   sel.innerHTML='<option value="">Select an owner…</option>'+
     listingOwners.map(o=>`<option value="${o.id}">${esc(o.name)}</option>`).join('');
+  // Populate the property dropdown
+  const psel=document.getElementById('listing-property');
+  if(psel){
+    psel.innerHTML='<option value="">Select a property…</option>'+
+      listingProperties.map(p=>`<option value="${p.id}" data-address="${esc(p.address||'')}" data-owner="${esc(p.owner_id||'')}" data-proptype="${esc(p.prop_type||'')}">${esc(p.address||'(no address)')}${p.owner_name?' · '+esc(p.owner_name):''}</option>`).join('');
+  }
   ['listing-address','listing-price','listing-commission','listing-start','listing-expiration','listing-sellers','listing-mls','listing-notes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('listing-id').value='';
   document.getElementById('listing-status').value='Pre-Listing';
   document.getElementById('listing-proptype').value='';
   document.getElementById('listing-type').value='';
+  if(psel)psel.value='';
+  // reset address field to selection-driven (readonly) mode
+  const addrEl=document.getElementById('listing-address');
+  if(addrEl){addrEl.readOnly=true;addrEl.value='';}
   const _df=document.getElementById('listing-doc-file');if(_df)_df.value='';
   const _us=document.getElementById('listing-upload-status');if(_us)_us.textContent='';
   document.getElementById('listing-modal-title').textContent='New Listing';
@@ -3230,7 +3254,15 @@ async function openListingModal(editId){
     const l=listings.find(x=>x.id===editId);
     if(l){
       document.getElementById('listing-id').value=l.id;
-      document.getElementById('listing-address').value=l.address||'';
+      // existing listing: address may not map to a property dropdown entry, so
+      // show it directly and allow manual editing
+      const ae=document.getElementById('listing-address');
+      ae.readOnly=false;ae.value=l.address||'';
+      // try to preselect the matching property
+      if(psel){
+        const match=listingProperties.find(p=>(p.address||'').trim().toLowerCase()===(l.address||'').trim().toLowerCase());
+        psel.value=match?match.id:'';
+      }
       document.getElementById('listing-owner').value=(l.owner_ids||[])[0]||'';
       document.getElementById('listing-status').value=l.status||'Pre-Listing';
       document.getElementById('listing-proptype').value=l.property_type||'';
@@ -3246,6 +3278,31 @@ async function openListingModal(editId){
     }
   }
   document.getElementById('listing-modal').classList.add('open');
+}
+// When a property is picked, auto-fill address + owner (+ property type)
+function onListingPropertySelect(){
+  const sel=document.getElementById('listing-property');
+  const opt=sel&&sel.options[sel.selectedIndex];
+  if(!opt||!opt.value){return;}
+  const addr=opt.getAttribute('data-address')||'';
+  const ownerId=opt.getAttribute('data-owner')||'';
+  const ptype=opt.getAttribute('data-proptype')||'';
+  const addrEl=document.getElementById('listing-address');
+  if(addrEl){addrEl.readOnly=true;addrEl.value=addr;}
+  if(ownerId)document.getElementById('listing-owner').value=ownerId;
+  if(ptype){
+    const pt=document.getElementById('listing-proptype');
+    // only set if it's one of the options
+    if([...pt.options].some(o=>o.value===ptype))pt.value=ptype;
+  }
+}
+// Fallback: let the user type an address that isn't a known property
+function enableManualListingAddress(ev){
+  if(ev)ev.preventDefault();
+  const addrEl=document.getElementById('listing-address');
+  const psel=document.getElementById('listing-property');
+  if(psel)psel.value='';
+  if(addrEl){addrEl.readOnly=false;addrEl.value='';addrEl.placeholder='123 Main St, Indianapolis, IN 46201';addrEl.focus();}
 }
 function closeListingModal(){document.getElementById('listing-modal').classList.remove('open');}
 async function saveListing(){

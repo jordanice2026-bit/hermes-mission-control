@@ -404,6 +404,37 @@ async def update_owner(request: Request, owner_id: str, body: OwnerUpdateBody):
 
 
 # ==============================================================================
+# GET /api/properties  — all properties in the system, with owner name resolved
+#                         (used by the New Listing form's property dropdown)
+# ==============================================================================
+@router.get("/api/properties")
+async def get_properties(request: Request):
+    _require_auth(request)
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            props_raw, owners_raw = await asyncio.gather(
+                _query_all(client, PROPS_DS_ID),
+                _query_all(client, OWNERS_DS_ID),
+            )
+        owner_map = {p["id"]: _parse_owner(p) for p in owners_raw}
+        properties = []
+        for page in props_raw:
+            prop = _parse_property(page)
+            oid = (prop.get("owner_ids") or [None])[0]
+            owner = owner_map.get(oid, {}) if oid else {}
+            prop["owner_id"] = oid or ""
+            prop["owner_name"] = owner.get("name", "")
+            properties.append(prop)
+        properties.sort(key=lambda x: (x.get("address") or "").lower())
+        return JSONResponse({"properties": properties, "total": len(properties),
+                             "updated_at": int(time.time() * 1000)})
+    except HTTPException: raise
+    except Exception as e:
+        logger.exception("get_properties: %s", e)
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+# ==============================================================================
 # POST /api/seller-pipeline/generate  — run email draft generation script
 # ==============================================================================
 @router.post("/api/seller-pipeline/generate")
