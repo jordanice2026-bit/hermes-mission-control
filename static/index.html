@@ -5352,7 +5352,7 @@ function initOrb(){
   const orbBlend=isLight?THREE.NormalBlending:THREE.AdditiveBlending;
   const orbPointColor=isLight?0x0055dd:0xffffff;
   const orbLineColor=isLight?0x0055dd:0x4ca8e8;
-  const mat=new THREE.PointsMaterial({map:orbTex,size:0.22,transparent:true,opacity:0.6,
+  const mat=new THREE.PointsMaterial({map:orbTex,size:0.22,transparent:true,opacity:0.75,
     sizeAttenuation:true,vertexColors:true,blending:orbBlend,depthWrite:false,alphaTest:0.01,color:orbPointColor});
   const points=new THREE.Points(geo,mat);
   scene.add(points);
@@ -5438,11 +5438,11 @@ function startOrbLoop(){
   let targetSize=0.4,currentSize=0.4;
   let lineAmount=0,targetLineAmount=0;
   let coreGlow=0,targetCoreGlow=0;   // 2026-07-01: brighten lines toward sphere center, off during thinking/speaking
+  const lineDistance=6;   // 2026-07-01: was 8 — shorter connection radius = fewer lines, wavier/more open feel; cluster physics (containment pull) untouched
   let electronSpawnRate=0,targetElectronRate=0,lastElectronSpawn=0;
   let spinX=0,spinY=0,spinZ=0;
   let transitionEnergy=0,lastOrbState='idle';
   let cloudZ=0,cloudZVel=0;
-  const lineDistance=8;
   const activeElectrons=[];
   let activeConnections=[];
 
@@ -5467,11 +5467,13 @@ function startOrbLoop(){
 
     // State targets
     // 2026-07-01: coreGlow on for idle/listening (no sound detected), off for thinking/speaking
+    // 2026-07-01 (round 2): targetBright raised further, targetLineAmount lowered — brighter
+    // particles overall, fewer lines for a wavier/flowier feel. Cluster/flow-glow logic untouched.
     switch(orbState){
-      case 'idle':     targetRadius=28;targetSpeed=0.2;targetBright=0.5;targetSize=0.35;targetLineAmount=0.3;targetElectronRate=0;targetCoreGlow=1;break;   // lineAmount 0.15->0.3: more visible flowing lines
-      case 'listening':targetRadius=22;targetSpeed=0.3;targetBright=0.65;targetSize=0.4;targetLineAmount=0.55;targetElectronRate=0;targetCoreGlow=1;break;  // lineAmount 0.4->0.55
-      case 'thinking': targetRadius=16;targetSpeed=0.5;targetBright=0.7;targetSize=0.3;targetLineAmount=1.0;targetElectronRate=0.015;targetCoreGlow=0;break;
-      case 'speaking': targetRadius=18;targetSpeed=0.2;targetBright=0.7;targetSize=0.4;targetLineAmount=0.8;targetElectronRate=0;targetCoreGlow=0;break;
+      case 'idle':     targetRadius=28;targetSpeed=0.2;targetBright=0.68;targetSize=0.35;targetLineAmount=0.16;targetElectronRate=0;targetCoreGlow=1;break;   // was bright 0.5, lineAmount 0.3
+      case 'listening':targetRadius=22;targetSpeed=0.3;targetBright=0.8;targetSize=0.4;targetLineAmount=0.28;targetElectronRate=0;targetCoreGlow=1;break;      // was bright 0.65, lineAmount 0.55
+      case 'thinking': targetRadius=16;targetSpeed=0.5;targetBright=0.82;targetSize=0.3;targetLineAmount=0.7;targetElectronRate=0.015;targetCoreGlow=0;break;  // was bright 0.7, lineAmount 1.0
+      case 'speaking': targetRadius=18;targetSpeed=0.2;targetBright=0.82;targetSize=0.4;targetLineAmount=0.55;targetElectronRate=0;targetCoreGlow=0;break;     // was bright 0.7, lineAmount 0.8
     }
     currentRadius+=(targetRadius-currentRadius)*0.02;
     currentSpeed+=(targetSpeed-currentSpeed)*0.02;
