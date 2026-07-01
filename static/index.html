@@ -5533,9 +5533,41 @@ function startOrbLoop(){
       if(orbState==='speaking'&&mid>0.1){const pulse=Math.sin(t*8+px);vel[i3]+=(x/dist)*mid*0.012*pulse;vel[i3+1]+=(y/dist)*mid*0.012*pulse;}
       vel[i3]*=0.992;vel[i3+1]*=0.992;vel[i3+2]*=0.992;
       a[i3]+=vel[i3];a[i3+1]+=vel[i3+1];a[i3+2]+=vel[i3+2];
+    }
+
+    // 2026-07-01 cluster-glow tweak: cheap spatial-hash density pass so
+    // particles that happen to bunch together (clusters) read brighter too,
+    // on top of the flowing noise field. Same dimming-only, hue-safe rule as
+    // everything else — this only ever pulls brightness DOWN from 1.0 less
+    // aggressively where density is high, never boosts past the material's
+    // real color. Revert: delete this Map/density block and the two
+    // "densityT(...)" calls below (particle + line color passes), and the
+    // color math falls back to flow-only brightness.
+    const CLUSTER_CELL=3.2;
+    const cellCounts=coreGlow>0.01 ? new Map() : null;
+    if(cellCounts){
+      for(let i=0;i<_ORB_N;i++){
+        const i3=i*3;
+        const key=(Math.round(a[i3]/CLUSTER_CELL))+','+(Math.round(a[i3+1]/CLUSTER_CELL))+','+(Math.round(a[i3+2]/CLUSTER_CELL));
+        cellCounts.set(key,(cellCounts.get(key)||0)+1);
+      }
+    }
+    function _densityT(x,y,z){
+      if(!cellCounts)return 0;
+      const key=(Math.round(x/CLUSTER_CELL))+','+(Math.round(y/CLUSTER_CELL))+','+(Math.round(z/CLUSTER_CELL));
+      const n=cellCounts.get(key)||0;
+      const s=Math.max(0,Math.min(1,(n-2)/5)); // ~3 particles/cell = baseline, ~7+ = fully "clustered"
+      return s*s*(3-2*s);
+    }
+
+    for(let i=0;i<_ORB_N;i++){
+      const i3=i*3;
+      const x=a[i3],y=a[i3+1],z=a[i3+2];
       if(coreGlow>0.01){
         const flow=_orbFlowN(x,y,z,t);
-        const bri=LOW_BASE+flow*(1-LOW_BASE);
+        const dens=_densityT(x,y,z);
+        const glow=Math.max(flow,dens);   // flowing waves OR real clusters can light up — whichever is brighter here
+        const bri=LOW_BASE+glow*(1-LOW_BASE);
         const m=1+coreGlow*(bri-1);   // always <=1 — dimming only, color never shifts
         pca[i3]=m;pca[i3+1]=m;pca[i3+2]=m;
       } else {
@@ -5571,7 +5603,8 @@ function startOrbLoop(){
             la[idx]=x1;la[idx+1]=y1;la[idx+2]=z1;
             la[idx+3]=a[j3];la[idx+4]=a[j3+1];la[idx+5]=a[j3+2];
             if(coreGlow>0.01){
-              const f1n=_orbFlowN(x1,y1,z1,t),f2n=_orbFlowN(a[j3],a[j3+1],a[j3+2],t);
+              const f1n=Math.max(_orbFlowN(x1,y1,z1,t),_densityT(x1,y1,z1));
+              const f2n=Math.max(_orbFlowN(a[j3],a[j3+1],a[j3+2],t),_densityT(a[j3],a[j3+1],a[j3+2]));
               const b1=LOW_BASE+f1n*(1-LOW_BASE),b2=LOW_BASE+f2n*(1-LOW_BASE);
               const f1=1+coreGlow*(b1-1),f2=1+coreGlow*(b2-1);   // always <=1
               lca[idx]=f1;lca[idx+1]=f1;lca[idx+2]=f1;
