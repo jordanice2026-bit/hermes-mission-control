@@ -161,6 +161,13 @@ try:
 except Exception as _ls_err:
     logger.warning("Listings router failed to load: %s", _ls_err)
 
+# Manager Console router (agent-corporation health, proposals, approve/reject)
+try:
+    from manager import router as manager_router
+    app.include_router(manager_router)
+except Exception as _mg_err:
+    logger.warning("Manager router failed to load: %s", _mg_err)
+
 
 # ---------------------------------------------------------------------------
 # Auth helpers

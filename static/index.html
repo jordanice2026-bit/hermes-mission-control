@@ -545,6 +545,61 @@ nav{display:flex;gap:2px;flex:1}
 .cmd-log-status.error{background:rgba(255,23,68,.12);color:#ff5983}
 .cmd-log-status.queued{background:rgba(255,171,0,.14);color:#ffab00}
 .cmd-log-meta{color:var(--text3);margin-left:auto;font-size:11px}
+/* ── MANAGER CONSOLE ── */
+.manager-wrap{padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:20px;max-width:1000px}
+.mgr-section-title{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.mgr-dept-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.mgr-dept-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;border-left:3px solid var(--text3)}
+.mgr-dept-card.healthy{border-left-color:var(--done)}
+.mgr-dept-card.degraded{border-left-color:#ffab00}
+.mgr-dept-card.critical{border-left-color:var(--blocked)}
+.mgr-dept-card.idle{border-left-color:var(--text3);opacity:.7}
+.mgr-dept-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.mgr-dept-icon{font-size:22px}
+.mgr-dept-name{font-size:14px;font-weight:600}
+.mgr-dept-health{font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:10px;font-weight:600;margin-left:auto}
+.mgr-health-healthy{background:rgba(0,230,118,.12);color:var(--done)}
+.mgr-health-degraded{background:rgba(255,171,0,.14);color:#ffab00}
+.mgr-health-critical{background:rgba(255,23,68,.12);color:#ff5983}
+.mgr-health-idle{background:var(--surface3);color:var(--text3)}
+.mgr-dept-desc{font-size:11px;color:var(--text3);margin-bottom:10px}
+.mgr-dept-stats{display:flex;gap:12px;font-size:11px}
+.mgr-stat{display:flex;flex-direction:column}
+.mgr-stat-num{font-size:16px;font-weight:700}
+.mgr-stat-num.ok{color:var(--done)}
+.mgr-stat-num.fail{color:var(--blocked)}
+.mgr-stat-label{color:var(--text3);font-size:9px;text-transform:uppercase;letter-spacing:.05em}
+.mgr-dept-agents{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.mgr-agent-chip{font-size:10px;padding:2px 7px;border-radius:6px;background:var(--surface3);color:var(--text2);cursor:pointer}
+.mgr-agent-chip:hover{background:var(--accent-glow);color:var(--accent2)}
+/* Proposals */
+.mgr-proposal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;border-left:3px solid var(--accent2)}
+.mgr-prop-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
+.mgr-prop-type{font-size:9px;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:6px;font-weight:600;background:rgba(41,121,255,.12);color:var(--accent2);white-space:nowrap;flex-shrink:0}
+.mgr-prop-type.pause_agent{background:rgba(255,171,0,.14);color:#ffab00}
+.mgr-prop-type.resume_agent{background:rgba(0,230,118,.12);color:var(--done)}
+.mgr-prop-type.new_skill{background:rgba(157,120,255,.14);color:#b794ff}
+.mgr-prop-title{font-size:14px;font-weight:600;flex:1}
+.mgr-prop-rationale{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:10px}
+.mgr-prop-change{display:flex;gap:10px;font-size:11px;margin-bottom:12px;flex-wrap:wrap}
+.mgr-prop-val{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;flex:1;min-width:180px}
+.mgr-prop-val-label{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-bottom:2px}
+.mgr-prop-actions{display:flex;gap:8px}
+.mgr-prop-meta{font-size:11px;color:var(--text3);margin-top:8px}
+.mgr-prop-status-badge{font-size:10px;text-transform:uppercase;padding:2px 8px;border-radius:10px;font-weight:600}
+.mgr-ps-approved{background:rgba(0,230,118,.12);color:var(--done)}
+.mgr-ps-rejected{background:rgba(255,23,68,.12);color:#ff5983}
+.mgr-ps-applied{background:rgba(41,121,255,.12);color:var(--accent2)}
+.mgr-runs{display:flex;flex-direction:column;gap:5px}
+.mgr-run-item{display:flex;align-items:center;gap:10px;font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px}
+.mgr-run-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.mgr-run-dot.success{background:var(--done)}
+.mgr-run-dot.partial{background:#ffab00}
+.mgr-run-dot.failure{background:var(--blocked)}
+.mgr-run-agent{font-weight:500;min-width:130px}
+.mgr-run-summary{color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mgr-run-time{color:var(--text3);font-size:11px;white-space:nowrap}
+.mgr-empty{text-align:center;padding:30px;color:var(--text3);font-size:13px}
 /* ── Light mode overrides for hardcoded values ── */
 :root.light .pl-modal-overlay{background:rgba(8,13,42,.45)}
 :root.light .deal-modal-overlay{background:rgba(8,13,42,.45)}
@@ -588,6 +643,7 @@ nav{display:flex;gap:2px;flex:1}
   <nav>
     <button class="nav-item active" data-view="board">Board</button>
     <button class="nav-item" data-view="alerts">⚠️ Alerts <span class="nav-badge" id="alert-nav-badge" style="display:none"></span></button>
+    <button class="nav-item" data-view="manager">🧭 Manager <span class="nav-badge" id="manager-nav-badge" style="display:none"></span></button>
     <button class="nav-item" data-view="listings">📋 Listings</button>
     <button class="nav-item" data-view="deals">Deal Pipeline</button>
     <button class="nav-item" data-view="tc">TC Inbox</button>
@@ -922,6 +978,19 @@ nav{display:flex;gap:2px;flex:1}
       <span class="record-count" id="command-worker-status"></span>
     </div>
     <div class="command-wrap" id="command-wrap">
+      <div class="loading"><div class="spinner"></div> Loading…</div>
+    </div>
+  </div>
+
+  <!-- MANAGER CONSOLE VIEW -->
+  <div class="view" id="view-manager">
+    <div class="action-bar">
+      <h2 class="view-title">🧭 Manager Console</h2>
+      <button class="btn" onclick="loadManager()">🔄 Refresh</button>
+      <div class="spacer"></div>
+      <span class="record-count" id="manager-summary"></span>
+    </div>
+    <div class="manager-wrap" id="manager-wrap">
       <div class="loading"><div class="spinner"></div> Loading…</div>
     </div>
   </div>
@@ -1398,7 +1467,7 @@ function switchView(view){
     'exports':'view-exports','deals':'view-deals','tc':'view-tc',
     'alerts':'view-alerts','calendar':'view-calendar','analytics':'view-analytics',
     'templates':'view-templates','settings':'view-settings','listings':'view-listings',
-    'command':'view-command'
+    'command':'view-command','manager':'view-manager'
   };
   const vid=mapping[view]||('view-'+view);
   const el=document.getElementById(vid);
@@ -1415,6 +1484,7 @@ function switchView(view){
   if(view==='settings')loadSettings();
   if(view==='listings')loadListings();
   if(view==='command')loadCommandConsole();
+  if(view==='manager')loadManager();
 }
 document.querySelectorAll('.nav-item').forEach(btn=>{
   btn.addEventListener('click',()=>switchView(btn.dataset.view));
@@ -3196,6 +3266,134 @@ function confirmStopAll(){
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// MANAGER CONSOLE
+// ═══════════════════════════════════════════════════════════════════════════
+async function loadManager(){
+  const wrap=document.getElementById('manager-wrap');
+  wrap.innerHTML='<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try{
+    const [bRes,pRes,rRes]=await Promise.all([
+      api('/api/manager/briefing'),
+      api('/api/manager/proposals?status=pending'),
+      api('/api/manager/runs?limit=25')
+    ]);
+    if(!bRes.ok)throw new Error((await bRes.json().catch(()=>({}))).detail||bRes.statusText);
+    const briefing=await bRes.json();
+    const proposals=(await pRes.json().catch(()=>({}))).proposals||[];
+    const runs=(await rRes.json().catch(()=>({}))).runs||[];
+    renderManager(briefing,proposals,runs);
+  }catch(e){
+    wrap.innerHTML=`<div class="mgr-empty">Failed to load Manager Console: ${esc(e.message)}</div>`;
+  }
+}
+function renderManager(b,proposals,runs){
+  const wrap=document.getElementById('manager-wrap');
+  document.getElementById('manager-summary').textContent=`${b.total_runs} runs / 7d · ${b.pending_proposals} pending`;
+  let html='';
+
+  // Proposals (top priority — what needs your approval)
+  html+=`<div><div class="mgr-section-title">📋 Proposals Awaiting Your Approval (${proposals.length})</div>`;
+  if(!proposals.length){
+    html+=`<div class="mgr-empty">✅ No pending proposals. The manager scans daily and only surfaces changes worth your attention.</div>`;
+  }else{
+    proposals.forEach(p=>{
+      html+=`<div class="mgr-proposal" style="margin-bottom:12px">
+        <div class="mgr-prop-head">
+          <span class="mgr-prop-type ${esc(p.change_type)}">${esc(p.change_type.replace(/_/g,' '))}</span>
+          <div class="mgr-prop-title">${esc(p.title)}</div>
+        </div>
+        <div class="mgr-prop-rationale">${esc(p.rationale)}</div>
+        <div class="mgr-prop-change">
+          <div class="mgr-prop-val"><div class="mgr-prop-val-label">Current</div>${esc(p.current_value||'—')}</div>
+          <div class="mgr-prop-val"><div class="mgr-prop-val-label">Proposed</div>${esc(p.proposed_value||'—')}</div>
+        </div>
+        <div class="mgr-prop-actions">
+          <button class="btn btn-green" onclick="decideProposal('${p.id}','approve')">✓ Approve</button>
+          <button class="btn btn-danger" onclick="decideProposal('${p.id}','reject')">✕ Reject</button>
+        </div>
+        <div class="mgr-prop-meta">${esc(p.agent)} · ${esc(p.department)} · proposed ${p.proposed_at?timeAgo(p.proposed_at):''}</div>
+      </div>`;
+    });
+  }
+  html+=`</div>`;
+
+  // Department health (the org chart)
+  html+=`<div><div class="mgr-section-title">🏢 Departments</div><div class="mgr-dept-grid">`;
+  const depts=b.departments||{};
+  Object.entries(depts).forEach(([name,d])=>{
+    html+=`<div class="mgr-dept-card ${esc(d.health)}">
+      <div class="mgr-dept-head">
+        <span class="mgr-dept-icon">${d.icon||'•'}</span>
+        <span class="mgr-dept-name">${esc(name)}</span>
+        <span class="mgr-dept-health mgr-health-${esc(d.health)}">${esc(d.health)}</span>
+      </div>
+      <div class="mgr-dept-desc">${esc(d.desc||'')}</div>
+      <div class="mgr-dept-stats">
+        <div class="mgr-stat"><span class="mgr-stat-num ok">${d.success||0}</span><span class="mgr-stat-label">clean</span></div>
+        <div class="mgr-stat"><span class="mgr-stat-num">${d.partial||0}</span><span class="mgr-stat-label">partial</span></div>
+        <div class="mgr-stat"><span class="mgr-stat-num fail">${d.failure||0}</span><span class="mgr-stat-label">failed</span></div>
+        <div class="mgr-stat"><span class="mgr-stat-num">${d.runs||0}</span><span class="mgr-stat-label">runs/7d</span></div>
+      </div>
+      <div class="mgr-dept-agents">${(d.agents||[]).map(a=>`<span class="mgr-agent-chip" onclick="viewAgent('${esc(a)}')">${esc(a)}</span>`).join('')}</div>
+    </div>`;
+  });
+  html+=`</div></div>`;
+
+  // Recent activity
+  html+=`<div><div class="mgr-section-title">📊 Recent Agent Runs</div>`;
+  if(!runs.length){
+    html+=`<div class="mgr-empty">No runs logged yet. Agents log every run once they execute through the learning wrapper.</div>`;
+  }else{
+    html+=`<div class="mgr-runs">`;
+    runs.forEach(r=>{
+      html+=`<div class="mgr-run-item">
+        <span class="mgr-run-dot ${esc(r.status)}"></span>
+        <span class="mgr-run-agent">${esc(r.agent)}</span>
+        <span class="mgr-run-summary">${esc(r.summary||r.error||'')}</span>
+        <span class="mgr-run-time">${r.run_at?timeAgo(r.run_at):''}</span>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+  html+=`</div>`;
+
+  wrap.innerHTML=html;
+}
+async function decideProposal(id,decision){
+  try{
+    const r=await api(`/api/manager/proposals/${id}/${decision}`,{method:'POST'});
+    if(!r.ok)throw new Error((await r.json().catch(()=>({}))).detail||r.statusText);
+    const d=await r.json();
+    if(decision==='approve'){
+      showToast('Approved — will apply on the next worker tick (~1 min)','success');
+    }else{
+      showToast('Rejected','success');
+    }
+    loadManager();
+    refreshManagerBadge();
+  }catch(e){showToast('Failed: '+e.message,'error');}
+}
+async function viewAgent(agent){
+  try{
+    const r=await api('/api/manager/agent/'+encodeURIComponent(agent));
+    const d=await r.json();
+    const runs=d.runs||[];
+    const lines=runs.slice(0,10).map(x=>`${x.status.toUpperCase()} · ${x.summary||x.error||''} (${x.run_at?timeAgo(x.run_at):''})`).join('\n');
+    alert(`${agent} — last ${runs.length} runs (14d):\n\n`+(lines||'No runs logged yet.'));
+  }catch(e){showToast('Failed to load agent','error');}
+}
+async function refreshManagerBadge(){
+  try{
+    const r=await api('/api/manager/proposals?status=pending');
+    if(!r.ok)return;
+    const n=((await r.json()).proposals||[]).length;
+    const badge=document.getElementById('manager-nav-badge');
+    if(n>0){badge.textContent=n;badge.style.display='inline-flex';badge.style.background='var(--accent2)';}
+    else{badge.style.display='none';}
+  }catch(e){}
+}
+
 // ── THEME TOGGLE ─────────────────────────────────────────────────────────────
 function toggleTheme(){
   const isLight=document.documentElement.classList.toggle('light');
@@ -3218,7 +3416,9 @@ function initTheme(){
   initTheme();
   initGlobalSearch();
   refreshAlertBadge();
+  refreshManagerBadge();
   setInterval(refreshAlertBadge, 60000);
+  setInterval(refreshManagerBadge, 90000);
   loadUser();
   connectSSE();
   // load initial board via HTTP too
