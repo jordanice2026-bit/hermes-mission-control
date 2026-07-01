@@ -1718,6 +1718,14 @@ nav{display:flex;gap:2px;flex:1}
           <input type="range" data-tune-key="lineBrightness" min="0.1" max="2.5" step="0.05" oninput="jarvisTuneInput('lineBrightness',this)"></div>
         <div class="jt-row"><label>Cluster brightness <span class="jt-val" id="jt-val-clusterBrightness">1.00</span></label>
           <input type="range" data-tune-key="clusterBrightness" min="0" max="3" step="0.05" oninput="jarvisTuneInput('clusterBrightness',this)"></div>
+        <div class="jt-row"><label>Particles per cluster <span class="jt-val" id="jt-val-clusterSize">0.00</span></label>
+          <input type="range" data-tune-key="clusterSize" min="0" max="3" step="0.05" oninput="jarvisTuneInput('clusterSize',this)"></div>
+        <div class="jt-row"><label>3D depth shading <span class="jt-val" id="jt-val-depthShading">0.00</span></label>
+          <input type="range" data-tune-key="depthShading" min="0" max="1" step="0.02" oninput="jarvisTuneInput('depthShading',this)"></div>
+        <div class="jt-row"><label>Wave count <span class="jt-val" id="jt-val-waveCount">1.00</span></label>
+          <input type="range" data-tune-key="waveCount" min="1" max="6" step="0.1" oninput="jarvisTuneInput('waveCount',this)"></div>
+        <div class="jt-row"><label>Parallax amount <span class="jt-val" id="jt-val-parallaxAmount">1.00</span></label>
+          <input type="range" data-tune-key="parallaxAmount" min="0" max="3" step="0.05" oninput="jarvisTuneInput('parallaxAmount',this)"></div>
         <div class="jt-row"><label>Particle count <span class="jt-val" id="jt-val-particleCount">3000</span></label>
           <input type="range" data-tune-key="particleCount" min="500" max="8000" step="100" oninput="jarvisTuneInput('particleCount',this)"></div>
         <div class="jt-row"><label>Line density <span class="jt-val" id="jt-val-lineDensity">1.00</span></label>
@@ -5392,6 +5400,10 @@ const JARVIS_TUNE_DEFAULTS={
   particleBrightness:1.0, // multiplier on particle opacity
   lineBrightness:1.0,     // multiplier on line opacity
   clusterBrightness:1.0,  // multiplier on how much brighter clusters/flow-veins get vs baseline
+  clusterSize:0,          // NEW: local cohesion force pulling nearby particles into denser clusters (more particles per cluster). 0 = original spread. Does NOT touch gravityPull.
+  depthShading:0,         // NEW: depth-based brightness falloff — particles nearer the camera read brighter, far ones dimmer, for a stronger 3D read. 0 = no effect (flat brightness, original).
+  waveCount:1,            // NEW: number of overlapping traveling wave-bands in the flow field; >1 also nudges particles inside a bright wave to drift together (coherent group motion), independent of gravityPull. 1 = original single wave.
+  parallaxAmount:1.0,     // NEW: multiplier on the camera's ambient drift, which is what actually produces the parallax-vs-depth effect as clusters/particles pass at different depths. 1.0 = original drift amount.
   gravityPull:1.0,        // multiplier on containment pull-to-center force
   speedMult:1.0,          // multiplier on ambient particle drift speed
   orbitAmount:0,          // continuous orbit/rotation speed of the whole cloud (0 = none, matches original)
@@ -5529,9 +5541,17 @@ const _ORB_MAX_ELECTRONS=200; // max simultaneous electrons
 // toward white, which caused the earlier "color looks different" bug — that
 // bug came from boosting vertex color up to 1.9x, which clips the G/B
 // channels unevenly and shifts the visible hue. Never boost past 1.0).
-function _orbFlowN(x,y,z,t){
-  const v=Math.sin(x*0.09+t*0.37)+Math.sin(y*0.11-t*0.29+z*0.07)+
-          Math.sin(z*0.08+t*0.33+x*0.05)+Math.sin((x+y+z)*0.05-t*0.21);
+// JARVIS_TUNE.waveCount (param wc, default 1): multiplies the spatial
+// frequency of every term, which directly increases how many distinct
+// traveling wave-bands/crests fit inside the sphere at once (more waves),
+// while each band still drifts with the same t-based phase speed as before
+// — i.e. this only changes HOW MANY wave crests exist, not how fast they
+// move or how strongly particles are pulled toward the center (gravityPull
+// is untouched by this).
+function _orbFlowN(x,y,z,t,wc){
+  wc=wc||1;
+  const v=Math.sin(x*0.09*wc+t*0.37)+Math.sin(y*0.11*wc-t*0.29+z*0.07*wc)+
+          Math.sin(z*0.08*wc+t*0.33+x*0.05*wc)+Math.sin((x+y+z)*0.05*wc-t*0.21);
   const n=Math.max(0,Math.min(1,(v+4)/8));
   // widen the bright band with smoothstep so a broad, moving swath of the
   // sphere reads at full brightness at any moment (fluid veins), rather than
@@ -5586,19 +5606,26 @@ function initOrb(){
   ptColor.fill(1);   // default: full original color (no dimming) until frame() computes real values
   geo.setAttribute('color',new THREE.BufferAttribute(ptColor,3));
   // circular sprite — draw a crisp anti-aliased circle on a canvas
-  // and use it as the point texture so particles are circles not squares
-  const _c=document.createElement('canvas');_c.width=_c.height=64;
+  // and use it as the point texture so particles are circles not squares.
+  // 2026-07-01: bumped sprite texture resolution 64->192px so particles stay
+  // crisp/anti-aliased even when the renderer's pixel ratio (up to 3x on
+  // Retina/high-DPI displays) magnifies them — the old 64px sprite visibly
+  // pixelated at high DPR. Base on-screen size also reduced (0.22->0.15
+  // material size, 0.4->0.28 currentSize/targetSize defaults below) for a
+  // finer, higher-resolution-looking particle field.
+  const _c=document.createElement('canvas');_c.width=_c.height=192;
   const _x=_c.getContext('2d');
-  const _g=_x.createRadialGradient(32,32,0,32,32,32);
+  const _g=_x.createRadialGradient(96,96,0,96,96,96);
   _g.addColorStop(0,'rgba(255,255,255,1)');
   _g.addColorStop(0.4,'rgba(255,255,255,0.9)');
   _g.addColorStop(1,'rgba(255,255,255,0)');
-  _x.fillStyle=_g; _x.beginPath(); _x.arc(32,32,32,0,Math.PI*2); _x.fill();
+  _x.fillStyle=_g; _x.beginPath(); _x.arc(96,96,96,0,Math.PI*2); _x.fill();
   const orbTex=new THREE.CanvasTexture(_c);
+  orbTex.anisotropy=4;
   const orbBlend=isLight?THREE.NormalBlending:THREE.AdditiveBlending;
   const orbPointColor=isLight?0x0055dd:0xffffff;
   const orbLineColor=isLight?0x0055dd:0x4ca8e8;
-  const mat=new THREE.PointsMaterial({map:orbTex,size:0.22,transparent:true,opacity:0.75,
+  const mat=new THREE.PointsMaterial({map:orbTex,size:0.15,transparent:true,opacity:0.75,
     sizeAttenuation:true,vertexColors:true,blending:orbBlend,depthWrite:false,alphaTest:0.01,color:orbPointColor});
   const points=new THREE.Points(geo,mat);
   scene.add(points);
@@ -5641,7 +5668,7 @@ function initOrb(){
   let targetRadius=25,currentRadius=25;
   let targetSpeed=0.3,currentSpeed=0.3;
   let targetBright=0.6,currentBright=0.6;
-  let targetSize=0.4,currentSize=0.4;
+  let targetSize=0.28,currentSize=0.28;
   let lineAmount=0,targetLineAmount=0;
   const lineDistance=8;
   let spinX=0,spinY=0,spinZ=0;
@@ -5681,7 +5708,7 @@ function startOrbLoop(){
   let targetRadius=25,currentRadius=25;
   let targetSpeed=0.3,currentSpeed=0.3;
   let targetBright=0.6,currentBright=0.6;
-  let targetSize=0.4,currentSize=0.4;
+  let targetSize=0.28,currentSize=0.28;
   let lineAmount=0,targetLineAmount=0;
   let coreGlow=0,targetCoreGlow=0;   // 2026-07-01: brighten lines toward sphere center, off during thinking/speaking
   const lineDistance=4.5;   // 2026-07-01 (round 4): was 6 (originally 8) — even shorter connection radius = fewer lines despite more particles
@@ -5720,10 +5747,10 @@ function startOrbLoop(){
     // 2026-07-01 (round 4): targetLineAmount lowered again (more particles now flowing, want
     // even fewer connecting lines relative to particle count).
     switch(orbState){
-      case 'idle':     targetRadius=28;targetSpeed=0.2;targetBright=0.68;targetSize=0.35;targetLineAmount=0.08;targetElectronRate=0;targetCoreGlow=1;break;   // was lineAmount 0.16
-      case 'listening':targetRadius=22;targetSpeed=0.3;targetBright=0.8;targetSize=0.4;targetLineAmount=0.14;targetElectronRate=0;targetCoreGlow=1;break;      // was lineAmount 0.28
-      case 'thinking': targetRadius=16;targetSpeed=0.5;targetBright=0.82;targetSize=0.3;targetLineAmount=0.35;targetElectronRate=0.015;targetCoreGlow=0;break; // was lineAmount 0.7
-      case 'speaking': targetRadius=18;targetSpeed=0.2;targetBright=0.82;targetSize=0.4;targetLineAmount=0.28;targetElectronRate=0;targetCoreGlow=0;break;     // was lineAmount 0.55
+      case 'idle':     targetRadius=28;targetSpeed=0.2;targetBright=0.68;targetSize=0.25;targetLineAmount=0.08;targetElectronRate=0;targetCoreGlow=1;break;   // was lineAmount 0.16
+      case 'listening':targetRadius=22;targetSpeed=0.3;targetBright=0.8;targetSize=0.28;targetLineAmount=0.14;targetElectronRate=0;targetCoreGlow=1;break;      // was lineAmount 0.28
+      case 'thinking': targetRadius=16;targetSpeed=0.5;targetBright=0.82;targetSize=0.21;targetLineAmount=0.35;targetElectronRate=0.015;targetCoreGlow=0;break; // was lineAmount 0.7
+      case 'speaking': targetRadius=18;targetSpeed=0.2;targetBright=0.82;targetSize=0.28;targetLineAmount=0.28;targetElectronRate=0;targetCoreGlow=0;break;     // was lineAmount 0.55
     }
     currentRadius+=(targetRadius-currentRadius)*0.02;
     currentSpeed+=(targetSpeed-currentSpeed)*0.02;
@@ -5772,6 +5799,38 @@ function startOrbLoop(){
     // JARVIS_TUNE.speedMult / gravityPull: multipliers on ambient drift speed
     // and containment pull-to-center force (1.0 = original in both cases).
     const _tuneSpeed=JARVIS_TUNE.speedMult, _tuneGravity=JARVIS_TUNE.gravityPull;
+    // JARVIS_TUNE.clusterSize: NEW — extra local cohesion force that pulls
+    // each particle gently toward the centroid of nearby particles (cheap
+    // spatial-hash pre-pass), so higher values visibly gather MORE particles
+    // into each cluster/knot instead of an even spread. This is an ADDITIVE
+    // velocity nudge completely separate from the existing containment pull
+    // above (gravityPull) — turning clusterSize up does not change how hard
+    // particles are pulled toward the sphere's center. 0 = no cohesion at
+    // all (original spread, untouched).
+    const _tuneClusterSize=JARVIS_TUNE.clusterSize;
+    const COHESION_CELL=4.5;
+    let _cohesionCells=null;
+    if(_tuneClusterSize>0.001){
+      _cohesionCells=new Map();
+      for(let i=0;i<_ORB_N;i++){
+        const i3=i*3;
+        const cx=Math.round(a[i3]/COHESION_CELL),cy=Math.round(a[i3+1]/COHESION_CELL),cz=Math.round(a[i3+2]/COHESION_CELL);
+        const key=cx+','+cy+','+cz;
+        let cell=_cohesionCells.get(key);
+        if(!cell){cell={sx:0,sy:0,sz:0,n:0};_cohesionCells.set(key,cell);}
+        cell.sx+=a[i3];cell.sy+=a[i3+1];cell.sz+=a[i3+2];cell.n++;
+      }
+    }
+    // JARVIS_TUNE.waveCount: NEW — when >1, also nudges each particle along
+    // the local brightness-field gradient (gradient ascent toward the
+    // nearest wave crest computed by _orbFlowN), so particles inside a bright
+    // traveling wave-band drift together as a coherent group riding that
+    // wave, instead of moving independently — "waves that form and stay
+    // together while traveling". This is a separate additive velocity nudge;
+    // it does NOT touch gravityPull or the existing containment pull above.
+    // 1 = no extra cohesion (original single-wave behavior, untouched).
+    const _tuneWaveCount=JARVIS_TUNE.waveCount;
+    const _waveCohesion=_tuneWaveCount>1.001?0.006*(_tuneWaveCount-1):0;
     // ── Particle physics — soft containment, original behaviour ──
     for(let i=0;i<_ORB_N;i++){
       const i3=i*3;
@@ -5786,6 +5845,24 @@ function startOrbLoop(){
       const dist=Math.sqrt(x*x+y*y+z*z)||0.01;
       const pull=(Math.max(0,dist-currentRadius)*0.002+0.0003)*_tuneGravity;
       vel[i3]-=(x/dist)*pull;vel[i3+1]-=(y/dist)*pull;vel[i3+2]-=(z/dist)*pull;
+      if(_cohesionCells){
+        const cx=Math.round(x/COHESION_CELL),cy=Math.round(y/COHESION_CELL),cz=Math.round(z/COHESION_CELL);
+        const cell=_cohesionCells.get(cx+','+cy+','+cz);
+        if(cell&&cell.n>1){
+          const mx=cell.sx/cell.n,my=cell.sy/cell.n,mz=cell.sz/cell.n;
+          vel[i3]+=(mx-x)*0.0015*_tuneClusterSize;
+          vel[i3+1]+=(my-y)*0.0015*_tuneClusterSize;
+          vel[i3+2]+=(mz-z)*0.0015*_tuneClusterSize;
+        }
+      }
+      if(_waveCohesion>0){
+        const eps=0.6;
+        const f0=_orbFlowN(x,y,z,t,_tuneWaveCount);
+        const fx=(_orbFlowN(x+eps,y,z,t,_tuneWaveCount)-f0)/eps;
+        const fy=(_orbFlowN(x,y+eps,z,t,_tuneWaveCount)-f0)/eps;
+        const fz=(_orbFlowN(x,y,z+eps,t,_tuneWaveCount)-f0)/eps;
+        vel[i3]+=fx*_waveCohesion;vel[i3+1]+=fy*_waveCohesion;vel[i3+2]+=fz*_waveCohesion;
+      }
       if(bass>0.05){vel[i3]+=(x/dist)*bass*0.02;vel[i3+1]+=(y/dist)*bass*0.02;vel[i3+2]+=(z/dist)*bass*0.02;}
       if(orbState==='speaking'&&mid>0.1){const pulse=Math.sin(t*8+px);vel[i3]+=(x/dist)*mid*0.012*pulse;vel[i3+1]+=(y/dist)*mid*0.012*pulse;}
       vel[i3]*=0.992;vel[i3+1]*=0.992;vel[i3+2]*=0.992;
@@ -5817,21 +5894,47 @@ function startOrbLoop(){
       return s*s*(3-2*s);
     }
 
+    // JARVIS_TUNE.depthShading: NEW — depth-based brightness falloff for a
+    // stronger 3D read: particles nearer the camera read brighter, particles
+    // farther away read dimmer, using each particle's rotated Z position
+    // (same spin/tumble the whole cloud already applies) relative to the
+    // camera. Same dimming-only/hue-safe rule as everything else here — the
+    // factor only ever multiplies existing brightness down from 1.0, never
+    // boosts past it, so hue never shifts. 0 = no effect (flat brightness,
+    // original, untouched).
+    const _tuneDepth=JARVIS_TUNE.depthShading;
+    let _depthRotMat=null,_depthVec=null;
+    if(_tuneDepth>0.001){
+      _depthRotMat=new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(spinX,spinY,spinZ,'XYZ'));
+      _depthVec=new THREE.Vector3();
+    }
+    function _depthFactor(x,y,z){
+      if(!_depthRotMat)return 1;
+      _depthVec.set(x,y,z).applyMatrix4(_depthRotMat);
+      const worldZ=_depthVec.z+cloudZ;               // + toward camera (camera sits on +Z looking at origin)
+      const nz=Math.max(-1,Math.min(1,worldZ/28));    // normalize by approx sphere radius
+      const DEPTH_LOW=0.45;                           // dimmest floor for the farthest particles at full effect
+      const near01=(nz+1)/2;                          // 0 = farthest, 1 = nearest
+      const floor=1-_tuneDepth*(1-DEPTH_LOW);          // how low the farthest point can go at this tune level
+      return floor+near01*(1-floor);
+    }
+
     for(let i=0;i<_ORB_N;i++){
       const i3=i*3;
       const x=a[i3],y=a[i3+1],z=a[i3+2];
       if(coreGlow>0.01){
-        const flow=_orbFlowN(x,y,z,t);
+        const flow=_orbFlowN(x,y,z,t,JARVIS_TUNE.waveCount);
         const dens=_densityT(x,y,z);
         // JARVIS_TUNE.clusterBrightness: scales how much brighter a flow-vein
         // or density cluster reads vs baseline (1.0 = original), clamped so
         // the dimming-only/hue-safe guarantee still holds.
         const glow=Math.min(1,Math.max(flow,dens)*JARVIS_TUNE.clusterBrightness);
         const bri=LOW_BASE+glow*(1-LOW_BASE);
-        const m=1+coreGlow*(bri-1);   // always <=1 — dimming only, color never shifts
+        const m=(1+coreGlow*(bri-1))*_depthFactor(x,y,z);   // always <=1 — dimming only, color never shifts
         pca[i3]=m;pca[i3+1]=m;pca[i3+2]=m;
       } else {
-        pca[i3]=1;pca[i3+1]=1;pca[i3+2]=1;
+        const m=_depthFactor(x,y,z);
+        pca[i3]=m;pca[i3+1]=m;pca[i3+2]=m;
       }
     }
     p.needsUpdate=true;
@@ -5866,15 +5969,16 @@ function startOrbLoop(){
             la[idx]=x1;la[idx+1]=y1;la[idx+2]=z1;
             la[idx+3]=a[j3];la[idx+4]=a[j3+1];la[idx+5]=a[j3+2];
             if(coreGlow>0.01){
-              const f1n=Math.max(_orbFlowN(x1,y1,z1,t),_densityT(x1,y1,z1));
-              const f2n=Math.max(_orbFlowN(a[j3],a[j3+1],a[j3+2],t),_densityT(a[j3],a[j3+1],a[j3+2]));
+              const f1n=Math.max(_orbFlowN(x1,y1,z1,t,JARVIS_TUNE.waveCount),_densityT(x1,y1,z1));
+              const f2n=Math.max(_orbFlowN(a[j3],a[j3+1],a[j3+2],t,JARVIS_TUNE.waveCount),_densityT(a[j3],a[j3+1],a[j3+2]));
               const b1=LOW_BASE+f1n*(1-LOW_BASE),b2=LOW_BASE+f2n*(1-LOW_BASE);
-              const f1=1+coreGlow*(b1-1),f2=1+coreGlow*(b2-1);   // always <=1
+              const f1=(1+coreGlow*(b1-1))*_depthFactor(x1,y1,z1),f2=(1+coreGlow*(b2-1))*_depthFactor(a[j3],a[j3+1],a[j3+2]);   // always <=1
               lca[idx]=f1;lca[idx+1]=f1;lca[idx+2]=f1;
               lca[idx+3]=f2;lca[idx+4]=f2;lca[idx+5]=f2;
             } else {
-              lca[idx]=1;lca[idx+1]=1;lca[idx+2]=1;
-              lca[idx+3]=1;lca[idx+4]=1;lca[idx+5]=1;
+              const f1=_depthFactor(x1,y1,z1),f2=_depthFactor(a[j3],a[j3+1],a[j3+2]);
+              lca[idx]=f1;lca[idx+1]=f1;lca[idx+2]=f1;
+              lca[idx+3]=f2;lca[idx+4]=f2;lca[idx+5]=f2;
             }
             lineCount++;
           }
@@ -5938,9 +6042,14 @@ function startOrbLoop(){
     else{T.mat.color.lerp(_pBase,0.08);T.lineMat.color.lerp(_lBase,0.08);}
     T.lineMat.opacity=lineAmount*0.12*JARVIS_TUNE.lineBrightness;
 
-    // Slow orbital camera drift
-    T.camera.position.x=Math.sin(t*0.02)*5;
-    T.camera.position.y=Math.cos(t*0.03)*3;
+    // Slow orbital camera drift — this lateral camera motion is what actually
+    // produces the parallax effect: as the camera shifts side-to-side/up-down,
+    // clusters/particles nearer the camera appear to shift more across the
+    // screen than distant ones, exactly like real-world parallax. JARVIS_TUNE.
+    // parallaxAmount scales the drift's amplitude directly (1.0 = original).
+    const _tuneParallax=JARVIS_TUNE.parallaxAmount;
+    T.camera.position.x=Math.sin(t*0.02)*5*_tuneParallax;
+    T.camera.position.y=Math.cos(t*0.03)*3*_tuneParallax;
     T.camera.lookAt(0,0,cloudZ*0.2);
 
     T.renderer.render(T.scene,T.camera);
