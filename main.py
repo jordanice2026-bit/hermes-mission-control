@@ -701,6 +701,18 @@ async def jarvis_chat_get(request: Request, user: dict = Depends(require_user)):
                          "worker_online": (time.time() - _agent_state.get("updated_at", 0)) < 90})
 
 
+@app.get("/api/jarvis/chat/recent")
+async def jarvis_chat_recent(request: Request, _=Depends(require_sync_token)):
+    """VPS Jarvis runner fetches recent turns for the fast conversational path
+    (bypasses the full agentic hermes CLI session for casual chat, so it
+    needs its own lightweight source of recent context). Returns the last
+    N real (non-control) messages as {role, text}."""
+    n = min(int(request.query_params.get("n", "12")), 50)
+    real = [m for m in _jarvis_chat if not m.get("control") and m.get("text")]
+    recent = [{"role": m["role"], "text": m["text"]} for m in real[-n:]]
+    return JSONResponse({"messages": recent})
+
+
 @app.post("/api/jarvis/tts")
 async def jarvis_tts(request: Request, user: dict = Depends(require_user)):
     """Convert text to speech using Fish Audio (Jarvis MCU voice).

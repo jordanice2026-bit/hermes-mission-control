@@ -5174,29 +5174,14 @@ function handleVoiceUtterance(text){
     jarvisSpeak("Standing by.", ()=>closeJarvisVoice());
     return;
   }
+  // No scripted "on it / running that now" acknowledgment — a human
+  // executive assistant doesn't narrate that they're about to think,
+  // they just answer. The orb's 'thinking' animation is the only visual
+  // feedback while the reply is in flight; casual/conversational messages
+  // now get a genuinely fast direct reply from the backend (no CLI
+  // startup delay to bridge), so there's nothing to fill with filler.
   setVoiceState('thinking');
-  // Only speak the instant "I'm on it" acknowledgment for messages that are
-  // actually asking Jarvis to DO something. Bare check-ins/greetings ("can
-  // you hear me", "hello", "are you there") aren't tasks — acking them with
-  // "On it, running that now" is a wrong answer to a yes/no question. Those
-  // skip straight to the real reply, same as a typed chat message would.
-  if(!isConversationalCheckIn(low)){
-    const ack = pickAck();
-    jarvisSpeak(ack);              // instant, client-side — the "instantaneous" feel
-  }
-  sendJarvisVoice(text);         // fire the real agentic task in the background
-}
-
-// Bare greetings/check-ins that aren't asking Jarvis to perform a task —
-// these should get a direct conversational answer, not a task-executor ack.
-function isConversationalCheckIn(low){
-  return /^(hey|hi|hello|yo)\b[\s,]*(jarvis)?[\s,]*$/.test(low)
-    || /\b(can you hear me|are you (there|listening|online|awake)|you (there|online|awake)|do you (read|copy)|(is|are) (this|it) (working|on)|testing[, ]+testing)\b/.test(low);
-}
-
-function pickAck(){
-  const acks=["On it, Jordan.","Right away.","Consider it done — working on it now.","Got it. Let me handle that.","Understood. On it."];
-  return acks[Math.floor(Math.random()*acks.length)];
+  sendJarvisVoice(text);         // fire the real reply (fast path or agentic task) in the background
 }
 
 // Send a voice message through the normal Jarvis pipeline (background agentic work)
@@ -5306,7 +5291,49 @@ function _jarvisAudioOnFinished(){
   }
 }
 
+// Strip markdown/formatting artifacts before text is sent to TTS, so
+// Jarvis's voice doesn't literally pronounce symbols like asterisks,
+// pound signs, or pipe characters that only make sense as visual
+// formatting. Keeps normal sentence punctuation (. , ? ! : ;) since TTS
+// engines use those for natural pacing/intonation — only strips the
+// markdown/structural symbols that would otherwise get read aloud.
+function sanitizeForSpeech(text){
+  if(!text)return text;
+  let t=text;
+  // Fenced code blocks — drop entirely (not meant to be spoken)
+  t=t.replace(/```[\s\S]*?```/g,' ');
+  // Inline code `like this` → just the text, no backticks
+  t=t.replace(/`([^`]+)`/g,'$1');
+  // Links [text](url) → just the link text
+  t=t.replace(/\[([^\]]+)\]\([^)]+\)/g,'$1');
+  // Bold/italic markers: **text**, __text__, *text*, _text_ → text
+  t=t.replace(/\*\*\*([^*]+)\*\*\*/g,'$1');
+  t=t.replace(/\*\*([^*]+)\*\*/g,'$1');
+  t=t.replace(/___([^_]+)___/g,'$1');
+  t=t.replace(/__([^_]+)__/g,'$1');
+  t=t.replace(/\*([^*\n]+)\*/g,'$1');
+  t=t.replace(/(?<!\w)_([^_\n]+)_(?!\w)/g,'$1');
+  // Headers (# ## ### ...) → strip the leading hashes
+  t=t.replace(/^#{1,6}\s+/gm,'');
+  // Bullet/numbered list markers at line start → strip, keep the text
+  t=t.replace(/^\s*[-*+•]\s+/gm,'');
+  t=t.replace(/^\s*\d+[.)]\s+/gm,'');
+  // Blockquote markers
+  t=t.replace(/^>\s?/gm,'');
+  // Horizontal rules
+  t=t.replace(/^\s*(-{3,}|_{3,}|\*{3,})\s*$/gm,' ');
+  // Any remaining stray markdown/structural symbols that shouldn't be
+  // spoken literally (leftover asterisks/underscores/pipes/backticks/tildes,
+  // and hash marks not already handled above)
+  t=t.replace(/[*_`~#|]/g,'');
+  // Collapse extra whitespace left behind by the stripping above
+  t=t.replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+  return t;
+}
+
 async function jarvisSpeak(text, onDone){
+  if(!text){ if(onDone)onDone(); return; }
+  text=sanitizeForSpeech(text);
   if(!text){ if(onDone)onDone(); return; }
   _jarvisAudioStop();
   jarvisSpeaking=true;
