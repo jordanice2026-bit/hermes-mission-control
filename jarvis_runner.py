@@ -6,34 +6,33 @@ Runs a FULL agentic Hermes session using the `default` profile — the same
 agent (all tools, all skills, terminal, full infra access) that built this
 whole system. Full autonomy (--yolo): executes anything immediately.
 
-Model routing: before running the real turn, a cheap direct Anthropic API
-call (bypassing the `hermes` CLI's ~8-10s fixed startup cost entirely, so
-this adds well under a second) classifies the message as FAST (casual chat,
-general knowledge, quick math — no need to touch real systems) or COMPLEX
-(needs tools: checking data, running commands, multi-step work).
+Model routing: a single direct Anthropic API call (bypassing the `hermes`
+CLI's ~8-10s fixed startup cost entirely) both classifies the message AND,
+for FAST messages, generates the reply — all in one HTTP round trip
+(classify_and_reply()). Merging routing+reply into one call (instead of a
+separate classify call followed by a separate reply call) roughly halves
+FAST-path latency, since each direct API call pays a fixed ~0.3-0.7s
+network/queueing floor independent of token count. Typical FAST reply:
+~1-2.5s total. A slower two-call fallback path (classify_complexity() +
+run_fast_reply()) exists for when the merged call fails or returns an
+unparseable response, so a reply is never lost to a formatting hiccup.
 
-FAST messages skip the hermes CLI subprocess ENTIRELY and instead make a
-direct Anthropic API call (~1-2s round trip) with the Jarvis persona as the
-system prompt plus recent conversation history fetched from the dashboard
-for continuity. This is what makes FAST replies actually fast — no fixed
-CLI startup cost, no scripted "on it" filler needed to bridge a delay that
-no longer exists. On any failure it falls back to the hermes CLI path
-(same FAST_MODEL) so a reply is never lost.
-
-COMPLEX messages use the full agentic hermes CLI session (currently
-claude-sonnet-5, picked up automatically by omitting -m) — these genuinely
-need tool access, so the CLI startup cost is worth it. Session continuity
-for COMPLEX turns is unaffected by FAST turns (they use the dashboard's own
+FAST (casual chat, general knowledge, quick math — no need to touch real
+systems) messages never touch the hermes CLI subprocess. COMPLEX (needs
+tools: checking data, running commands, multi-step work) messages fall
+through to the full agentic hermes CLI session (currently claude-sonnet-5,
+picked up automatically by omitting -m) — these genuinely need tool
+access, so the CLI startup cost is worth it. Session continuity for
+COMPLEX turns is unaffected by FAST turns (FAST uses the dashboard's own
 chat history for context instead of the persistent hermes CLI session).
 
 Invoked by command_worker.py for each pending Jarvis chat message. It:
   1. Loads the persistent Jarvis session id (for Jarvis-style memory across messages).
-  2. Classifies the message's complexity (direct API call, ~1s).
-  3. FAST: direct Anthropic call with soul + recent dashboard history.
+  2. FAST: single merged classify+reply API call (~1-2.5s).
      COMPLEX: runs `hermes chat -q <message>` with the routed model (resume if we have
      a session, else fresh).
-  4. Persists the (possibly new) session id.
-  5. POSTs the assistant's reply back to the dashboard — WITH RETRIES, so a
+  3. Persists the (possibly new) session id.
+  4. POSTs the assistant's reply back to the dashboard — WITH RETRIES, so a
      transient network blip can never leave a message stuck at "thinking"
      forever with no trace of what happened.
 
@@ -103,6 +102,62 @@ CLASSIFY_PROMPT = (
     "Reply with EXACTLY one word, FAST or COMPLEX, and nothing else.\n\n"
     "User message: {text}"
 )
+
+# ── Merged classify+reply prompt (single API round trip) ───────────────────
+# Each direct Anthropic call pays a fixed ~0.3-0.7s network/queueing floor
+# regardless of how few tokens it generates (measured empirically — a 6-token
+# classify-only call and a full conversational reply call both hit this
+# floor). Running classify_complexity() then run_fast_reply() sequentially
+# means paying that floor TWICE for every FAST message. classify_and_reply()
+# instead asks the model to emit its own routing decision as the first line
+# of a single response, so a FAST message only pays the floor once. This is
+# the biggest lever for cutting FAST-path latency without touching model
+# quality — same model, same context, same instructions, just one HTTP
+# round trip instead of two.
+
+
+def _build_route_reply_system_prompt(soul: str) -> str:
+    """System prompt for the merged classify+reply call: persona + voice-
+    conversation formatting rules (same as run_fast_reply's) PLUS the
+    routing instruction. Shared so classify_and_reply() and run_fast_reply()
+    stay in sync if the persona/voice rules ever change."""
+    base = soul or (
+        "You are Jarvis, Jordan's executive assistant. Be warm, direct, and "
+        "conversational — talk like a sharp human EA, not a task-executor. "
+        "Keep replies concise."
+    )
+    base += (
+        "\n\n---\nThis is a live VOICE conversation — the reply will be "
+        "spoken aloud via text-to-speech. Answer directly and "
+        "conversationally, in plain prose — no markdown formatting "
+        "(no **bold**, bullet points, or headers), and don't narrate what "
+        "you're doing (no \"let me check\" / \"running that now\" / \"on it\") "
+        "since there's nothing being run here — just give the answer. Keep "
+        "it SHORT: 1-3 sentences for a normal reply, like a real executive "
+        "assistant talking on the phone — not a written report. Only go "
+        "longer if the user explicitly asks for detail or a list."
+    )
+    base += (
+        "\n\n---\nBefore answering, decide whether this message needs real "
+        "infrastructure access to answer well. Start your response with "
+        "EXACTLY one line, nothing before it:\n"
+        "ROUTE: FAST\n"
+        "or\n"
+        "ROUTE: COMPLEX\n\n"
+        "FAST = casual chat, greetings, opinions, general knowledge, quick "
+        "math, or anything you can answer well from conversation alone.\n"
+        "COMPLEX = anything requiring checking current/live data, running "
+        "commands, querying a database, reading/editing files, deploying, "
+        "or other multi-step real work — a separate full agentic system "
+        "with tool access handles those, not you, right now.\n"
+        "When genuinely unsure, choose COMPLEX — a wrong FAST guess means a "
+        "confidently wrong answer about real data, which is worse than "
+        "routing to the system that can actually check.\n\n"
+        "If ROUTE: FAST, continue IMMEDIATELY on the next line with your "
+        "actual reply to the user (following the voice-conversation rules "
+        "above). If ROUTE: COMPLEX, output NOTHING else after that line."
+    )
+    return base
 
 
 def classify_complexity(text: str) -> str:
@@ -285,19 +340,127 @@ def run_fast_reply(text: str) -> str:
         return ''
 
 
+def classify_and_reply(text: str) -> tuple[str, str]:
+    """Single Anthropic API call that both routes AND (for FAST) answers in
+    one round trip — see the module-level comment above
+    _build_route_reply_system_prompt for why this matters: each direct API
+    call pays a fixed ~0.3-0.7s floor independent of token count, so doing
+    classify_complexity() + run_fast_reply() sequentially pays that floor
+    twice. This pays it once.
+
+    Returns (route, reply):
+      ('fast', <text>)  — genuinely routed FAST, reply is ready to speak.
+      ('complex', '')   — genuinely routed COMPLEX (model's own decision).
+                          Caller should go straight to the hermes CLI path
+                          WITHOUT re-classifying — this is a real routing
+                          result, not a failure.
+      ('error', '')     — network error, unparseable response, missing API
+                          key, or a malformed FAST reply. Caller should fall
+                          back to the original two-call path
+                          (classify_complexity + run_fast_reply) rather than
+                          trust this result.
+    """
+    if not ANTHROPIC_API_KEY:
+        return ('error', '')
+    soul = load_soul()
+    history = fetch_recent_context()
+
+    messages = []
+    for m in history:
+        role = 'user' if m.get('role') == 'user' else 'assistant'
+        content = (m.get('text') or '').strip()
+        if content:
+            messages.append({'role': role, 'content': content[:4000]})
+    if messages and messages[-1]['role'] == 'user' and messages[-1]['content'].strip() == text.strip():
+        messages.pop()
+    messages.append({'role': 'user', 'content': text})
+
+    fixed = []
+    for m in messages:
+        if fixed and fixed[-1]['role'] == m['role']:
+            fixed[-1] = {'role': m['role'], 'content': fixed[-1]['content'] + '\n\n' + m['content']}
+        else:
+            fixed.append(dict(m))
+    if fixed and fixed[0]['role'] != 'user':
+        fixed.insert(0, {'role': 'user', 'content': '(conversation continues)'})
+
+    system_prompt = _build_route_reply_system_prompt(soul)
+
+    try:
+        payload = json.dumps({
+            'model': FAST_MODEL,
+            'max_tokens': FAST_MAX_TOKENS,
+            'temperature': 0.4,
+            'system': system_prompt,
+            'messages': fixed,
+        }).encode()
+        req = urllib.request.Request(
+            'https://api.anthropic.com/v1/messages',
+            data=payload,
+            headers={
+                'Content-Type': 'application/json',
+                'x-api-key': ANTHROPIC_API_KEY,
+                'anthropic-version': '2023-06-01',
+            },
+            method='POST',
+        )
+        with urllib.request.urlopen(req, timeout=FAST_TIMEOUT) as r:
+            data = json.loads(r.read())
+            raw = ''.join(
+                block.get('text', '') for block in data.get('content', [])
+                if block.get('type') == 'text'
+            ).strip()
+
+        m = re.match(r'^ROUTE:\s*(FAST|COMPLEX)\s*\n?(.*)', raw, re.IGNORECASE | re.DOTALL)
+        if not m:
+            # Model didn't follow the routing format — don't guess wrong on
+            # a real request, fall back to the two-call path.
+            log_error(f'classify_and_reply: unparseable route marker (falling back): {raw[:150]!r}')
+            return ('error', '')
+
+        route = m.group(1).strip().lower()
+        reply = m.group(2).strip()
+
+        if route == 'fast':
+            if not reply:
+                log_error('classify_and_reply: ROUTE: FAST but empty reply body (falling back)')
+                return ('error', '')
+            return ('fast', reply)
+        return ('complex', '')   # genuine COMPLEX routing decision — not a failure
+    except Exception as e:
+        log_error(f'classify_and_reply failed (falling back to two-call path): {e!r}')
+        return ('error', '')
+
+
 def run_agent(text: str) -> tuple[str, str]:
     """Run one agentic turn. Returns (reply_text, session_id). Never raises —
     every failure path returns a user-visible reply string instead."""
     sid = load_session_id()
-    route = classify_complexity(text)
 
+    # Single merged call: try to route AND answer in one API round trip.
+    route, merged_reply = classify_and_reply(text)
     if route == 'fast':
-        fast_reply = run_fast_reply(text)
-        if fast_reply:
-            return (fast_reply, sid)   # sid unchanged — FAST path doesn't touch the hermes CLI session
-        log_error(f'FAST direct-API path failed for message, falling back to hermes CLI: {text[:100]}')
+        return (merged_reply, sid)   # sid unchanged — FAST path doesn't touch the hermes CLI session
 
-    # COMPLEX (or FAST fallback on direct-API failure): full agentic hermes CLI session
+    if route == 'complex':
+        # Genuine COMPLEX routing decision from the merged call — no need
+        # to re-classify, that would just add a redundant API round trip
+        # ahead of the (already much longer) hermes CLI session.
+        fallback_route = 'complex'
+    else:
+        # route == 'error': the merged call failed or misbehaved — fall
+        # back to the original, separately-tested two-call path
+        # (classify_complexity + run_fast_reply) before giving up and
+        # treating this as COMPLEX. This preserves the original proven
+        # routing behavior as a safety net.
+        fallback_route = classify_complexity(text)
+        if fallback_route == 'fast':
+            fast_reply = run_fast_reply(text)
+            if fast_reply:
+                return (fast_reply, sid)
+            log_error(f'FAST direct-API path failed for message, falling back to hermes CLI: {text[:100]}')
+
+    # COMPLEX (from either path, or FAST fallback failure): full agentic hermes CLI session
     prompt = text
     if not sid:
         soul = load_soul()
@@ -305,7 +468,7 @@ def run_agent(text: str) -> tuple[str, str]:
             prompt = soul + "\n\n---\n\nJordan's message:\n" + text
 
     cmd = [HERMES, 'chat', '-q', prompt, '--yolo', '-Q', '--max-turns', str(MAX_TURNS)]
-    if route == 'fast':
+    if fallback_route == 'fast':
         cmd += ['-m', FAST_MODEL, '--provider', 'anthropic']
     # 'complex' omits -m entirely, so it always uses whatever the hermes
     # config default model is (currently claude-sonnet-5) without this file

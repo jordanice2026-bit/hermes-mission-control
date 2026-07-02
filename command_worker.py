@@ -238,7 +238,7 @@ def launch_jarvis_messages(jarvis_messages):
     for m in jarvis_messages:
         try:
             _sp.Popen(
-                ['python3', '/opt/data/jarvis_runner.py',
+                ['python3', '/opt/data/mission-control/jarvis_runner.py',
                  '--message-id', m['id'], '--text', m.get('text', '')],
                 stdout=_sp.DEVNULL, stderr=_sp.DEVNULL,
                 start_new_session=True, cwd='/opt/data', env=dict(os.environ),
