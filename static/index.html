@@ -5115,6 +5115,7 @@ function jarvisVoiceTextSend(){
   // send the typed text
   inp.value='';
   row.style.display='none';
+  if(jarvisSpeaking) jarvisStopSpeaking();   // typed interrupt: cut him off, take the new prompt
   jarvisMessages.push({id:'tmp-'+Date.now(),role:'user',text,status:'pending',ts:Date.now()});
   renderJarvis(true);
   setVoiceState('thinking');
@@ -5133,9 +5134,16 @@ function jarvisVoiceShowError(msg){
 function setVoiceTranscript(t){ const el=document.getElementById('jarvis-voice-transcript'); if(el)el.textContent=t||''; }
 
 // ── Speech recognition (mic → text) ──
+// Runs CONTINUOUSLY, including while Jarvis is speaking (barge-in support):
+// an utterance recognized mid-TTS interrupts him — audio is cut instantly
+// and the utterance is handled as a new prompt/redirect. A self-echo guard
+// (_jarvisLikelySelfEcho) keeps him from hearing his own voice through the
+// speakers and interrupting himself.
+let _jarvisRecActive=false;
 function startJarvisListening(){
-  if(!jarvisVoiceOn||jarvisMicMuted||jarvisSpeaking)return;
+  if(!jarvisVoiceOn||jarvisMicMuted)return;
   if(!STT)return;
+  if(_jarvisRecActive)return;   // one recognizer at a time — restarts can race
   try{
     jarvisRec=new STT();
     jarvisRec.lang='en-US';
@@ -5149,16 +5157,74 @@ function startJarvisListening(){
         if(tr.isFinal)finalText+=tr[0].transcript;
         else interim+=tr[0].transcript;
       }
-      setVoiceTranscript(finalText||interim);
+      // While Jarvis is speaking, the transcript shows HIS words — don't
+      // clobber it with interim mic noise unless this becomes a real interrupt.
+      if(!jarvisSpeaking) setVoiceTranscript(finalText||interim);
     };
     jarvisRec.onerror=(e)=>{ /* no-match/aborted are normal */ };
     jarvisRec.onend=()=>{
+      _jarvisRecActive=false;
       const said=(finalText||'').trim();
-      if(said && jarvisVoiceOn){ handleVoiceUtterance(said); }
-      else if(jarvisVoiceOn && !jarvisSpeaking && !jarvisMicMuted){ setTimeout(startJarvisListening,250); }
+      if(said && jarvisVoiceOn){
+        if(jarvisSpeaking){ jarvisHandleInterrupt(said); }
+        else { handleVoiceUtterance(said); }
+      }
+      else if(jarvisVoiceOn && !jarvisMicMuted){ setTimeout(startJarvisListening,250); }
     };
     jarvisRec.start();
-  }catch(e){ setTimeout(startJarvisListening,600); }
+    _jarvisRecActive=true;
+  }catch(e){ _jarvisRecActive=false; setTimeout(startJarvisListening,600); }
+}
+
+// ── Barge-in interrupt ──────────────────────────────────────────────────────
+// Words that mean "just stop talking" rather than a new instruction.
+const JARVIS_STOP_WORDS=/^(stop|wait|hold on|hang on|pause|quiet|enough|shush|shut up|okay|ok|never mind|nevermind)[\s.,!]*$/i;
+
+function _jarvisLikelySelfEcho(said){
+  // If most of the recognized words appear in what Jarvis is currently
+  // saying, the mic almost certainly picked up his own TTS — ignore it.
+  const spoken=(_jarvisSpokenText||'').toLowerCase();
+  if(!spoken)return false;
+  const words=said.toLowerCase().replace(/[^a-z0-9\s']/g,'').split(/\s+/).filter(w=>w.length>2);
+  if(words.length===0)return true;              // pure noise/filler
+  let hits=0; for(const w of words){ if(spoken.includes(w))hits++; }
+  return (hits/words.length)>0.6;
+}
+
+function jarvisStopSpeaking(){
+  // Cut ALL speech output instantly: Fish Audio queue + any in-flight
+  // browser-TTS fallback utterance.
+  _jarvisAudioStop();
+  try{ const s=window.speechSynthesis||window.webkitSpeechSynthesis; if(s)s.cancel(); }catch(e){}
+  jarvisSpeaking=false;
+  _jarvisSpokenText='';
+  _jarvisSpeakGen++;             // invalidate any TTS fetch still in flight
+  // restore mic analyser so the orb reacts to Jordan again
+  if(jarvisAudioCtx&&jarvisAudioCtx._micAnalyser){
+    jarvisAnalyser=jarvisAudioCtx._micAnalyser;
+    jarvisFreq=new Uint8Array(jarvisAnalyser.frequencyBinCount);
+    if(jarvisThree&&jarvisThree.setAnalyser) jarvisThree.setAnalyser(jarvisAnalyser);
+  }
+}
+
+function jarvisHandleInterrupt(said){
+  if(_jarvisLikelySelfEcho(said)){
+    // Probably his own voice — keep talking, keep listening.
+    setTimeout(startJarvisListening,150);
+    return;
+  }
+  jarvisStopSpeaking();
+  const low=said.toLowerCase().trim();
+  if(JARVIS_STOP_WORDS.test(low)){
+    // "stop / hold on / quiet" → shut up and listen, nothing else.
+    setVoiceState('listening');
+    setVoiceTranscript('');
+    setTimeout(startJarvisListening,150);
+    return;
+  }
+  // Genuine redirect/re-prompt: treat it exactly like a fresh utterance.
+  setVoiceTranscript(said);
+  handleVoiceUtterance(said);
 }
 
 function handleVoiceUtterance(text){
@@ -5277,6 +5343,7 @@ function _jarvisAudioStop(){
 
 function _jarvisAudioOnFinished(){
   jarvisSpeaking=false;
+  _jarvisSpokenText='';
   // restore mic analyser so orb reacts to user input again
   if(jarvisAudioCtx&&jarvisAudioCtx._micAnalyser){
     jarvisAnalyser=jarvisAudioCtx._micAnalyser;
@@ -5331,13 +5398,20 @@ function sanitizeForSpeech(text){
   return t;
 }
 
+let _jarvisSpokenText='';   // what Jarvis is currently saying (self-echo guard)
+let _jarvisSpeakGen=0;      // bumped on every speak/interrupt — stale TTS fetches are dropped
 async function jarvisSpeak(text, onDone){
   if(!text){ if(onDone)onDone(); return; }
   text=sanitizeForSpeech(text);
   if(!text){ if(onDone)onDone(); return; }
   _jarvisAudioStop();
   jarvisSpeaking=true;
-  try{ if(jarvisRec)jarvisRec.abort(); }catch(e){}
+  _jarvisSpokenText=text;
+  const gen=++_jarvisSpeakGen;
+  // NOTE: we deliberately KEEP the speech recognizer running while Jarvis
+  // talks — that's what makes barge-in interrupts possible. Make sure the
+  // listen loop is alive (it may have stopped between utterances).
+  if(!jarvisMicMuted) setTimeout(startJarvisListening,100);
   if(jarvisVoiceOn){ setVoiceState('speaking'); setVoiceTranscript(text); }
   if(jarvisThree&&jarvisThree.setOrbState) jarvisThree.setOrbState('speaking');
 
@@ -5346,6 +5420,7 @@ async function jarvisSpeak(text, onDone){
       body:JSON.stringify({text:text.slice(0,2000)})});
     if(!r.ok) throw new Error('TTS '+r.status);
     const d=await r.json();
+    if(gen!==_jarvisSpeakGen){ if(onDone)onDone(); return; }   // interrupted while TTS was generating — drop it
     if(d.audio){
       await _jarvisAudioResume();
       // point orb at TTS analyser (self-contained in TTS context)
@@ -5394,7 +5469,7 @@ function jarvisVoiceMicToggle(){
   if(b)b.classList.toggle('muted',jarvisMicMuted);
   // No status text — the orb just keeps animating. Only start/stop listening.
   if(jarvisMicMuted){ try{if(jarvisRec)jarvisRec.abort();}catch(e){} }
-  else { if(!jarvisSpeaking)startJarvisListening(); }
+  else { startJarvisListening(); }   // barge-in: listen even while Jarvis is speaking
 }
 
 // Hook: when a NEW assistant reply lands while in voice mode, speak it
