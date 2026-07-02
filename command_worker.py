@@ -2,15 +2,28 @@
 """
 command_worker.py — VPS-side agent control worker for Mission Control.
 
-Runs on the VPS (where the agents/cron jobs live). Every tick it:
-  1. Reads the current cron job state from ~/.hermes/cron (or HERMES cron dir)
-  2. Polls Render's /api/agent-control/poll, pushing that state + any results
-  3. Executes any queued commands via the `hermes cron` CLI
-     (start_all/stop_all/pause_job/resume_job/run_job)
-  4. Reports each command's result on the next poll
+WATCHDOG ENTRY POINT: this file's main() no longer does the polling work
+itself. It only checks whether the persistent daemon (command_worker_daemon.py)
+is alive and starts it if not, then exits immediately. The Hermes cron job
+("agent-control-worker") still fires this every 1 minute as a cheap safety
+net — restarting the daemon within ~60s if it ever crashes or the container
+restarted — but the ACTUAL polling that matters for latency (noticing a
+pending Jarvis/chat message and launching a runner for it) now happens
+continuously inside the daemon on a ~2s interval, not gated by the cron
+tick. See command_worker_daemon.py for the real loop.
 
-Designed to run as a Hermes cron job on a short interval (every 1 minute),
-mirroring sync_kanban.py. It is idempotent and safe to run repeatedly.
+Why this exists: a voice/chat message sitting "pending" used to wait up to
+60s (the cron tick interval) before ANYTHING noticed it and launched
+jarvis_runner.py — on top of the runner's own (now ~2-6s) reply time. That
+compounded into 30-60+ second end-to-end waits that had nothing to do with
+model speed. The daemon removes that 60s ceiling; typical worst case is now
+~2s (the daemon's own poll interval) instead of ~60s.
+
+This module still exports all the shared logic (load_jobs, poll,
+execute_command, handle_chat_messages, launch_jarvis_messages,
+handle_jarvis_control, system_status) — command_worker_daemon.py imports
+and reuses these directly so there is exactly one implementation of each,
+not two copies that can drift.
 
 Env:
   MISSION_CONTROL_URL    - https://hermes-mission-control.onrender.com
@@ -21,6 +34,7 @@ import os
 import re
 import ast
 import json
+import signal
 import subprocess
 import urllib.request
 import urllib.error
@@ -34,6 +48,10 @@ HERMES_BIN = '/opt/hermes/.venv/bin/hermes'
 DASHBOARD_URL = os.environ.get('MISSION_CONTROL_URL', '').rstrip('/')
 SYNC_TOKEN = os.environ.get('MISSION_CONTROL_TOKEN', '')
 
+DAEMON_SCRIPT = '/opt/data/mission-control/command_worker_daemon.py'
+DAEMON_PIDFILE = '/opt/data/command_worker_daemon.pid'
+DAEMON_LOG = '/opt/data/command_worker_daemon.log'
+
 # cron jobs.json — the source of truth for agent state
 _CANDIDATES = [
     '/opt/data/cron/jobs.json',
@@ -46,6 +64,7 @@ def _jobs_path():
         if os.path.isfile(p):
             return p
     return _CANDIDATES[0]
+
 
 
 def load_jobs():
@@ -231,56 +250,117 @@ def launch_jarvis_messages(jarvis_messages):
     return launched
 
 
-def main():
+def run_light_tick():
+    """Cheap, latency-critical tick: poll + dispatch pending Jarvis/chat
+    messages ONLY. No proposal_applier (hits the Notion API), no job-state
+    re-read from disk beyond what's needed for the poll payload. This is
+    what the daemon calls every ~2s — it must stay cheap enough to run that
+    often without hammering any external API.
+
+    Command execution (pause/resume/run_job/etc.) and jarvis_control
+    markers are still handled here since they're purely local/instant
+    (subprocess calls to `hermes cron`, or a file delete) — only the
+    Notion-backed proposal sync is deferred to the slower full tick.
+    """
     jobs, err = load_jobs()
     if err:
         print(err)
     status = system_status(jobs)
 
-    # Apply any approved manager proposals (structural changes Jordan OK'd)
-    try:
-        import proposal_applier
-        n = proposal_applier.apply_all_approved()
-        if n:
-            print(f'applied {n} approved proposal(s)')
-            jobs, _ = load_jobs()   # state may have changed
-            status = system_status(jobs)
-    except Exception as e:
-        print(f'proposal applier skipped: {e}')
-
-    # First poll: push state, get queued commands + pending chat messages
     data = poll(jobs, status, [])
     commands = data.get('commands', [])
     chat_messages = data.get('chat_messages', [])
     jarvis_messages = data.get('jarvis_messages', [])
     jarvis_control = data.get('jarvis_control', [])
 
-    # Handle Jarvis control markers first (e.g. reset session for a new conversation)
     handle_jarvis_control(jarvis_control)
-
-    # Handle Manager chat messages (classify + dispatch tasks)
     chat_updates = handle_chat_messages(chat_messages)
-
-    # Launch the Jarvis runner for any pending Jarvis messages (detached; replies async)
     jarvis_launched = launch_jarvis_messages(jarvis_messages)
 
     if not commands and not chat_updates and not jarvis_launched and not jarvis_control:
-        print(f'OK: {len(jobs)} jobs, status={status}, no commands/chat/ea')
         return
 
-    # Execute queued commands
     results = []
     for cmd in commands:
         res = execute_command(cmd, jobs)
         results.append(res)
         print(f"Executed {cmd.get('action')} {cmd.get('job_id') or ''} -> {res['status']}")
 
-    # Re-read jobs (state changed) and report results + chat replies back
     jobs, _ = load_jobs()
     status = system_status(jobs)
     poll(jobs, status, results, chat_updates)
     print(f'OK: executed {len(results)} command(s), {len(chat_updates)} chat reply(ies), '
           f'{jarvis_launched} Jarvis launch(es), status now {status}')
+
+
+def run_full_tick():
+    """Heavier periodic tick: everything run_light_tick does, PLUS syncing
+    approved manager proposals (hits the Notion API — must NOT run on the
+    daemon's ~2s cadence). Called by the daemon every FULL_TICK_EVERY_N
+    light ticks instead of every tick."""
+    try:
+        import proposal_applier
+        n = proposal_applier.apply_all_approved()
+        if n:
+            print(f'applied {n} approved proposal(s)')
+    except Exception as e:
+        print(f'proposal applier skipped: {e}')
+    run_light_tick()
+
+
+def run_one_tick():
+    """Backward-compatible alias for the full tick — kept so any external
+    caller (manual debugging, older references) still gets the complete
+    behavior this module used to run on every invocation."""
+    run_full_tick()
+
+
+def _daemon_pid_alive():
+    """Return True if the pidfile points at a live command_worker_daemon.py process."""
+    try:
+        with open(DAEMON_PIDFILE) as f:
+            pid = int(f.read().strip())
+    except Exception:
+        return False
+    try:
+        os.kill(pid, 0)   # signal 0: existence check only, doesn't actually kill
+    except OSError:
+        return False
+    # Confirm it's actually our daemon and not a recycled PID reused by something else
+    try:
+        with open(f'/proc/{pid}/cmdline', 'rb') as f:
+            cmdline = f.read().decode(errors='replace')
+        return 'command_worker_daemon.py' in cmdline
+    except Exception:
+        # /proc not available (non-Linux) — fall back to trusting the pidfile
+        return True
+
+
+def _start_daemon():
+    """Spawn the persistent polling daemon, detached, writing its own pidfile."""
+    try:
+        subprocess.Popen(
+            ['python3', DAEMON_SCRIPT],
+            stdout=open(DAEMON_LOG, 'a'),
+            stderr=subprocess.STDOUT,
+            start_new_session=True, cwd='/opt/data', env=dict(os.environ),
+        )
+        print('Started command_worker_daemon.py')
+    except Exception as e:
+        print(f'Failed to start command_worker_daemon.py: {e}')
+
+
+def main():
+    """Watchdog entry point (invoked by the 'agent-control-worker' cron job
+    every 1 minute): ensure the persistent low-latency daemon is running,
+    starting it if it died or was never started. Does NOT do the poll/
+    dispatch work itself — see run_one_tick() / command_worker_daemon.py."""
+    if _daemon_pid_alive():
+        print('OK: command_worker_daemon.py already running')
+        return
+    print('command_worker_daemon.py not running — starting it')
+    _start_daemon()
+
 
 
 if __name__ == '__main__':
