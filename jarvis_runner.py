@@ -65,7 +65,9 @@ POST_RETRY_BACKOFF = [2, 5, 10, 20, 30]  # seconds between attempts
 # ── Model routing ────────────────────────────────────────────────────────────
 FAST_MODEL = 'claude-haiku-4-5-20251001'   # small/quick — casual chat, general knowledge
 FAST_TIMEOUT = 20         # generous for the direct-API conversational path (typical: ~1-2s)
-FAST_MAX_TOKENS = 300     # voice conversation should stay short (1-3 sentences typical)
+FAST_MAX_TOKENS = 160     # voice conversation should stay short (1-3 sentences typical);
+                          # generation time dominates FAST latency, so this cap directly
+                          # bounds worst-case reply time (~160 tok ≈ 2-3s incl. round trip)
 FAST_HISTORY_TURNS = 12   # recent dashboard messages fetched for continuity
 # COMPLEX messages fall through to the hermes config default (claude-sonnet-5)
 # by omitting -m entirely, so any future default-model change is picked up
@@ -135,7 +137,10 @@ def _build_route_reply_system_prompt(soul: str) -> str:
         "since there's nothing being run here — just give the answer. Keep "
         "it SHORT: 1-3 sentences for a normal reply, like a real executive "
         "assistant talking on the phone — not a written report. Only go "
-        "longer if the user explicitly asks for detail or a list."
+        "longer if the user explicitly asks for detail or a list. NEVER "
+        "invent claims about live system/business state (pipeline runs, "
+        "alerts, job statuses, deals) — you have no live data access on "
+        "this path; if the answer would require it, that's COMPLEX."
     )
     base += (
         "\n\n---\nBefore answering, decide whether this message needs real "
@@ -155,7 +160,12 @@ def _build_route_reply_system_prompt(soul: str) -> str:
         "routing to the system that can actually check.\n\n"
         "If ROUTE: FAST, continue IMMEDIATELY on the next line with your "
         "actual reply to the user (following the voice-conversation rules "
-        "above). If ROUTE: COMPLEX, output NOTHING else after that line."
+        "above). If ROUTE: COMPLEX, continue IMMEDIATELY on the next line "
+        "with ONE short in-character acknowledgment sentence telling Jordan "
+        "you're on it (e.g. \"On it — pulling that up now.\" or \"Give me a "
+        "moment, checking the live data.\"). Do NOT attempt to answer the "
+        "question itself in that sentence — the full system will deliver "
+        "the real answer right after."
     )
     return base
 
@@ -350,7 +360,11 @@ def classify_and_reply(text: str) -> tuple[str, str]:
 
     Returns (route, reply):
       ('fast', <text>)  — genuinely routed FAST, reply is ready to speak.
-      ('complex', '')   — genuinely routed COMPLEX (model's own decision).
+      ('complex', <ack>) — genuinely routed COMPLEX (model's own decision).
+                          <ack> is a short in-character acknowledgment line
+                          ("On it — pulling that up now.") to post/speak
+                          IMMEDIATELY while the full agentic hermes CLI run
+                          happens; may be '' if the model omitted it.
                           Caller should go straight to the hermes CLI path
                           WITHOUT re-classifying — this is a real routing
                           result, not a failure.
@@ -426,15 +440,26 @@ def classify_and_reply(text: str) -> tuple[str, str]:
                 log_error('classify_and_reply: ROUTE: FAST but empty reply body (falling back)')
                 return ('error', '')
             return ('fast', reply)
-        return ('complex', '')   # genuine COMPLEX routing decision — not a failure
+        # Genuine COMPLEX routing decision — reply (if any) is a short
+        # acknowledgment line to surface immediately, not the real answer.
+        # Guard against the model rambling: keep it to the first line, capped.
+        ack = reply.splitlines()[0].strip()[:200] if reply else ''
+        return ('complex', ack)
     except Exception as e:
         log_error(f'classify_and_reply failed (falling back to two-call path): {e!r}')
         return ('error', '')
 
 
-def run_agent(text: str) -> tuple[str, str]:
+def run_agent(text: str, message_id: str = '') -> tuple[str, str]:
     """Run one agentic turn. Returns (reply_text, session_id). Never raises —
-    every failure path returns a user-visible reply string instead."""
+    every failure path returns a user-visible reply string instead.
+
+    When message_id is given and the message routes COMPLEX, an immediate
+    in-character acknowledgment is POSTed to the dashboard (status stays
+    'processing') BEFORE the multi-second hermes CLI run, so Jordan always
+    hears/sees a response within ~1-2.5s regardless of task complexity. The
+    real answer follows as a second assistant message when the run finishes.
+    """
     sid = load_session_id()
 
     # Single merged call: try to route AND answer in one API round trip.
@@ -447,6 +472,7 @@ def run_agent(text: str) -> tuple[str, str]:
         # to re-classify, that would just add a redundant API round trip
         # ahead of the (already much longer) hermes CLI session.
         fallback_route = 'complex'
+        ack = merged_reply or "On it — give me a moment while I pull that together."
     else:
         # route == 'error': the merged call failed or misbehaved — fall
         # back to the original, separately-tested two-call path
@@ -459,6 +485,14 @@ def run_agent(text: str) -> tuple[str, str]:
             if fast_reply:
                 return (fast_reply, sid)
             log_error(f'FAST direct-API path failed for message, falling back to hermes CLI: {text[:100]}')
+        ack = "On it — give me a moment while I pull that together."
+
+    # Post the instant acknowledgment NOW, before the long agentic run, so
+    # the response-time floor for COMPLEX work is the merged call (~1-2.5s),
+    # not the hermes CLI session (~10s+). status='processing' keeps the
+    # dashboard's typing indicator alive until the real reply lands.
+    if message_id:
+        post_reply(message_id, ack, status='processing', hermes_sid=sid, retries=2)
 
     # COMPLEX (from either path, or FAST fallback failure): full agentic hermes CLI session
     prompt = text
@@ -516,7 +550,8 @@ def run_agent(text: str) -> tuple[str, str]:
     return (reply, new_sid)
 
 
-def post_reply(message_id: str, reply: str, status: str = 'done', hermes_sid: str = '') -> bool:
+def post_reply(message_id: str, reply: str, status: str = 'done', hermes_sid: str = '',
+               retries: int = POST_RETRIES) -> bool:
     """POST the reply back to the dashboard. Retries with backoff on any
     failure (network blip, cold-start, DNS hiccup, 5xx) so a transient issue
     can never silently strand a message in 'processing' forever."""
@@ -531,7 +566,7 @@ def post_reply(message_id: str, reply: str, status: str = 'done', hermes_sid: st
                           'jarvis': True}).encode()
 
     last_err = None
-    for attempt in range(1, POST_RETRIES + 1):
+    for attempt in range(1, retries + 1):
         try:
             req = urllib.request.Request(
                 f'{DASHBOARD_URL}/api/jarvis/chat/reply',
@@ -547,15 +582,21 @@ def post_reply(message_id: str, reply: str, status: str = 'done', hermes_sid: st
                 last_err = f'HTTP {r.status}'
         except Exception as e:
             last_err = repr(e)
-            log_error(f'post_reply attempt {attempt}/{POST_RETRIES} failed for {message_id}: {last_err}')
+            log_error(f'post_reply attempt {attempt}/{retries} failed for {message_id}: {last_err}')
 
-        if attempt < POST_RETRIES:
+        if attempt < retries:
             time.sleep(POST_RETRY_BACKOFF[min(attempt - 1, len(POST_RETRY_BACKOFF) - 1)])
+
+    if retries < POST_RETRIES:
+        # Best-effort post (e.g. the instant COMPLEX acknowledgment) — losing
+        # it is fine, the real reply follows via the full-retry path.
+        log_error(f'post_reply (best-effort, retries={retries}) gave up for {message_id}: {last_err}')
+        return False
 
     # All retries exhausted — this is the one case a reply can still be lost.
     # Persist it to disk so it's at minimum recoverable/inspectable, and log
     # loudly so it shows up if anyone checks the error log.
-    log_error(f'POST_REPLY GAVE UP after {POST_RETRIES} attempts for {message_id}. '
+    log_error(f'POST_REPLY GAVE UP after {retries} attempts for {message_id}. '
               f'Last error: {last_err}. Reply was: {reply[:500]}')
     try:
         with open('/opt/data/jarvis_lost_replies.jsonl', 'a') as f:
@@ -575,7 +616,7 @@ def main():
     # Top-level safety net: NO exception here can ever leave the frontend
     # stuck showing "thinking" forever with zero trace of what happened.
     try:
-        reply, sid = run_agent(args.text)
+        reply, sid = run_agent(args.text, message_id=args.message_id)
     except Exception as e:
         log_error(f'UNCAUGHT exception in run_agent for {args.message_id}: {e!r}')
         reply, sid = (f"Something went wrong on my end and I couldn't finish that "

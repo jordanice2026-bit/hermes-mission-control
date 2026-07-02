@@ -4933,8 +4933,8 @@ function startJarvisPolling(){
     ticks++;
     await loadJarvisChat();
     const pending=jarvisMessages.some(m=>m.role==='user'&&(m.status==='pending'||m.status==='processing'));
-    if((!pending&&ticks>2)||ticks>180){clearInterval(jarvisPollTimer);jarvisPollTimer=setInterval(loadJarvisChat,4000);}
-  },3000);
+    if((!pending&&ticks>6)||ticks>540){clearInterval(jarvisPollTimer);jarvisPollTimer=setInterval(loadJarvisChat,4000);}
+  },1000);
 }
 async function newJarvisSession(){
   // Instant: archive current thread + reset, no message sent to JARVIS

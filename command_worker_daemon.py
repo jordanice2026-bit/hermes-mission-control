@@ -33,7 +33,7 @@ sys.path.insert(0, '/opt/data/mission-control')
 
 import command_worker as CW  # reuse all the shared tick logic — one implementation
 
-POLL_INTERVAL_SECONDS = 2
+POLL_INTERVAL_SECONDS = 1
 FULL_TICK_EVERY_SECONDS = 15   # proposal_applier (Notion API) cadence — must stay coarse
 PIDFILE = CW.DAEMON_PIDFILE
 
